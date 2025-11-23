@@ -1,78 +1,72 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Lead</title>
   <meta charset="UTF-8">
+  <title>Lead</title>
   <style>
-    <style>
-  body {
-    font-family: 'Segoe UI', Roboto, Arial, sans-serif;
-    background-color: #f7f8fa;
-    color: #333;
-    margin: 0;
-    padding: 0;
-  }
-
-  .container {
-    width: 90%;           /* zajmuje 90% szerokości ekranu */
-    max-width: 600px;     /* ale nie większe niż 600px na dużym ekranie */
-    margin: 10px auto;    /* centrowanie i minimalny margines */
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    padding: 20px;
-    box-sizing: border-box;
-  }
-
-  .header {
-    background: linear-gradient(135deg, #00bcd4, #9c27b0);
-    color: #fff;
-    padding: 20px;
-    text-align: center;
-    border-radius: 12px 12px 0 0;
-  }
-
-  .button {
-    padding: 12px 18px;
-    margin: 5px;
-    border-radius: 6px;
-    text-decoration: none;
-    color: #fff;
-    display: inline-block;
-    cursor: pointer;
-    font-size: 16px;
-  }
-
-  .obs { background-color: #4caf50; }
-  .nie { background-color: #ff9800; }
-  .odrz { background-color: #f44336; }
-
-  .buttons { text-align: center; margin: 15px 0; }
-
-  /* RESPONSYWNE DOPASOWANIE NA TELEFONIE */
-  @media (max-width: 480px) {
-    .container {
-      width: 95%;
-      padding: 15px;
+    body {
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+      background-color: #f7f8fa;
+      margin: 0;
+      padding: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
     }
-    .button {
-      width: 100%;          /* przyciski zajmują całą szerokość */
-      font-size: 18px;
+
+    .container {
+      width: 100%;
+      max-width: 500px; /* dopasowane do telefonu i desktopu */
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      padding: 15px;
       box-sizing: border-box;
     }
-  }
-</style>
 
+    .header {
+      background: linear-gradient(135deg, #00bcd4, #9c27b0);
+      color: #fff;
+      text-align: center;
+      padding: 15px;
+      border-radius: 12px 12px 0 0;
+    }
+
+    .buttons {
+      display: flex;
+      flex-direction: column; /* przyciski pod sobą na telefonie */
+      gap: 10px;
+      margin: 15px 0;
+    }
+
+    .button {
+      padding: 12px;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 16px;
+      text-align: center;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .obs { background-color: #4caf50; }
+    .nie { background-color: #ff9800; }
+    .odrz { background-color: #f44336; }
+
+    @media (min-width: 600px) {
+      .buttons { flex-direction: row; justify-content: center; }
+      .button { flex: 1; }
+    }
   </style>
   <script>
-    // Pobranie parametrów GET z URL
     const params = new URLSearchParams(window.location.search);
-    const row = params.get('row'); // np. row=123
+    const row = params.get('row');
     const webhookBase = "https://hooks.zapier.com/hooks/catch/24656599/uzoxf3p/";
 
     function sendStatus(status) {
       fetch(`${webhookBase}?status=${status}&row=${row}`)
-        .then(() => window.close())  // zamyka okno jeśli jest nowa karta
+        .then(() => window.close())
         .catch(() => alert("Webhook wysłany lub zamknij kartę ręcznie."));
     }
   </script>
@@ -87,11 +81,9 @@
     <p>Otrzymaliśmy <strong>nowe zgłoszenie</strong> z kampanii reklamowej na Facebooku.</p>
 
     <div class="buttons">
-      <div>
-        <button class="button obs" onclick="sendStatus('obsluzony')">✔ Lead obsłużony</button>
-        <button class="button nie" onclick="sendStatus('nie_odbiera')">📞 Nie udało się skontaktować</button>
-        <button class="button odrz" onclick="sendStatus('odrzucony')">❌ Lead odrzucony</button>
-      </div>
+      <div class="button obs" onclick="sendStatus('obsluzony')">✔ Lead obsłużony</div>
+      <div class="button nie" onclick="sendStatus('nie_odbiera')">📞 Nie udało się skontaktować</div>
+      <div class="button odrz" onclick="sendStatus('odrzucony')">❌ Lead odrzucony</div>
     </div>
 
     <p style="font-size:12px; color:#666;">💡 Ten lead został wygenerowany automatycznie przez system Zapier.</p>
