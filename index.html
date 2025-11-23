@@ -87,23 +87,21 @@
 
       document.getElementById("loader").style.display = "block";
 
-      // Wywołanie webhooka w tle
       try {
         await fetch(webhookUrl, { mode: "no-cors" });
       } catch (e) {
         console.log("Webhook wysłany (tryb no-cors)");
       }
 
-      // Zamknięcie strony po 1,5 sekundy
       setTimeout(() => {
-        window.close();
-      }, 1500);
+        window.location.href = "thanks.html";
+      }, 500);
     }
   </script>
 
 </head>
 <body>
-  <div class="container">
+  <div class="container" id="mainContent">
     <div class="header">
       <h2>Nowy potencjalny pacjent z reklamy Facebook</h2>
     </div>
