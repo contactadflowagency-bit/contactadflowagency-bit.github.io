@@ -67,6 +67,13 @@
         margin: 0;
       }
     }
+
+    #loader {
+      display: none;
+      font-size: 16px;
+      margin-top: 20px;
+      color: #444;
+    }
   </style>
 
   <script>
@@ -75,17 +82,22 @@
 
     const webhookBase = "https://hooks.zapier.com/hooks/catch/24656599/uzoxf3p/";
 
-    function sendStatus(status) {
+    async function sendStatus(status) {
       const webhookUrl = `${webhookBase}?status=${status}&row=${row}`;
-      const redirectUrl = `redirect.html?url=${encodeURIComponent(webhookUrl)}`;
 
-      const win = window.open(redirectUrl, "_blank", "width=400,height=200");
+      document.getElementById("loader").style.display = "block";
 
-      if (!win) {
-        alert("Musisz zezwolić na otwieranie nowych okien (pop-up).");
-      } else {
-        window.close(); // zamyka główną stronę
+      // Wywołanie webhooka w tle
+      try {
+        await fetch(webhookUrl, { mode: "no-cors" });
+      } catch (e) {
+        console.log("Webhook wysłany (tryb no-cors)");
       }
+
+      // Zamknięcie strony po 1,5 sekundy
+      setTimeout(() => {
+        window.close();
+      }, 1500);
     }
   </script>
 
@@ -108,6 +120,8 @@
       <a class="nie" onclick="sendStatus('nie_odbiera')">📞 Nie udało się skontaktować</a>
       <a class="odrz" onclick="sendStatus('odrzucony')">❌ Lead odrzucony</a>
     </div>
+
+    <p id="loader">Wysyłanie danych…</p>
 
     <p style="font-size:12px; color:#666; margin-top: 15px;">
       💡 Ten lead został wygenerowany automatycznie przez system Zapier.
