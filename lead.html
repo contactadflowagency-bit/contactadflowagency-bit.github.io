@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Lead</title>
+  <script>
+    // Pobieramy parametry z URL
+    const params = new URLSearchParams(window.location.search);
+    const row = params.get('row');
+    const status = params.get('status');
+
+    // Wywołanie webhooka Zapiera
+    fetch(`https://hooks.zapier.com/hooks/catch/24656599/uzoxf3p/?status=${status}&row=${row}`)
+      .then(() => window.close())   // zamyka okno, jeśli otwarte w nowej karcie
+      .catch(() => window.close());
+  </script>
+</head>
+<body>
+  Processing lead...
+</body>
+</html>
