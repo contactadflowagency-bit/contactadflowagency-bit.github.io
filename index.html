@@ -3,127 +3,109 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lead</title>
+  <title>Przetwarzanie statusu...</title>
 
   <style>
-    html, body {
-      height: 100%;
-      overflow: hidden;
-    }
-
+    html, body { height: 100%; overflow: hidden; }
     body {
       font-family: 'Segoe UI', Roboto, Arial, sans-serif;
       background-color: #f7f8fa;
       margin: 0;
-      padding: 10px;
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
-      box-sizing: border-box;
     }
-
     .container {
-      width: 100%;
-      max-width: 500px;
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-      padding: 15px;
-      box-sizing: border-box;
       text-align: center;
+      padding: 20px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      max-width: 400px;
+      width: 90%;
     }
-
-    .header {
-      background: linear-gradient(135deg, #00bcd4, #9c27b0);
-      color: #fff;
-      padding: 15px;
-      border-radius: 12px 12px 0 0;
+    /* Animacja ładowania */
+    .loader {
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #00bcd4;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
     }
-
-    .status-links a {
-      display: block;
-      margin: 10px 0;
-      padding: 12px 20px;
-      color: #fff;
-      text-decoration: none;
-      font-size: 16px;
-      border-radius: 6px;
-      cursor: pointer;
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    
+    /* Styl dla sytuacji awaryjnej (gdyby ktoś wszedł bez linku z maila) */
+    .manual-buttons a {
+        display: block; margin: 10px 0; padding: 12px; color: white; text-decoration: none; border-radius: 6px; cursor: pointer;
     }
-
     .obs { background-color: #4caf50; }
     .nie { background-color: #ff9800; }
     .odrz { background-color: #f44336; }
-
-    @media (min-width: 600px) {
-      .status-links {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-      }
-      .status-links a {
-        flex: 1;
-        margin: 0;
-      }
-    }
-
-    #loader {
-      display: none;
-      font-size: 16px;
-      margin-top: 20px;
-      color: #444;
-    }
+    .hidden { display: none; }
   </style>
 
   <script>
     const params = new URLSearchParams(window.location.search);
-    const row = params.get('row') || '';
+    const row = params.get('row');
+    const action = params.get('action'); // Pobieramy akcję z linku w mailu
 
     const webhookBase = "https://hooks.zapier.com/hooks/catch/24656599/uzoxf3p/";
 
-    async function sendStatus(status) {
-      const webhookUrl = `${webhookBase}?status=${status}&row=${row}`;
+    async function processAction(statusToCheck) {
+      // Jeśli brakuje danych, nic nie rób
+      if (!row || !statusToCheck) return;
 
-      document.getElementById("loader").style.display = "block";
+      const webhookUrl = `${webhookBase}?status=${statusToCheck}&row=${row}`;
 
       try {
+        // Wysyłamy webhook w tle
         await fetch(webhookUrl, { mode: "no-cors" });
       } catch (e) {
-        console.log("Webhook wysłany (tryb no-cors)");
+        console.log("Webhook wysłany");
       }
 
+      // Czekamy chwilę dla pewności i przekierowujemy
       setTimeout(() => {
         window.location.href = "thanks.html";
-      }, 500);
+      }, 800); // 0.8 sekundy opóźnienia, żeby użytkownik zauważył reakcję
     }
-  </script>
 
+    window.onload = function() {
+      if (action && row) {
+        // SCENARIUSZ GŁÓWNY: Użytkownik wszedł z maila
+        document.getElementById('statusText').innerText = "Zapisuję Twój wybór...";
+        processAction(action);
+      } else {
+        // SCENARIUSZ AWARYJNY: Ktoś wszedł na stronę bez parametrów
+        document.getElementById('loadingSection').style.display = 'none';
+        document.getElementById('manualSection').style.display = 'block';
+      }
+    };
+  </script>
 </head>
 <body>
-  <div class="container" id="mainContent">
-    <div class="header">
-      <h2>Nowy potencjalny pacjent z reklamy Facebook</h2>
+
+  <div class="container">
+    
+    <div id="loadingSection">
+      <div class="loader"></div>
+      <h3 id="statusText">Łączenie z serwerem...</h3>
+      <p style="color: #777; font-size: 14px;">Proszę nie zamykać okna.</p>
     </div>
 
-    <p>Dzień dobry,</p>
-    <p>Otrzymaliśmy <strong>nowe zgłoszenie</strong> z kampanii reklamowej na Facebooku.</p>
-
-    <p style="margin-top: 25px; margin-bottom: 12px; font-weight: bold; color: #555;">
-      Aktualizuj status kontaktu:
-    </p>
-
-    <div class="status-links">
-      <a class="obs" onclick="sendStatus('obsluzony')">✔ Lead obsłużony</a>
-      <a class="nie" onclick="sendStatus('nie_odbiera')">📞 Nie udało się skontaktować</a>
-      <a class="odrz" onclick="sendStatus('odrzucony')">❌ Lead odrzucony</a>
+    <div id="manualSection" class="hidden">
+      <h3>Wybierz status ręcznie</h3>
+      <p>Nie udało się odczytać statusu z linku.</p>
+      <div class="manual-buttons">
+          <a class="obs" onclick="processAction('obsluzony')">✔ Lead obsłużony</a>
+          <a class="nie" onclick="processAction('nie_odbiera')">📞 Nie udało się skontaktować</a>
+          <a class="odrz" onclick="processAction('odrzucony')">❌ Lead odrzucony</a>
+      </div>
     </div>
 
-    <p id="loader">Wysyłanie danych…</p>
-
-    <p style="font-size:12px; color:#666; margin-top: 15px;">
-      💡 Ten lead został wygenerowany automatycznie przez system Zapier.
-    </p>
   </div>
+
 </body>
 </html>
