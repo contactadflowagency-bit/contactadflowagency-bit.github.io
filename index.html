@@ -76,16 +76,17 @@
     const webhookBase = "https://hooks.zapier.com/hooks/catch/24656599/uzoxf3p/";
 
     function sendStatus(status) {
-      fetch(`${webhookBase}?status=${status}&row=${row}`)
-        .then(() => window.close())
-        .catch(() => alert("Status wysłany. Możesz zamknąć kartę ręcznie."));
-    }
+      const webhookUrl = `${webhookBase}?status=${status}&row=${row}`;
+      const redirectUrl = `redirect.html?url=${encodeURIComponent(webhookUrl)}`;
 
-    window.onload = () => {
-      document.getElementById("link-obsluzony").onclick = () => sendStatus('obsluzony');
-      document.getElementById("link-nie").onclick = () => sendStatus('nie_odbiera');
-      document.getElementById("link-odrzucony").onclick = () => sendStatus('odrzucony');
-    };
+      const win = window.open(redirectUrl, "_blank", "width=400,height=200");
+
+      if (!win) {
+        alert("Musisz zezwolić na otwieranie nowych okien (pop-up).");
+      } else {
+        window.close(); // zamyka główną stronę
+      }
+    }
   </script>
 
 </head>
@@ -103,9 +104,9 @@
     </p>
 
     <div class="status-links">
-      <a id="link-obsluzony" class="obs">✔ Lead obsłużony</a>
-      <a id="link-nie" class="nie">📞 Nie udało się skontaktować</a>
-      <a id="link-odrzucony" class="odrz">❌ Lead odrzucony</a>
+      <a class="obs" onclick="sendStatus('obsluzony')">✔ Lead obsłużony</a>
+      <a class="nie" onclick="sendStatus('nie_odbiera')">📞 Nie udało się skontaktować</a>
+      <a class="odrz" onclick="sendStatus('odrzucony')">❌ Lead odrzucony</a>
     </div>
 
     <p style="font-size:12px; color:#666; margin-top: 15px;">
