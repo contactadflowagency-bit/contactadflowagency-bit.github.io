@@ -2,19 +2,48 @@
 <html>
 <head>
   <title>Lead</title>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f7f8fa; color: #333; }
+    .container { max-width: 600px; margin: auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); padding: 25px; }
+    .header { background: linear-gradient(135deg, #00bcd4, #9c27b0); color: #fff; padding: 25px; text-align: center; border-radius: 12px 12px 0 0; }
+    .button { padding: 12px 20px; margin: 5px; border-radius: 6px; text-decoration: none; color: #fff; display: inline-block; cursor: pointer; }
+    .obs { background-color: #4caf50; }
+    .nie { background-color: #ff9800; }
+    .odrz { background-color: #f44336; }
+    .buttons { text-align: center; margin: 20px 0; }
+  </style>
   <script>
-    // Pobieramy parametry z URL
+    // Pobranie parametrów GET z URL
     const params = new URLSearchParams(window.location.search);
-    const row = params.get('row');
-    const status = params.get('status');
+    const row = params.get('row'); // np. row=123
+    const webhookBase = "https://hooks.zapier.com/hooks/catch/24656599/uzoxf3p/";
 
-    // Wywołanie webhooka Zapiera
-    fetch(`https://hooks.zapier.com/hooks/catch/24656599/uzoxf3p/?status=${status}&row=${row}`)
-      .then(() => window.close())   // zamyka okno, jeśli otwarte w nowej karcie
-      .catch(() => window.close());
+    function sendStatus(status) {
+      fetch(`${webhookBase}?status=${status}&row=${row}`)
+        .then(() => window.close())  // zamyka okno jeśli jest nowa karta
+        .catch(() => alert("Webhook wysłany lub zamknij kartę ręcznie."));
+    }
   </script>
 </head>
 <body>
-  Processing lead...
+  <div class="container">
+    <div class="header">
+      <h2>Nowy potencjalny pacjent z reklamy Facebook</h2>
+    </div>
+
+    <p>Dzień dobry,</p>
+    <p>Otrzymaliśmy <strong>nowe zgłoszenie</strong> z kampanii reklamowej na Facebooku.</p>
+
+    <div class="buttons">
+      <div>
+        <button class="button obs" onclick="sendStatus('obsluzony')">✔ Lead obsłużony</button>
+        <button class="button nie" onclick="sendStatus('nie_odbiera')">📞 Nie udało się skontaktować</button>
+        <button class="button odrz" onclick="sendStatus('odrzucony')">❌ Lead odrzucony</button>
+      </div>
+    </div>
+
+    <p style="font-size:12px; color:#666;">💡 Ten lead został wygenerowany automatycznie przez system Zapier.</p>
+  </div>
 </body>
 </html>
