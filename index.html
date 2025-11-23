@@ -2,28 +2,25 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
-
-  <!-- KLUCZOWE: poprawne wyświetlanie na telefonach -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <title>Lead</title>
 
   <style>
     html, body {
       height: 100%;
-      overflow: hidden;
+      overflow: hidden; /* blokada przewijania */
     }
+
     body {
       font-family: 'Segoe UI', Roboto, Arial, sans-serif;
       background-color: #f7f8fa;
       margin: 0;
       padding: 10px;
-
-      /* pełne centrowanie */
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
+      box-sizing: border-box;
     }
 
     .container {
@@ -34,31 +31,24 @@
       box-shadow: 0 4px 10px rgba(0,0,0,0.05);
       padding: 15px;
       box-sizing: border-box;
+      text-align: center;
     }
 
     .header {
       background: linear-gradient(135deg, #00bcd4, #9c27b0);
       color: #fff;
-      text-align: center;
       padding: 15px;
       border-radius: 12px 12px 0 0;
     }
 
-    .buttons {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin: 15px 0;
-    }
-
-    .button {
-      padding: 12px;
-      border-radius: 6px;
+    .status-links a {
+      display: block;
+      margin: 10px 0;
+      padding: 12px 20px;
       color: #fff;
-      font-size: 16px;
-      text-align: center;
-      cursor: pointer;
       text-decoration: none;
+      font-size: 16px;
+      border-radius: 6px;
     }
 
     .obs { background-color: #4caf50; }
@@ -66,21 +56,34 @@
     .odrz { background-color: #f44336; }
 
     @media (min-width: 600px) {
-      .buttons { flex-direction: row; justify-content: center; }
-      .button { flex: 1; }
+      .status-links {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+      }
+      .status-links a {
+        flex: 1;
+        margin: 0;
+      }
     }
   </style>
 
   <script>
     const params = new URLSearchParams(window.location.search);
-    const row = params.get('row');
+    const row = params.get('row') || '';
+
     const webhookBase = "https://hooks.zapier.com/hooks/catch/24656599/uzoxf3p/";
 
-    function sendStatus(status) {
-      fetch(`${webhookBase}?status=${status}&row=${row}`)
-        .then(() => window.close())
-        .catch(() => alert("Webhook wysłany lub zamknij kartę ręcznie."));
-    }
+    window.onload = () => {
+      document.getElementById("link-obsluzony").href =
+        `${webhookBase}?status=obsluzony&row=${row}`;
+
+      document.getElementById("link-nie").href =
+        `${webhookBase}?status=nie_odbiera&row=${row}`;
+
+      document.getElementById("link-odrzucony").href =
+        `${webhookBase}?status=odrzucony&row=${row}`;
+    };
   </script>
 
 </head>
@@ -93,13 +96,17 @@
     <p>Dzień dobry,</p>
     <p>Otrzymaliśmy <strong>nowe zgłoszenie</strong> z kampanii reklamowej na Facebooku.</p>
 
-    <div class="buttons">
-      <div class="button obs" onclick="sendStatus('obsluzony')">✔ Lead obsłużony</div>
-      <div class="button nie" onclick="sendStatus('nie_odbiera')">📞 Nie udało się skontaktować</div>
-      <div class="button odrz" onclick="sendStatus('odrzucony')">❌ Lead odrzucony</div>
+    <p style="margin-top: 25px; margin-bottom: 12px; font-weight: bold; color: #555;">
+      Aktualizuj status kontaktu:
+    </p>
+
+    <div class="status-links">
+      <a id="link-obsluzony" class="obs">✔ Lead obsłużony</a>
+      <a id="link-nie" class="nie">📞 Nie udało się skontaktować</a>
+      <a id="link-odrzucony" class="odrz">❌ Lead odrzucony</a>
     </div>
 
-    <p style="font-size:12px; color:#666;">
+    <p style="font-size:12px; color:#666; margin-top: 15px;">
       💡 Ten lead został wygenerowany automatycznie przez system Zapier.
     </p>
   </div>
