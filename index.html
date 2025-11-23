@@ -8,7 +8,7 @@
   <style>
     html, body {
       height: 100%;
-      overflow: hidden; /* blokada przewijania */
+      overflow: hidden;
     }
 
     body {
@@ -49,6 +49,7 @@
       text-decoration: none;
       font-size: 16px;
       border-radius: 6px;
+      cursor: pointer;
     }
 
     .obs { background-color: #4caf50; }
@@ -74,15 +75,16 @@
 
     const webhookBase = "https://hooks.zapier.com/hooks/catch/24656599/uzoxf3p/";
 
+    function sendStatus(status) {
+      fetch(`${webhookBase}?status=${status}&row=${row}`)
+        .then(() => window.close())
+        .catch(() => alert("Status wysłany. Możesz zamknąć kartę ręcznie."));
+    }
+
     window.onload = () => {
-      document.getElementById("link-obsluzony").href =
-        `${webhookBase}?status=obsluzony&row=${row}`;
-
-      document.getElementById("link-nie").href =
-        `${webhookBase}?status=nie_odbiera&row=${row}`;
-
-      document.getElementById("link-odrzucony").href =
-        `${webhookBase}?status=odrzucony&row=${row}`;
+      document.getElementById("link-obsluzony").onclick = () => sendStatus('obsluzony');
+      document.getElementById("link-nie").onclick = () => sendStatus('nie_odbiera');
+      document.getElementById("link-odrzucony").onclick = () => sendStatus('odrzucony');
     };
   </script>
 
