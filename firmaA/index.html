@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>Panel firmy</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body { font-family: Arial; background: #f4f7fa; padding: 20px; }
+  .box { background: #fff; padding: 20px; border-radius: 12px;
+         box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 600px; margin:auto; }
+  h2 { text-align: center; }
+  .stat { font-size: 18px; margin: 10px 0; padding: 12px; background:#eef;
+          border-radius: 8px; }
+</style>
+</head>
+<body>
+
+<div class="box">
+  <h2>Panel firmy: <span id="firma"></span></h2>
+
+  <div class="stat">Łączna liczba leadów: <strong id="leadCount">...</strong></div>
+  <div class="stat">Leadów obsłużonych: <strong id="doneCount">...</strong></div>
+  <div class="stat">Leadów nieodebranych: <strong id="noAnswerCount">...</strong></div>
+  <div class="stat">Leadów odrzuconych: <strong id="rejectedCount">...</strong></div>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const firma = params.get("firma") || "nieznana";
+document.getElementById("firma").innerText = firma;
+
+const sheetUrl = "https://docs.google.com/spreadsheets/d/ID/export?format=csv"; // <- WSTAW ID
+
+fetch(sheetUrl)
+  .then(res => res.text())
+  .then(csv => {
+    const rows = csv.split('\n').map(r => r.split(','));
+    const headers = rows[0];
+    const data = rows.slice(1);
+
+    // Filtrujemy tylko leady tej firmy
+    const filtered = data.filter(r => r[1] === firma); // kolumna B = nazwa firmy
+
+    document.getElementById("leadCount").innerText = filtered.length;
+    document.getElementById("doneCount").innerText = filtered.filter(r => r[7] === "obsluzony").length;
+    document.getElementById("noAnswerCount").innerText = filtered.filter(r => r[7] === "nie_odbiera").length;
+    document.getElementById("rejectedCount").innerText = filtered.filter(r => r[7] === "odrzucony").length;
+  });
+</script>
+
+</body>
+</html>
