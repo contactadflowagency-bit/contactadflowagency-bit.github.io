@@ -1,51 +1,191 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="UTF-8">
-<title>Panel firmy</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard – Firma</title>
+
 <style>
-  body { font-family: Arial; background: #f4f7fa; padding: 20px; }
-  .box { background: #fff; padding: 20px; border-radius: 12px;
-         box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 600px; margin:auto; }
-  h2 { text-align: center; }
-  .stat { font-size: 18px; margin: 10px 0; padding: 12px; background:#eef;
-          border-radius: 8px; }
+    body {
+        font-family: "Segoe UI", Roboto, Arial;
+        background: #f4f7fa;
+        margin: 0;
+        padding: 15px;
+    }
+
+    .container {
+        max-width: 900px;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        border-radius: 14px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+
+    h2 {
+        text-align: center;
+        margin-top: 0;
+        background: linear-gradient(135deg, #00bcd4, #9c27b0);
+        padding: 15px;
+        color: white;
+        border-radius: 8px;
+        font-size: 20px;
+    }
+
+    .stats {
+        display: flex;
+        justify-content: space-between;
+        margin: 15px 0;
+        flex-wrap: wrap;
+    }
+
+    .stat-box {
+        flex: 1 1 30%;
+        background: #f0faff;
+        border-left: 4px solid #00bcd4;
+        padding: 12px;
+        margin: 5px;
+        border-radius: 6px;
+        text-align: center;
+        font-weight: bold;
+        color: #333;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+
+    th, td {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+        text-align: left;
+        font-size: 14px;
+    }
+
+    th {
+        background: #fafafa;
+        font-weight: bold;
+    }
+
+    .status {
+        padding: 6px 10px;
+        border-radius: 6px;
+        color: white;
+        font-weight: bold;
+        font-size: 12px;
+        display: inline-block;
+    }
+
+    .nowy { background: #9c27b0; }
+    .kontakt { background: #2196f3; }
+    .nie_odbiera { background: #ff9800; }
+    .obsluzony { background: #4caf50; }
+    .odrzucony { background: #f44336; }
+
+    .loading {
+        text-align: center;
+        margin: 40px 0;
+        font-size: 18px;
+        font-weight: bold;
+        color: #666;
+    }
 </style>
 </head>
 <body>
 
-<div class="box">
-  <h2>Panel firmy: <span id="firma"></span></h2>
+<div class="container">
+    <h2>📊 Dashboard – Podsumowanie leadów</h2>
 
-  <div class="stat">Łączna liczba leadów: <strong id="leadCount">...</strong></div>
-  <div class="stat">Leadów obsłużonych: <strong id="doneCount">...</strong></div>
-  <div class="stat">Leadów nieodebranych: <strong id="noAnswerCount">...</strong></div>
-  <div class="stat">Leadów odrzuconych: <strong id="rejectedCount">...</strong></div>
+    <div id="loading" class="loading">Ładowanie danych...</div>
+
+    <div id="stats" class="stats" style="display:none;">
+        <div class="stat-box">Nowe: <span id="stat-nowe">0</span></div>
+        <div class="stat-box">W kontakcie: <span id="stat-kontakt">0</span></div>
+        <div class="stat-box">Obsłużone: <span id="stat-obsluzone">0</span></div>
+    </div>
+
+    <table id="leads-table" style="display:none;">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Data</th>
+                <th>Pacjent</th>
+                <th>Telefon</th>
+                <th>Email</th>
+                <th>Cel wizyty</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
 </div>
 
 <script>
-const params = new URLSearchParams(window.location.search);
-const firma = params.get("firma") || "nieznana";
-document.getElementById("firma").innerText = firma;
+// ---- CONFIG ----
+const SHEET_ID = "1WubNwZuof8s8Udg93k0C9Qgo-VkPXiQT0_7-VeEg81k";
+const urlParams = new URLSearchParams(window.location.search);
+const sheetName = urlParams.get("firma") || "firma1";
 
-const sheetUrl = "https://docs.google.com/spreadsheets/d/ID/export?format=csv"; // <- WSTAW ID
+// ---- FETCH GOOGLE SHEETS ----
+const url =
+  `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${sheetName}`;
 
-fetch(sheetUrl)
+fetch(url)
   .then(res => res.text())
-  .then(csv => {
-    const rows = csv.split('\n').map(r => r.split(','));
-    const headers = rows[0];
-    const data = rows.slice(1);
+  .then(data => {
+    const json = JSON.parse(data.substr(47).slice(0, -2));
+    const rows = json.table.rows;
 
-    // Filtrujemy tylko leady tej firmy
-    const filtered = data.filter(r => r[1] === firma); // kolumna B = nazwa firmy
+    const tbody = document.querySelector("#leads-table tbody");
 
-    document.getElementById("leadCount").innerText = filtered.length;
-    document.getElementById("doneCount").innerText = filtered.filter(r => r[7] === "obsluzony").length;
-    document.getElementById("noAnswerCount").innerText = filtered.filter(r => r[7] === "nie_odbiera").length;
-    document.getElementById("rejectedCount").innerText = filtered.filter(r => r[7] === "odrzucony").length;
+    let statNowe = 0, statKontakt = 0, statObsluzone = 0;
+
+    rows.forEach(r => {
+      const id = r.c[0]?.v || "";
+      const data = r.c[1]?.v || "";
+      const name = r.c[2]?.v || "";
+      const tel = r.c[3]?.v || "";
+      const email = r.c[4]?.v || "";
+      const cel = r.c[5]?.v || "";
+      const status = (r.c[7]?.v || "").toLowerCase();
+
+      // Liczenie statystyk
+      if (status === "nowy") statNowe++;
+      if (status === "w kontakcie") statKontakt++;
+      if (status === "obsluzony") statObsluzone++;
+
+      // Tworzenie wiersza
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${id}</td>
+        <td>${data}</td>
+        <td>${name}</td>
+        <td>${tel}</td>
+        <td>${email}</td>
+        <td>${cel}</td>
+        <td><span class="status ${status.replace(" ", "_")}">${status}</span></td>
+      `;
+
+      tbody.appendChild(tr);
+    });
+
+    // Pokazanie danych + statystyk
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("leads-table").style.display = "table";
+    document.getElementById("stats").style.display = "flex";
+
+    document.getElementById("stat-nowe").innerText = statNowe;
+    document.getElementById("stat-kontakt").innerText = statKontakt;
+    document.getElementById("stat-obsluzone").innerText = statObsluzone;
+
+  })
+  .catch(err => {
+    document.getElementById("loading").innerText = "Błąd ładowania danych.";
   });
+
 </script>
 
 </body>
