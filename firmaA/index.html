@@ -1,192 +1,220 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Dashboard – Firma</title>
-
 <style>
-    body {
-        font-family: "Segoe UI", Roboto, Arial;
-        background: #f4f7fa;
-        margin: 0;
-        padding: 15px;
-    }
-
-    .container {
-        max-width: 900px;
-        margin: auto;
-        background: white;
-        padding: 20px;
-        border-radius: 14px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-    }
-
-    h2 {
-        text-align: center;
-        margin-top: 0;
-        background: linear-gradient(135deg, #00bcd4, #9c27b0);
-        padding: 15px;
-        color: white;
-        border-radius: 8px;
-        font-size: 20px;
-    }
-
-    .stats {
-        display: flex;
-        justify-content: space-between;
-        margin: 15px 0;
-        flex-wrap: wrap;
-    }
-
-    .stat-box {
-        flex: 1 1 30%;
-        background: #f0faff;
-        border-left: 4px solid #00bcd4;
-        padding: 12px;
-        margin: 5px;
-        border-radius: 6px;
-        text-align: center;
-        font-weight: bold;
-        color: #333;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 15px;
-    }
-
-    th, td {
-        padding: 10px;
-        border-bottom: 1px solid #eee;
-        text-align: left;
-        font-size: 14px;
-    }
-
-    th {
-        background: #fafafa;
-        font-weight: bold;
-    }
-
-    .status {
-        padding: 6px 10px;
-        border-radius: 6px;
-        color: white;
-        font-weight: bold;
-        font-size: 12px;
-        display: inline-block;
-    }
-
-    .nowy { background: #9c27b0; }
-    .kontakt { background: #2196f3; }
-    .nie_odbiera { background: #ff9800; }
-    .obsluzony { background: #4caf50; }
-    .odrzucony { background: #f44336; }
-
-    .loading {
-        text-align: center;
-        margin: 40px 0;
-        font-size: 18px;
-        font-weight: bold;
-        color: #666;
-    }
+  body{font-family:"Segoe UI", Roboto, Arial; background:#f4f7fa; margin:0; padding:15px;}
+  .container{max-width:980px;margin:auto;background:#fff;padding:18px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.06)}
+  h2{margin:0 0 12px 0;background:linear-gradient(135deg,#00bcd4,#9c27b0);color:#fff;padding:14px;border-radius:8px;font-size:18px;text-align:center}
+  .stats{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+  .stat-box{flex:1 1 30%;background:#f0faff;border-left:4px solid #00bcd4;padding:10px;border-radius:6px;text-align:center;font-weight:700}
+  table{width:100%;border-collapse:collapse;margin-top:12px}
+  th,td{padding:10px;border-bottom:1px solid #eee;text-align:left;font-size:14px;vertical-align:middle}
+  th{background:#fafafa;text-transform:none}
+  .status{padding:6px 8px;border-radius:6px;color:#fff;font-weight:700;font-size:13px;display:inline-block}
+  .s-obsluzony{background:#4caf50}
+  .s-nie_odbiera{background:#ff9800}
+  .s-odrzucony{background:#f44336}
+  .s-nowy{background:#9c27b0}
+  .s-w_kontakcie{background:#2196f3}
+  .s-default{background:#6c757d}
+  .small{font-size:13px;color:#666}
+  @media (max-width:780px){
+    th,td{padding:8px;font-size:13px}
+  }
 </style>
 </head>
 <body>
-
-<div class="container">
+  <div class="container">
     <h2>📊 Dashboard – Podsumowanie leadów</h2>
 
-    <div id="loading" class="loading">Ładowanie danych...</div>
+    <div id="loading" class="small">Ładowanie danych z arkusza…</div>
 
-    <div id="stats" class="stats" style="display:none;">
-        <div class="stat-box">Nowe: <span id="stat-nowe">0</span></div>
-        <div class="stat-box">W kontakcie: <span id="stat-kontakt">0</span></div>
-        <div class="stat-box">Obsłużone: <span id="stat-obsluzone">0</span></div>
+    <div id="stats" class="stats" style="display:none">
+      <div class="stat-box">Nowe: <span id="stat-nowe">0</span></div>
+      <div class="stat-box">W kontakcie: <span id="stat-kontakt">0</span></div>
+      <div class="stat-box">Obsłużone: <span id="stat-obsluzone">0</span></div>
     </div>
 
-    <table id="leads-table" style="display:none;">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Data</th>
-                <th>Pacjent</th>
-                <th>Telefon</th>
-                <th>Email</th>
-                <th>Cel wizyty</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
+    <table id="leads-table" style="display:none">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Data zgłoszenia</th>
+          <th>Pacjent</th>
+          <th>Telefon</th>
+          <th>Email</th>
+          <th>Cel wizyty</th>
+          <th>Status</th>
+          <th>Data aktualizacji</th>
+          <th>Czas reakcji</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
     </table>
-
-</div>
+  </div>
 
 <script>
-// ---- CONFIG ----
+/* ===== KONFIG ===== */
 const SHEET_ID = "1WubNwZuof8s8Udg93k0C9Qgo-VkPXiQT0_7-VeEg81k";
 const urlParams = new URLSearchParams(window.location.search);
 const sheetName = urlParams.get("firma") || "firma1";
+const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+/* ================== */
 
-// ---- FETCH GOOGLE SHEETS ----
-const url =
-  `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${sheetName}`;
+function parseGvizDateCell(cell) {
+  // cell może mieć .f (sformatowany tekst) lub .v jako string "Date(YYYY,MM,DD,HH,MM,SS)"
+  if (!cell) return null;
+  if (cell.f) {
+    // spróbuj sparsować z f (np. "2025-09-14 19:51:03")
+    const parsed = new Date(cell.f);
+    if (!isNaN(parsed)) return parsed;
+  }
+  const v = cell.v;
+  if (!v && !cell.f) return null;
+  // v może być string "Date(2025,8,21,20,23,50)"
+  if (typeof v === 'string') {
+    const m = v.match(/Date\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/);
+    if (m) {
+      // miesiąc w tej notacji jest prawdopodobnie 0-based (0=styczeń). Tak jak w JS Date.
+      const Y = parseInt(m[1],10);
+      const M = parseInt(m[2],10);
+      const D = parseInt(m[3],10);
+      const h = parseInt(m[4],10);
+      const min = parseInt(m[5],10);
+      const s = parseInt(m[6],10);
+      return new Date(Y, M, D, h, min, s);
+    }
+    // jeśli v wygląda jak ISO
+    const iso = new Date(v);
+    if (!isNaN(iso)) return iso;
+  }
+  // jeśli v jest number (timestamp)
+  if (typeof v === 'number') {
+    return new Date(v);
+  }
+  // fallback: jeśli cell.f daje sensowny string daty
+  if (cell.f) {
+    const d = new Date(cell.f);
+    if (!isNaN(d)) return d;
+  }
+  return null;
+}
 
-fetch(url)
-  .then(res => res.text())
-  .then(data => {
-    const json = JSON.parse(data.substr(47).slice(0, -2));
-    const rows = json.table.rows;
+function formatDateNice(d) {
+  if (!d) return '';
+  const pad = n => String(n).padStart(2,'0');
+  return `${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
+function diffHuman(fromDate, toDate) {
+  if (!fromDate || !toDate) return '';
+  let diff = Math.floor((toDate - fromDate) / 1000); // sec
+  if (diff < 0) diff = 0;
+  const days = Math.floor(diff / 86400); diff %= 86400;
+  const hours = Math.floor(diff / 3600); diff %= 3600;
+  const minutes = Math.floor(diff / 60);
+  if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  if (minutes > 0) return `${minutes}m`;
+  return '<1m';
+}
+
+function normalizeStatusKey(s) {
+  if (!s) return '';
+  return s.toString().toLowerCase().trim()
+    .replace(/\s+/g,'_')
+    .replace(/[^a-z0-9_ąćęłńóśżź-]/g,''); // zachowaj polskie znaki jeśli są
+}
+
+function statusClassFor(s) {
+  const k = normalizeStatusKey(s);
+  if (!k) return 's-default';
+  if (k.includes('obsluz') || k.includes('obsłuż') ) return 's-obsluzony';
+  if (k.includes('nie') && (k.includes('odb') || k.includes('odebr'))) return 's-nie_odbiera';
+  if (k.includes('odrz') || k.includes('odrzu')) return 's-odrzucony';
+  if (k.includes('now') || k.includes('nowy')) return 's-nowy';
+  if (k.includes('kontakt') || k.includes('w_kontakcie') || k.includes('kontaktuje')) return 's-w_kontakcie';
+  return 's-default';
+}
+
+/* === fetch and render === */
+fetch(GVIZ_URL)
+  .then(r => r.text())
+  .then(t => {
+    // usuwamy wrapper gviz
+    const json = JSON.parse(t.replace(/^[^\(]*\(/,'').replace(/\);?$/,''));
+    const rows = json.table.rows || [];
     const tbody = document.querySelector("#leads-table tbody");
-
+    tbody.innerHTML = '';
     let statNowe = 0, statKontakt = 0, statObsluzone = 0;
 
     rows.forEach(r => {
-      const id = r.c[0]?.v || "";
-      const data = r.c[1]?.v || "";
-      const name = r.c[2]?.v || "";
-      const tel = r.c[3]?.v || "";
-      const email = r.c[4]?.v || "";
-      const cel = r.c[5]?.v || "";
-      const status = (r.c[7]?.v || "").toLowerCase();
+      // kolumny: A..I => idx 0..8
+      const idCell = r.c[0];
+      const dateCell = r.c[1];
+      const nameCell = r.c[2];
+      const phoneCell = r.c[3];
+      const emailCell = r.c[4];
+      const celCell = r.c[5];
+      const infoCell = r.c[6];
+      const statusCell = r.c[7];
+      const updatedCell = r.c[8];
 
-      // Liczenie statystyk
-      if (status === "nowy") statNowe++;
-      if (status === "w kontakcie") statKontakt++;
-      if (status === "obsluzony") statObsluzone++;
+      const id = idCell?.v ?? '';
+      const createdDate = parseGvizDateCell(dateCell);
+      const createdText = createdDate ? formatDateNice(createdDate) : (dateCell?.f || dateCell?.v || '');
+      const name = nameCell?.v ?? '';
+      const phone = phoneCell?.v ?? '';
+      const email = emailCell?.v ?? '';
+      const cel = celCell?.v ?? '';
+      const statusText = statusCell?.v ?? (statusCell?.f ?? '') ;
+      const updatedDate = parseGvizDateCell(updatedCell);
+      const updatedText = updatedDate ? formatDateNice(updatedDate) : (updatedCell?.f ?? updatedCell?.v ?? '');
 
-      // Tworzenie wiersza
-      const tr = document.createElement("tr");
+      // oblicz czas reakcji (aktualizacja - created)
+      const reaction = (updatedDate && createdDate) ? diffHuman(createdDate, updatedDate) : '';
+
+      // statystyki proste (dostosuj nazwy statusów jeśli trzeba)
+      const k = normalizeStatusKey(statusText);
+      if (k.includes('now') || k.includes('nowy')) statNowe++;
+      if (k.includes('kontakt') || k.includes('w_kontakcie')) statKontakt++;
+      if (k.includes('obsluz') || k.includes('obsłuż')) statObsluzone++;
+
+      // wiersz
+      const tr = document.createElement('tr');
+      const statusClass = statusClassFor(statusText);
       tr.innerHTML = `
         <td>${id}</td>
-        <td>${data}</td>
-        <td>${name}</td>
-        <td>${tel}</td>
-        <td>${email}</td>
-        <td>${cel}</td>
-        <td><span class="status ${status.replace(" ", "_")}">${status}</span></td>
+        <td>${createdText}</td>
+        <td>${escapeHtml(name)}</td>
+        <td>${escapeHtml(phone)}</td>
+        <td>${escapeHtml(email)}</td>
+        <td>${escapeHtml(cel)}</td>
+        <td><span class="status ${statusClass}">${escapeHtml(statusText || 'oczekuje')}</span></td>
+        <td>${updatedText}</td>
+        <td>${reaction}</td>
       `;
-
       tbody.appendChild(tr);
     });
 
-    // Pokazanie danych + statystyk
-    document.getElementById("loading").style.display = "none";
-    document.getElementById("leads-table").style.display = "table";
-    document.getElementById("stats").style.display = "flex";
-
-    document.getElementById("stat-nowe").innerText = statNowe;
-    document.getElementById("stat-kontakt").innerText = statKontakt;
-    document.getElementById("stat-obsluzone").innerText = statObsluzone;
-
+    // pokaż dane
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('leads-table').style.display = 'table';
+    document.getElementById('stats').style.display = 'flex';
+    document.getElementById('stat-nowe').innerText = statNowe;
+    document.getElementById('stat-kontakt').innerText = statKontakt;
+    document.getElementById('stat-obsluzone').innerText = statObsluzone;
   })
-  .catch(err => {
-    document.getElementById("loading").innerText = "Błąd ładowania danych.";
+  .catch(e=>{
+    console.error(e);
+    document.getElementById('loading').innerText = 'Błąd ładowania danych. Sprawdź uprawnienia arkusza i poprawny sheet name.';
   });
 
+// drobna funkcja zabezpieczająca HTML
+function escapeHtml(s){ if(s==null) return ''; return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 </script>
-
 </body>
 </html>
