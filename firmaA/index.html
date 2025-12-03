@@ -15,33 +15,23 @@
   header h1{margin:0;font-size:18px}
   .controls{display:flex;gap:10px;padding:12px;flex-wrap:wrap;align-items:center}
   .controls .search{flex:1;min-width:200px}
-  input[type="text"], select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6edf2;background:#fff;box-sizing:border-box}
+  input[type="text"], input[type="date"], select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6edf2;background:#fff;box-sizing:border-box}
   .stats{display:flex;gap:12px;padding:12px;flex-wrap:wrap}
   .stat{flex:1 1 30%;background:#f0faff;border-left:4px solid var(--accent-start);padding:12px;border-radius:8px;font-weight:700;text-align:center}
   table{width:100%;border-collapse:collapse;font-size:14px}
   th,td{padding:10px;border-bottom:1px solid #eef2f5;text-align:left;vertical-align:middle}
   th{background:#fafcff;font-weight:700}
   .status{padding:6px 8px;border-radius:8px;color:#fff;font-weight:700;font-size:13px;display:inline-block}
-  /* status colors */
-  .s-nowy{background:#9c27b0}          /* nowy / oczekuje */
-  .s-oczekuje{background:#9c27b0}
-  .s-w_kontakcie{background:#2196f3}  /* w kontakcie */
-  .s-odebral{background:#4caf50}      /* odebrał */
-  .s-wizyta_umowiona{background:#009688} /* wizyta umówiona */
-  .s-nie_odebral{background:#ff9800}  /* nie odebrał */
-  .s-odrzucony{background:#f44336}    /* odrzucony */
-  .s-porzucony{background:#607d8b}    /* porzucony */
-  .s-default{background:#6c757d}      /* fallback */
+  .s-nowy{background:#9c27b0}
+  .s-w_kontakcie{background:#2196f3}
+  .s-odebral{background:#4caf50}
+  .s-wizyta_umowiona{background:#009688}
+  .s-nie_odebral{background:#ff9800}
+  .s-odrzucony{background:#f44336}
+  .s-porzucony{background:#607d8b}
+  .s-default{background:#6c757d}
   .small{font-size:13px;color:var(--muted)}
   .table-wrap{overflow:auto}
-  .controls .hint{font-size:13px;color:var(--muted)}
-  @media (max-width:800px){
-    .stat{flex:1 1 48%}
-    th,td{padding:8px;font-size:13px}
-  }
-  /* przyciski akcji (opcjonalne) */
-  .btn{display:inline-block;padding:8px 12px;border-radius:8px;color:#fff;text-decoration:none;text-align:center;font-weight:700;cursor:pointer}
-  .btn-ghost{background:transparent;border:1px solid #e6edf2;color:#333}
 </style>
 </head>
 <body>
@@ -52,39 +42,55 @@
       </header>
 
       <div style="padding:12px;">
+
         <div class="controls">
           <div style="flex:1;min-width:200px">
             <input id="search" class="search" type="text" placeholder="Szukaj: imię, telefon, email..." />
           </div>
 
-          <div style="width:220px">
+          <div style="width:180px">
             <select id="statusFilter">
-              <option value="">— Filtruj po statusie —</option>
-              <option value="nowy">Nowy / Oczekuje</option>
-              <option value="w_kontakcie">W kontakcie</option>
-              <option value="odebral">Odebrał</option>
+              <option value="">— Status —</option>
+              <option value="nowy">Nowy</option>
+              <option value="odrzucony">Lead odrzucony</option>
+              <option value="nie_odebral">Nie odbiera</option>
               <option value="wizyta_umowiona">Wizyta umówiona</option>
-              <option value="nie_odebral">Nie odebrał</option>
-              <option value="odrzucony">Odrzucony</option>
               <option value="porzucony">Porzucony</option>
             </select>
           </div>
 
+          <div style="width:180px">
+            <select id="campaignFilter">
+              <option value="">— Kampania —</option>
+            </select>
+          </div>
+
+          <div style="width:160px">
+            <input type="date" id="dateFrom">
+          </div>
+
+          <div style="width:160px">
+            <input type="date" id="dateTo">
+          </div>
+
           <div style="width:140px">
+            <select id="sortOrder">
+              <option value="desc">Najnowsze</option>
+              <option value="asc">Najstarsze</option>
+            </select>
+          </div>
+
+          <div style="width:120px">
             <select id="refreshInterval">
               <option value="60">Odśwież co 60s</option>
               <option value="0">Wyłącz auto</option>
             </select>
           </div>
-
-          <div style="min-width:120px">
-            <span class="hint small">Statusy kolorowane automatycznie</span>
-          </div>
         </div>
 
         <div class="stats" id="stats" style="display:none">
           <div class="stat">Nowe: <span id="stat-nowe">0</span></div>
-          <div class="stat">Obsłużone / Umówione: <span id="stat-done">0</span></div>
+          <div class="stat">Umówione / Obsłużone: <span id="stat-done">0</span></div>
           <div class="stat">Nieodebrane / Porzucone: <span id="stat-bad">0</span></div>
         </div>
 
@@ -93,15 +99,16 @@
           <table id="leadsTable" style="display:none">
             <thead>
               <tr>
-                <th style="width:70px">ID</th>
-                <th style="width:160px">Data zgłoszenia</th>
+                <th>ID</th>
+                <th>Data zgłoszenia</th>
                 <th>Pacjent</th>
-                <th style="width:120px">Telefon</th>
-                <th style="width:200px">Email</th>
+                <th>Telefon</th>
+                <th>Email</th>
                 <th>Cel wizyty</th>
-                <th style="width:140px">Status</th>
-                <th style="width:160px">Data aktualizacji</th>
-                <th style="width:120px">Czas reakcji</th>
+                <th>Status</th>
+                <th>Data aktualizacji</th>
+                <th>Czas reakcji</th>
+                <th>Kampania</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -113,251 +120,172 @@
   </div>
 
 <script>
-/* ====== KONFIGURACJA ======
-   Podmienić SHEET_ID jeśli inny
-   Sheet name: Firma1
-   Opcjonalnie: w przyszłości wpisz tutaj webhook Zapier w celu zmian statusów z UI
-===========================*/
+/* ====== CONFIG ====== */
 const SHEET_ID = "1WubNwZuof8s8Udg93k0C9Qgo-VkPXiQT0_7-VeEg81k";
 const SHEET_NAME = "Firma1";
-const ZAPIER_WEBHOOK = ""; // jeśli chcesz wysyłać zmiany statusów do Zapier, wpisz URL tutaj
-const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
+const GVIZ_URL =
+ `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
 
-/* ====== HELPERS ====== */
+let allRows = [];
+
+const tableBody = document.querySelector('#leadsTable tbody');
+const loadingEl = document.getElementById('loading');
+
+const searchInput = document.getElementById('search');
+const statusFilter = document.getElementById('statusFilter');
+const campaignFilter = document.getElementById('campaignFilter');
+const dateFrom = document.getElementById('dateFrom');
+const dateTo = document.getElementById('dateTo');
+const sortOrder = document.getElementById('sortOrder');
+
+/* DATE PARSER */
 function parseGvizResponseText(text){
-  // usuń wrapper google.visualization.Query.setResponse(...)
   const jsonText = text.replace(/^[^\(]*\(/, '').replace(/\);?$/,'');
   return JSON.parse(jsonText);
 }
 
+/* DATE FROM GOOGLE */
 function parseGvizDateCell(cell){
   if (!cell) return null;
-  // 1) jeśli jest cell.f i wygląda OK
   if (cell.f){
     const d = new Date(cell.f);
     if (!isNaN(d)) return d;
   }
-  // 2) jeśli v jest string 'Date(YYYY,MM,DD,HH,MM,SS)'
   const v = cell.v;
-  if (typeof v === 'string'){
-    const m = v.match(/Date\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/);
+  if (typeof v === "string"){
+    const m = v.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/);
     if (m){
-      const Y = +m[1], M = +m[2], D = +m[3], h = +m[4], min = +m[5], s = +m[6];
-      return new Date(Y, M, D, h, min, s);
+      return new Date(+m[1],+m[2],+m[3],+m[4],+m[5],+m[6]);
     }
-    // spróbuj parsować ISO
-    const iso = new Date(v);
-    if (!isNaN(iso)) return iso;
+    const d = new Date(v);
+    if (!isNaN(d)) return d;
   }
-  if (typeof v === 'number'){
-    return new Date(v);
-  }
+  if (typeof v === "number") return new Date(v);
   return null;
 }
 
 function fmtDate(d){
-  if (!d) return '';
-  const pad = n => String(n).padStart(2,'0');
-  return `${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  if (!d) return "";
+  const p = n => String(n).padStart(2,"0");
+  return `${p(d.getDate())}.${p(d.getMonth()+1)}.${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
-function diffHuman(from, to){
-  if (!from || !to) return '';
-  let s = Math.floor((to - from) / 1000);
-  if (s < 0) s = 0;
-  const days = Math.floor(s / 86400); s %= 86400;
-  const hours = Math.floor(s / 3600); s %= 3600;
-  const mins = Math.floor(s / 60);
-  if (days>0) return `${days}d ${hours}h ${mins}m`;
-  if (hours>0) return `${hours}h ${mins}m`;
-  if (mins>0) return `${mins}m`;
-  return '<1m';
+function statusClassFor(s){
+  s = (s||"").toLowerCase();
+  if (s.includes("porzu")) return "s-porzucony";
+  if (s.includes("odrz")) return "s-odrzucony";
+  if (s.includes("nie") && s.includes("odb")) return "s-nie_odebral";
+  if (s.includes("wizyta")) return "s-wizyta_umowiona";
+  if (s.includes("odebr")) return "s-odebral";
+  if (s.includes("kontak")) return "s-w_kontakcie";
+  if (s.includes("now")) return "s-nowy";
+  return "s-default";
 }
 
-function normalizeKey(s){
-  if (!s) return '';
-  return s.toString().toLowerCase().trim();
-}
+/* FILTER + RENDER */
+function renderRows(){
+  tableBody.innerHTML = "";
 
-function statusClassFor(raw){
-  const s = normalizeKey(raw);
-  if (!s) return 's-nowy';
-  if (s.includes('porzu')) return 's-porzucony';
-  if (s.includes('odrzu')) return 's-odrzucony';
-  if (s.includes('nie') && (s.includes('odebr')|| s.includes('odb'))) return 's-nie_odebral';
-  if (s.includes('nie_odebra') || s.includes('nie odb')) return 's-nie_odebral';
-  if (s.includes('wizyta') || s.includes('umow') || s.includes('umówi')) return 's-wizyta_umowiona';
-  if (s.includes('odebr') || s.includes('odebra')) return 's-odebral';
-  if (s.includes('kontakt') || s.includes('w kontakt') || s.includes('kontaktuje')) return 's-w_kontakcie';
-  if (s.includes('now') || s.includes('oczek')) return 's-nowy';
-  return 's-default';
-}
+  let rows = [...allRows];
 
-/* ====== RENDER ====== */
-const tableBody = document.querySelector('#leadsTable tbody');
-const loadingEl = document.getElementById('loading');
-const statsEl = document.getElementById('stats');
-const statNowe = document.getElementById('stat-nowe');
-const statDone = document.getElementById('stat-done');
-const statBad = document.getElementById('stat-bad');
-const searchInput = document.getElementById('search');
-const statusFilter = document.getElementById('statusFilter');
-const refreshSelect = document.getElementById('refreshInterval');
+  // Search
+  const q = searchInput.value.toLowerCase().trim();
+  if (q){
+    rows = rows.filter(r =>
+      (r.name+r.phone+r.email+r.cel).toLowerCase().includes(q)
+    );
+  }
 
-let allRows = [];
-let refreshTimer = null;
+  // Status
+  const s = statusFilter.value;
+  if (s){
+    rows = rows.filter(r => statusClassFor(r.statusRaw).includes(s));
+  }
 
-function renderRows(rows){
-  tableBody.innerHTML = '';
-  let cntNowe=0, cntDone=0, cntBad=0;
-  const filter = normalizeKey(statusFilter.value || '');
-  const q = normalizeKey(searchInput.value || '');
+  // Campaign
+  const c = campaignFilter.value;
+  if (c){
+    rows = rows.filter(r => r.campaign === c);
+  }
+
+  // Date range
+  const df = dateFrom.value ? new Date(dateFrom.value) : null;
+  const dt = dateTo.value ? new Date(dateTo.value+" 23:59:59") : null;
+  if (df) rows = rows.filter(r => r.createdDate >= df);
+  if (dt) rows = rows.filter(r => r.createdDate <= dt);
+
+  // Sorting
+  rows.sort((a,b)=>{
+    if (sortOrder.value === "asc") return a.createdDate - b.createdDate;
+    return b.createdDate - a.createdDate;
+  });
 
   rows.forEach(r=>{
-    const id = r.id || '';
-    const created = r.createdDate;
-    const createdText = r.createdText || '';
-    const name = r.name || '';
-    const phone = r.phone || '';
-    const email = r.email || '';
-    const cel = r.cel || '';
-    const statusRaw = r.statusRaw || '';
-    const updatedText = r.updatedText || '';
-    const reaction = r.reaction || '';
-
-    // filtrowanie
-    if (filter){
-      const cls = statusClassFor(statusRaw);
-      if (!cls.includes(filter)) return;
-    }
-    if (q){
-      const hay = (name + ' ' + phone + ' ' + email + ' ' + cel).toLowerCase();
-      if (!hay.includes(q)) return;
-    }
-
-    // statystyki (aggregacja)
-    const sk = normalizeKey(statusRaw);
-    if (sk.includes('now') || sk.includes('oczek')) cntNowe++;
-    if (sk.includes('odebr') || sk.includes('wizyta') || sk.includes('umow') || sk.includes('umówi') ) cntDone++;
-    if (sk.includes('nie') && (sk.includes('odb')||sk.includes('odebr'))) cntBad++;
-    if (sk.includes('porzu')) cntBad++;
-
-    const spanClass = statusClassFor(statusRaw);
-
-    const tr = document.createElement('tr');
+    const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${escapeHtml(id)}</td>
-      <td>${escapeHtml(createdText)}</td>
-      <td>${escapeHtml(name)}</td>
-      <td>${escapeHtml(phone)}</td>
-      <td>${escapeHtml(email)}</td>
-      <td>${escapeHtml(cel)}</td>
-      <td><span class="status ${spanClass}">${escapeHtml(statusRaw || 'oczekuje')}</span></td>
-      <td>${escapeHtml(updatedText)}</td>
-      <td>${escapeHtml(reaction)}</td>
+      <td>${r.id}</td>
+      <td>${r.createdText}</td>
+      <td>${r.name}</td>
+      <td>${r.phone}</td>
+      <td>${r.email}</td>
+      <td>${r.cel}</td>
+      <td><span class="status ${statusClassFor(r.statusRaw)}">${r.statusRaw}</span></td>
+      <td>${r.updatedText}</td>
+      <td>${r.reaction}</td>
+      <td>${r.campaign}</td>
     `;
     tableBody.appendChild(tr);
   });
 
-  // ustaw statystyki
-  statNowe.innerText = cntNowe;
-  statDone.innerText = cntDone;
-  statBad.innerText = cntBad;
-
-  loadingEl.style.display = 'none';
-  document.getElementById('leadsTable').style.display = tableBody.children.length ? 'table' : 'none';
-  statsEl.style.display = 'flex';
+  document.getElementById("leadsTable").style.display = rows.length ? "table" : "none";
 }
 
-/* ====== LOAD SHEET ====== */
+/* LOAD SHEET */
 function loadSheet(){
-  loadingEl.style.display = 'block';
   fetch(GVIZ_URL).then(r=>r.text()).then(t=>{
     const json = parseGvizResponseText(t);
     const rows = json.table.rows || [];
-    allRows = rows.map(r=>{
-      // kolumny A..I => 0..8
-      const idCell = r.c[0] || {};
-      const dateCell = r.c[1] || {};
-      const nameCell = r.c[2] || {};
-      const phoneCell = r.c[3] || {};
-      const emailCell = r.c[4] || {};
-      const celCell = r.c[5] || {};
-      const infoCell = r.c[6] || {};
-      const statusCell = r.c[7] || {};
-      const updatedCell = r.c[8] || {};
 
-      const id = idCell.v ?? '';
-      const createdDate = parseGvizDateCell(dateCell);
-      const createdText = createdDate ? fmtDate(createdDate) : (dateCell.f || dateCell.v || '');
-      const name = nameCell.v ?? '';
-      const phone = phoneCell.v ?? '';
-      const email = emailCell.v ?? '';
-      const cel = celCell.v ?? '';
-      const statusRaw = statusCell.v ?? (statusCell.f ?? '') ;
-      const updatedDate = parseGvizDateCell(updatedCell);
-      const updatedText = updatedDate ? fmtDate(updatedDate) : (updatedCell.f || updatedCell.v || '');
-      const reaction = (createdDate && updatedDate) ? diffHuman(createdDate, updatedDate) : '';
+    allRows = rows.map(r=>{
+      const c = r.c;
+
+      const createdDate = parseGvizDateCell(c[1]);
+      const updatedDate = parseGvizDateCell(c[8]);
 
       return {
-        id, createdDate, createdText, name, phone, email, cel, statusRaw, updatedDate, updatedText, reaction
+        id: c[0]?.v || "",
+        createdDate,
+        createdText: createdDate ? fmtDate(createdDate) : "",
+        name: c[2]?.v || "",
+        phone: c[3]?.v || "",
+        email: c[4]?.v || "",
+        cel: c[5]?.v || "",
+        statusRaw: c[7]?.v || "",
+        updatedText: updatedDate ? fmtDate(updatedDate) : "",
+        reaction: createdDate && updatedDate ? Math.round((updatedDate-createdDate)/60000)+" min" : "",
+        campaign: c[9]?.v || ""
       };
     });
-    renderRows(allRows);
-  }).catch(e=>{
-    console.error(e);
-    loadingEl.innerText = 'Błąd ładowania arkusza. Sprawdź uprawnienia i nazwę zakładki (Firma1).';
+
+    // load campaigns
+    const campaigns = [...new Set(allRows.map(r=>r.campaign).filter(Boolean))];
+    campaignFilter.innerHTML = `<option value="">— Kampania —</option>` +
+      campaigns.map(c=>`<option value="${c}">${c}</option>`).join("");
+
+    loadingEl.style.display = "none";
+    renderRows();
   });
 }
 
-/* ====== EVENTS ====== */
-searchInput.addEventListener('input', ()=> renderRows(allRows));
-statusFilter.addEventListener('change', ()=> renderRows(allRows));
-refreshSelect.addEventListener('change', ()=>{
-  if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
-  const val = Number(refreshSelect.value);
-  if (val>0) refreshTimer = setInterval(loadSheet, val*1000);
-});
+searchInput.oninput = renderRows;
+statusFilter.onchange = renderRows;
+campaignFilter.onchange = renderRows;
+dateFrom.onchange = renderRows;
+dateTo.onchange = renderRows;
+sortOrder.onchange = renderRows;
 
-/* auto-refresh domyślnie co 60s */
-refreshTimer = setInterval(loadSheet, 60000);
-
-/* initial load */
 loadSheet();
-
-/* ===== minor helpers ===== */
-function fmtDate(d){ if(!d) return ''; const pad=n=>String(n).padStart(2,'0'); return `${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`; }
-function escapeHtml(s){ if(s==null) return ''; return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
-function diffHuman(from,to){ if(!from||!to) return ''; let s=Math.floor((to-from)/1000); if(s<0) s=0; const days=Math.floor(s/86400); s%=86400; const hours=Math.floor(s/3600); s%=3600; const mins=Math.floor(s/60); if(days>0) return `${days}d ${hours}h ${mins}m`; if(hours>0) return `${hours}h ${mins}m`; if(mins>0) return `${mins}m`; return '<1m'; }
-function parseGvizResponseText(t){ const jsonText = t.replace(/^[^\(]*\(/,'').replace(/\);?$/,''); return JSON.parse(jsonText); }
-function parseGvizDateCell(cell){
-  if(!cell) return null;
-  if(cell.f){
-    const d=new Date(cell.f); if(!isNaN(d)) return d;
-  }
-  const v = cell.v;
-  if(typeof v==='string'){
-    const m=v.match(/Date\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/);
-    if(m){ return new Date(+m[1],+m[2],+m[3],+m[4],+m[5],+m[6]); }
-    const iso=new Date(v); if(!isNaN(iso)) return iso;
-  }
-  if(typeof v==='number') return new Date(v);
-  return null;
-}
-function statusClassFor(raw){
-  const s = normalizeKey(raw);
-  if(!s) return 's-nowy';
-  if(s.includes('porzu')) return 's-porzucony';
-  if(s.includes('odrz') || s.includes('odrzu')) return 's-odrzucony';
-  if((s.includes('nie') && (s.includes('odebr')||s.includes('odb'))) || s.includes('nie_odebra')) return 's-nie_odebral';
-  if(s.includes('wizyta') || s.includes('umow') || s.includes('umówi')) return 's-wizyta_umowiona';
-  if(s.includes('odebr') || s.includes('odebra')) return 's-odebral';
-  if(s.includes('kontakt') || s.includes('w_kontakt') || s.includes('kontaktuje')) return 's-w_kontakcie';
-  if(s.includes('now') || s.includes('oczek')) return 's-nowy';
-  return 's-default';
-}
-function normalizeKey(s){ if(!s) return ''; return s.toString().toLowerCase().trim(); }
-
 </script>
+
 </body>
 </html>
