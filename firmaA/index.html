@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Dashboard leadów — Firma1</title>
+<title>Dashboard leadów - Firma1</title>
 <style>
   :root{
     --bg:#f4f7fa; --card:#fff; --muted:#6c757d;
@@ -103,7 +103,7 @@
 <body>
   <div class="wrap">
     <div class="card">
-      <header><h1>📊 Dashboard leadów — Firma1</h1></header>
+      <header><h1>📊 Dashboard leadów - Firma1</h1></header>
 
       <div class="content">
 
@@ -115,7 +115,7 @@
 
           <div>
             <select id="statusFilter" aria-label="Filtruj po statusie">
-              <option value="">— Status —</option>
+              <option value="">- Status -</option>
               <option value="nowy">Nowy</option>
               <option value="odrzucony">Lead odrzucony</option>
               <option value="nie_odebral">Nie odbiera</option>
@@ -126,7 +126,7 @@
 
           <div>
             <select id="campaignFilter" aria-label="Filtruj po kampanii">
-              <option value="">— Kampania —</option>
+              <option value="">- Nazwa Kampanii -</option>
             </select>
           </div>
         </div>
@@ -149,8 +149,8 @@
           <div style="width:160px">
             <select id="refreshInterval">
               <option value="60">Odśwież co 60s</option>
-              <option value="0">Wyłącz auto</option>
               <option value="300">Odśwież co 5min</option>
+              <option value="0">Wyłącz auto</option>
             </select>
           </div>
 
@@ -169,7 +169,7 @@
             <thead>
               <tr>
                 <th class="col-lp">Lp.</th>
-                <th class="col-id">ID</th>
+                
                 <th class="col-date">Data zgłoszenia</th>
                 <th>Pacjent</th>
                 <th class="col-phone">Telefon</th>
@@ -178,7 +178,8 @@
                 <th class="col-status">Status</th>
                 <th class="col-updated">Data aktualizacji</th>
                 <th class="col-reaction">Czas reakcji</th>
-                <th class="col-campaign">Kampania</th>
+                <th class="col-campaign">Nazwa Kampanii</th>
+                <th class="col-id">ID</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -400,7 +401,7 @@ function loadSheet(){
 
     // populate campaignFilter options (unique, sorted)
     const campaigns = Array.from(new Set(allRows.map(r=>r.campaign).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pl'));
-    campaignFilter.innerHTML = `<option value="">— Kampania —</option>` + campaigns.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    campaignFilter.innerHTML = `<option value="">- Nazwa Kampanii -</option>` + campaigns.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
 
     loadingEl.style.display = 'none';
     renderRows();
