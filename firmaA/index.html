@@ -1,363 +1,277 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Dashboard leadów — Firma1</title>
-<style>
-  :root{
-    --bg:#f4f7fa; --card:#fff; --muted:#6c757d; --accent-start:#00bcd4; --accent-end:#9c27b0;
-  }
-  body{font-family:"Segoe UI", Roboto, Arial, sans-serif;background:var(--bg);margin:0;padding:12px;box-sizing:border-box;color:#222}
-  .wrap{max-width:1100px;margin:12px auto}
-  .card{background:var(--card);border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,0.06);overflow:hidden}
-  header{background:linear-gradient(135deg,var(--accent-start),var(--accent-end));color:#fff;padding:16px;text-align:center}
-  header h1{margin:0;font-size:18px}
-  .controls{display:flex;gap:10px;padding:12px;flex-wrap:wrap;align-items:center}
-  .controls .search{flex:1;min-width:200px}
-  input[type="text"], select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6edf2;background:#fff;box-sizing:border-box}
-  .stats{display:flex;gap:12px;padding:12px;flex-wrap:wrap}
-  .stat{flex:1 1 30%;background:#f0faff;border-left:4px solid var(--accent-start);padding:12px;border-radius:8px;font-weight:700;text-align:center}
-  table{width:100%;border-collapse:collapse;font-size:14px}
-  th,td{padding:10px;border-bottom:1px solid #eef2f5;text-align:left;vertical-align:middle}
-  th{background:#fafcff;font-weight:700}
-  .status{padding:6px 8px;border-radius:8px;color:#fff;font-weight:700;font-size:13px;display:inline-block}
-  /* status colors */
-  .s-nowy{background:#9c27b0}          /* nowy / oczekuje */
-  .s-oczekuje{background:#9c27b0}
-  .s-w_kontakcie{background:#2196f3}  /* w kontakcie */
-  .s-odebral{background:#4caf50}      /* odebrał */
-  .s-wizyta_umowiona{background:#009688} /* wizyta umówiona */
-  .s-nie_odebral{background:#ff9800}  /* nie odebrał */
-  .s-odrzucony{background:#f44336}    /* odrzucony */
-  .s-porzucony{background:#607d8b}    /* porzucony */
-  .s-default{background:#6c757d}      /* fallback */
-  .small{font-size:13px;color:var(--muted)}
-  .table-wrap{overflow:auto}
-  .controls .hint{font-size:13px;color:var(--muted)}
-  @media (max-width:800px){
-    .stat{flex:1 1 48%}
-    th,td{padding:8px;font-size:13px}
-  }
-  /* przyciski akcji (opcjonalne) */
-  .btn{display:inline-block;padding:8px 12px;border-radius:8px;color:#fff;text-decoration:none;text-align:center;font-weight:700;cursor:pointer}
-  .btn-ghost{background:transparent;border:1px solid #e6edf2;color:#333}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leady</title>
+    <link rel="stylesheet" href="styles.css">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            background: #f4f4f4;
+        }
+
+        #loader {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 0 4px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 8px;
+            border: 1px solid #ddd;
+            font-size: 13px;
+        }
+
+        th {
+            background: #eee;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+            text-transform: capitalize;
+            text-align: center;
+            display: inline-block;
+        }
+
+        .status-nowy { background: #007bff; }
+        .status-lead-odrzucony { background: #dc3545; }
+        .status-nie-odbiera { background: #ffc107; color: black; }
+        .status-wizyta-umowiona { background: #28a745; }
+        .status-porzucony { background: #6c757d; }
+    </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <header>
-        <h1>📊 Dashboard leadów — Firma1</h1>
-      </header>
 
-      <div style="padding:12px;">
-        <div class="controls">
-          <div style="flex:1;min-width:200px">
-            <input id="search" class="search" type="text" placeholder="Szukaj: imię, telefon, email..." />
-          </div>
+    <h2>Leady z kampanii Meta Ads</h2>
 
-          <div style="width:220px">
-            <select id="statusFilter">
-              <option value="">— Filtruj po statusie —</option>
-              <option value="nowy">Nowy / Oczekuje</option>
-              <option value="w_kontakcie">W kontakcie</option>
-              <option value="odebral">Odebrał</option>
-              <option value="wizyta_umowiona">Wizyta umówiona</option>
-              <option value="nie_odebral">Nie odebrał</option>
-              <option value="odrzucony">Odrzucony</option>
-              <option value="porzucony">Porzucony</option>
-            </select>
-          </div>
+    <div id="loader">Ładowanie danych...</div>
 
-          <div style="width:140px">
-            <select id="refreshInterval">
-              <option value="60">Odśwież co 60s</option>
-              <option value="0">Wyłącz auto</option>
-            </select>
-          </div>
-
-          <div style="min-width:120px">
-            <span class="hint small">Statusy kolorowane automatycznie</span>
-          </div>
-        </div>
-
-        <div class="stats" id="stats" style="display:none">
-          <div class="stat">Nowe: <span id="stat-nowe">0</span></div>
-          <div class="stat">Obsłużone / Umówione: <span id="stat-done">0</span></div>
-          <div class="stat">Nieodebrane / Porzucone: <span id="stat-bad">0</span></div>
-        </div>
-
-        <div class="table-wrap" style="padding:12px;">
-          <div id="loading" class="small">Ładowanie danych z Google Sheets…</div>
-          <table id="leadsTable" style="display:none">
-            <thead>
-              <tr>
-                <th style="width:70px">ID</th>
-                <th style="width:160px">Data zgłoszenia</th>
-                <th>Pacjent</th>
-                <th style="width:120px">Telefon</th>
-                <th style="width:200px">Email</th>
-                <th>Cel wizyty</th>
-                <th style="width:140px">Status</th>
-                <th style="width:160px">Data aktualizacji</th>
-                <th style="width:120px">Czas reakcji</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-
-      </div>
+    <div class="stats">
+        <div>Nowe: <span id="stat-new">0</span></div>
+        <div>Odrzucone: <span id="stat-odrzucone">0</span></div>
+        <div>Nie odbiera: <span id="stat-nieodbiera">0</span></div>
+        <div>Umówione: <span id="stat-umowione">0</span></div>
+        <div>Porzucone: <span id="stat-porzucone">0</span></div>
     </div>
-  </div>
+
+    <div class="controls">
+        <select id="statusFilter">
+            <option value="">— Status —</option>
+            <option value="Nowy">Nowy</option>
+            <option value="Lead odrzucony">Lead odrzucony</option>
+            <option value="Nie odbiera">Nie odbiera</option>
+            <option value="Wizyta umówiona">Wizyta umówiona</option>
+            <option value="Porzucony">Porzucony</option>
+        </select>
+
+        <input type="date" id="dateFrom">
+        <input type="date" id="dateTo">
+
+        <select id="sortOrder">
+            <option value="desc">Najnowsze</option>
+            <option value="asc">Najstarsze</option>
+        </select>
+
+        <select id="campaignFilter">
+            <option value="">— Kampania —</option>
+        </select>
+    </div>
+
+    <table id="leadTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Data</th>
+                <th>Imię</th>
+                <th>Telefon</th>
+                <th>Email</th>
+                <th>Cel</th>
+                <th>Status</th>
+                <th>Data aktualizacji</th>
+                <th>Reakcja</th>
+                <th>Kampania</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+
 
 <script>
-/* ====== KONFIGURACJA ======
-   Podmienić SHEET_ID jeśli inny
-   Sheet name: Firma1
-   Opcjonalnie: w przyszłości wpisz tutaj webhook Zapier w celu zmian statusów z UI
-===========================*/
-const SHEET_ID = "1WubNwZuof8s8Udg93k0C9Qgo-VkPXiQT0_7-VeEg81k";
-const SHEET_NAME = "Firma1";
-const ZAPIER_WEBHOOK = ""; // jeśli chcesz wysyłać zmiany statusów do Zapier, wpisz URL tutaj
-const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
-
-/* ====== HELPERS ====== */
-function parseGvizResponseText(text){
-  // usuń wrapper google.visualization.Query.setResponse(...)
-  const jsonText = text.replace(/^[^\(]*\(/, '').replace(/\);?$/,'');
-  return JSON.parse(jsonText);
-}
-
-function parseGvizDateCell(cell){
-  if (!cell) return null;
-  // 1) jeśli jest cell.f i wygląda OK
-  if (cell.f){
-    const d = new Date(cell.f);
-    if (!isNaN(d)) return d;
-  }
-  // 2) jeśli v jest string 'Date(YYYY,MM,DD,HH,MM,SS)'
-  const v = cell.v;
-  if (typeof v === 'string'){
-    const m = v.match(/Date\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/);
-    if (m){
-      const Y = +m[1], M = +m[2], D = +m[3], h = +m[4], min = +m[5], s = +m[6];
-      return new Date(Y, M, D, h, min, s);
-    }
-    // spróbuj parsować ISO
-    const iso = new Date(v);
-    if (!isNaN(iso)) return iso;
-  }
-  if (typeof v === 'number'){
-    return new Date(v);
-  }
-  return null;
-}
-
-function fmtDate(d){
-  if (!d) return '';
-  const pad = n => String(n).padStart(2,'0');
-  return `${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function diffHuman(from, to){
-  if (!from || !to) return '';
-  let s = Math.floor((to - from) / 1000);
-  if (s < 0) s = 0;
-  const days = Math.floor(s / 86400); s %= 86400;
-  const hours = Math.floor(s / 3600); s %= 3600;
-  const mins = Math.floor(s / 60);
-  if (days>0) return `${days}d ${hours}h ${mins}m`;
-  if (hours>0) return `${hours}h ${mins}m`;
-  if (mins>0) return `${mins}m`;
-  return '<1m';
-}
-
-function normalizeKey(s){
-  if (!s) return '';
-  return s.toString().toLowerCase().trim();
-}
-
-function statusClassFor(raw){
-  const s = normalizeKey(raw);
-  if (!s) return 's-nowy';
-  if (s.includes('porzu')) return 's-porzucony';
-  if (s.includes('odrzu')) return 's-odrzucony';
-  if (s.includes('nie') && (s.includes('odebr')|| s.includes('odb'))) return 's-nie_odebral';
-  if (s.includes('nie_odebra') || s.includes('nie odb')) return 's-nie_odebral';
-  if (s.includes('wizyta') || s.includes('umow') || s.includes('umówi')) return 's-wizyta_umowiona';
-  if (s.includes('odebr') || s.includes('odebra')) return 's-odebral';
-  if (s.includes('kontakt') || s.includes('w kontakt') || s.includes('kontaktuje')) return 's-w_kontakcie';
-  if (s.includes('now') || s.includes('oczek')) return 's-nowy';
-  return 's-default';
-}
-
-/* ====== RENDER ====== */
-const tableBody = document.querySelector('#leadsTable tbody');
-const loadingEl = document.getElementById('loading');
-const statsEl = document.getElementById('stats');
-const statNowe = document.getElementById('stat-nowe');
-const statDone = document.getElementById('stat-done');
-const statBad = document.getElementById('stat-bad');
-const searchInput = document.getElementById('search');
-const statusFilter = document.getElementById('statusFilter');
-const refreshSelect = document.getElementById('refreshInterval');
-
 let allRows = [];
-let refreshTimer = null;
 
-function renderRows(rows){
-  tableBody.innerHTML = '';
-  let cntNowe=0, cntDone=0, cntBad=0;
-  const filter = normalizeKey(statusFilter.value || '');
-  const q = normalizeKey(searchInput.value || '');
+async function loadData() {
+    try {
+        const res = await fetch(
+            "https://docs.google.com/spreadsheets/d/1pqfVCI-chR0e6TZNgTh4T5bFWcNSrH1h5XlmPRCfjBk/export?format=json"
+        );
 
-  rows.forEach(r=>{
-    const id = r.id || '';
-    const created = r.createdDate;
-    const createdText = r.createdText || '';
-    const name = r.name || '';
-    const phone = r.phone || '';
-    const email = r.email || '';
-    const cel = r.cel || '';
-    const statusRaw = r.statusRaw || '';
-    const updatedText = r.updatedText || '';
-    const reaction = r.reaction || '';
+        const raw = await res.text();
+        const jsonStr = raw.replace(/^\)\]\}'/, '');
+        const data = JSON.parse(jsonStr);
+        const rows = data.table.rows;
 
-    // filtrowanie
-    if (filter){
-      const cls = statusClassFor(statusRaw);
-      if (!cls.includes(filter)) return;
+        allRows = rows.map(r => {
+            const id = r.c[0]?.v ?? "";
+            const createdRaw = r.c[1]?.f ?? "";
+            const createdDate = createdRaw ? new Date(createdRaw) : null;
+            const name = r.c[2]?.v ?? "";
+            const phone = r.c[3]?.v ?? "";
+            const email = r.c[4]?.v ?? "";
+            const cel = r.c[5]?.v ?? "";
+            const statusRaw = r.c[6]?.v ?? "";
+            const updatedRaw = r.c[7]?.f ?? "";
+            const updatedDate = updatedRaw ? new Date(updatedRaw) : null;
+            const reaction = r.c[8]?.v ?? "";
+            const campaign = r.c[9]?.v ?? "";
+
+            return {
+                id,
+                createdDate,
+                createdText: createdRaw,
+                name,
+                phone,
+                email,
+                cel,
+                statusRaw,
+                updatedDate,
+                updatedText: updatedRaw,
+                reaction,
+                campaign
+            };
+        });
+
+        fillCampaignList();
+        renderRows(allRows);
+        document.getElementById("loader").style.display = "none";
+
+    } catch (e) {
+        doc.getElementById("loader").innerHTML = "Błąd ładowania danych.";
+        console.error(e);
     }
-    if (q){
-      const hay = (name + ' ' + phone + ' ' + email + ' ' + cel).toLowerCase();
-      if (!hay.includes(q)) return;
-    }
-
-    // statystyki (aggregacja)
-    const sk = normalizeKey(statusRaw);
-    if (sk.includes('now') || sk.includes('oczek')) cntNowe++;
-    if (sk.includes('odebr') || sk.includes('wizyta') || sk.includes('umow') || sk.includes('umówi') ) cntDone++;
-    if (sk.includes('nie') && (sk.includes('odb')||sk.includes('odebr'))) cntBad++;
-    if (sk.includes('porzu')) cntBad++;
-
-    const spanClass = statusClassFor(statusRaw);
-
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${escapeHtml(id)}</td>
-      <td>${escapeHtml(createdText)}</td>
-      <td>${escapeHtml(name)}</td>
-      <td>${escapeHtml(phone)}</td>
-      <td>${escapeHtml(email)}</td>
-      <td>${escapeHtml(cel)}</td>
-      <td><span class="status ${spanClass}">${escapeHtml(statusRaw || 'oczekuje')}</span></td>
-      <td>${escapeHtml(updatedText)}</td>
-      <td>${escapeHtml(reaction)}</td>
-    `;
-    tableBody.appendChild(tr);
-  });
-
-  // ustaw statystyki
-  statNowe.innerText = cntNowe;
-  statDone.innerText = cntDone;
-  statBad.innerText = cntBad;
-
-  loadingEl.style.display = 'none';
-  document.getElementById('leadsTable').style.display = tableBody.children.length ? 'table' : 'none';
-  statsEl.style.display = 'flex';
 }
 
-/* ====== LOAD SHEET ====== */
-function loadSheet(){
-  loadingEl.style.display = 'block';
-  fetch(GVIZ_URL).then(r=>r.text()).then(t=>{
-    const json = parseGvizResponseText(t);
-    const rows = json.table.rows || [];
-    allRows = rows.map(r=>{
-      // kolumny A..I => 0..8
-      const idCell = r.c[0] || {};
-      const dateCell = r.c[1] || {};
-      const nameCell = r.c[2] || {};
-      const phoneCell = r.c[3] || {};
-      const emailCell = r.c[4] || {};
-      const celCell = r.c[5] || {};
-      const infoCell = r.c[6] || {};
-      const statusCell = r.c[7] || {};
-      const updatedCell = r.c[8] || {};
+function fillCampaignList() {
+    const select = document.getElementById("campaignFilter");
+    const unique = [...new Set(allRows.map(r => r.campaign).filter(v => v))];
 
-      const id = idCell.v ?? '';
-      const createdDate = parseGvizDateCell(dateCell);
-      const createdText = createdDate ? fmtDate(createdDate) : (dateCell.f || dateCell.v || '');
-      const name = nameCell.v ?? '';
-      const phone = phoneCell.v ?? '';
-      const email = emailCell.v ?? '';
-      const cel = celCell.v ?? '';
-      const statusRaw = statusCell.v ?? (statusCell.f ?? '') ;
-      const updatedDate = parseGvizDateCell(updatedCell);
-      const updatedText = updatedDate ? fmtDate(updatedDate) : (updatedCell.f || updatedCell.v || '');
-      const reaction = (createdDate && updatedDate) ? diffHuman(createdDate, updatedDate) : '';
-
-      return {
-        id, createdDate, createdText, name, phone, email, cel, statusRaw, updatedDate, updatedText, reaction
-      };
+    unique.forEach(c => {
+        let o = document.createElement("option");
+        o.value = c;
+        o.textContent = c;
+        select.appendChild(o);
     });
-    renderRows(allRows);
-  }).catch(e=>{
-    console.error(e);
-    loadingEl.innerText = 'Błąd ładowania arkusza. Sprawdź uprawnienia i nazwę zakładki (Firma1).';
-  });
 }
 
-/* ====== EVENTS ====== */
-searchInput.addEventListener('input', ()=> renderRows(allRows));
-statusFilter.addEventListener('change', ()=> renderRows(allRows));
-refreshSelect.addEventListener('change', ()=>{
-  if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
-  const val = Number(refreshSelect.value);
-  if (val>0) refreshTimer = setInterval(loadSheet, val*1000);
-});
+function renderRows(rows) {
+    const body = document.getElementById("tableBody");
+    body.innerHTML = "";
 
-/* auto-refresh domyślnie co 60s */
-refreshTimer = setInterval(loadSheet, 60000);
+    const filterStatus = document.getElementById("statusFilter").value.toLowerCase();
+    const dateFrom = new Date(document.getElementById("dateFrom").value);
+    const dateTo   = new Date(document.getElementById("dateTo").value);
+    const sortOrder = document.getElementById("sortOrder").value;
+    const camp = document.getElementById("campaignFilter").value.toLowerCase();
 
-/* initial load */
-loadSheet();
+    let filtered = rows.filter(r => {
 
-/* ===== minor helpers ===== */
-function fmtDate(d){ if(!d) return ''; const pad=n=>String(n).padStart(2,'0'); return `${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`; }
-function escapeHtml(s){ if(s==null) return ''; return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
-function diffHuman(from,to){ if(!from||!to) return ''; let s=Math.floor((to-from)/1000); if(s<0) s=0; const days=Math.floor(s/86400); s%=86400; const hours=Math.floor(s/3600); s%=3600; const mins=Math.floor(s/60); if(days>0) return `${days}d ${hours}h ${mins}m`; if(hours>0) return `${hours}h ${mins}m`; if(mins>0) return `${mins}m`; return '<1m'; }
-function parseGvizResponseText(t){ const jsonText = t.replace(/^[^\(]*\(/,'').replace(/\);?$/,''); return JSON.parse(jsonText); }
-function parseGvizDateCell(cell){
-  if(!cell) return null;
-  if(cell.f){
-    const d=new Date(cell.f); if(!isNaN(d)) return d;
-  }
-  const v = cell.v;
-  if(typeof v==='string'){
-    const m=v.match(/Date\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/);
-    if(m){ return new Date(+m[1],+m[2],+m[3],+m[4],+m[5],+m[6]); }
-    const iso=new Date(v); if(!isNaN(iso)) return iso;
-  }
-  if(typeof v==='number') return new Date(v);
-  return null;
+        if (filterStatus && r.statusRaw.toLowerCase() !== filterStatus) return false;
+
+        if (camp && r.campaign.toLowerCase() !== camp) return false;
+
+        if (dateFrom.toString() !== "Invalid Date") {
+            if (!r.createdDate || r.createdDate < dateFrom) return false;
+        }
+
+        if (dateTo.toString() !== "Invalid Date") {
+            if (!r.createdDate || r.createdDate > dateTo) return false;
+        }
+
+        return true;
+    });
+
+    filtered.sort((a, b) => {
+        if (!a.createdDate || !b.createdDate) return 0;
+        return sortOrder === "asc"
+            ? a.createdDate - b.createdDate
+            : b.createdDate - a.createdDate;
+    });
+
+    filtered.forEach(r => {
+        const tr = document.createElement("tr");
+
+        const statusClass = "status-" + r.statusRaw.toLowerCase().replace(/\s+/g, "-");
+
+        tr.innerHTML = `
+            <td>${r.id}</td>
+            <td>${r.createdText}</td>
+            <td>${r.name}</td>
+            <td>${r.phone}</td>
+            <td>${r.email}</td>
+            <td>${r.cel}</td>
+            <td><span class="status-badge ${statusClass}">${r.statusRaw}</span></td>
+            <td>${r.updatedText}</td>
+            <td>${r.reaction}</td>
+            <td>${r.campaign}</td>
+        `;
+
+        body.appendChild(tr);
+    });
+
+    updateStats(filtered);
 }
-function statusClassFor(raw){
-  const s = normalizeKey(raw);
-  if(!s) return 's-nowy';
-  if(s.includes('porzu')) return 's-porzucony';
-  if(s.includes('odrz') || s.includes('odrzu')) return 's-odrzucony';
-  if((s.includes('nie') && (s.includes('odebr')||s.includes('odb'))) || s.includes('nie_odebra')) return 's-nie_odebral';
-  if(s.includes('wizyta') || s.includes('umow') || s.includes('umówi')) return 's-wizyta_umowiona';
-  if(s.includes('odebr') || s.includes('odebra')) return 's-odebral';
-  if(s.includes('kontakt') || s.includes('w_kontakt') || s.includes('kontaktuje')) return 's-w_kontakcie';
-  if(s.includes('now') || s.includes('oczek')) return 's-nowy';
-  return 's-default';
-}
-function normalizeKey(s){ if(!s) return ''; return s.toString().toLowerCase().trim(); }
 
+function updateStats(rows) {
+    document.getElementById("stat-new").textContent =
+        rows.filter(r => r.statusRaw === "Nowy").length;
+
+    document.getElementById("stat-odrzucone").textContent =
+        rows.filter(r => r.statusRaw === "Lead odrzucony").length;
+
+    document.getElementById("stat-nieodbiera").textContent =
+        rows.filter(r => r.statusRaw === "Nie odbiera").length;
+
+    document.getElementById("stat-umowione").textContent =
+        rows.filter(r => r.statusRaw === "Wizyta umówiona").length;
+
+    document.getElementById("stat-porzucone").textContent =
+        rows.filter(r => r.statusRaw === "Porzucony").length;
+}
+
+document.getElementById("statusFilter").addEventListener("change", () => renderRows(allRows));
+document.getElementById("dateFrom").addEventListener("change", () => renderRows(allRows));
+document.getElementById("dateTo").addEventListener("change", () => renderRows(allRows));
+document.getElementById("sortOrder").addEventListener("change", () => renderRows(allRows));
+document.getElementById("campaignFilter").addEventListener("change", () => renderRows(allRows));
+
+loadData();
 </script>
+
 </body>
 </html>
