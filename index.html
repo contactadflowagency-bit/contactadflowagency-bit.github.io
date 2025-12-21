@@ -83,6 +83,17 @@
         document.getElementById('manualSection').style.display = 'block';
       }
     };
+    const params = new URLSearchParams(location.search);
+const id = params.get("id");
+const token = params.get("token");
+
+fetch(`API_URL?id=${id}&token=${token}`)
+  .then(r => r.json())
+  .then(d => {
+    if (!d.success) showError();
+    else render(d.lead);
+  });
+
   </script>
 </head>
 <body>
