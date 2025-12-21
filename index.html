@@ -45,61 +45,58 @@ a {
 </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbybSOz5NeBfEXy6FOYqakmckMP6Ul5m9V6qnt6nZrWaDJpPe6UX-YJPDZluNgkfkfJi/exec";
+const API_URL = "TU_WKLEJ_LINK_DO_WEB_APP_APPS_SCRIPT";
 
-const params = new URLSearchParams(location.search);
+const params = new URLSearchParams(window.location.search);
 const row = params.get("row");
 const token = params.get("token");
 
-const app = document.getElementById("app");
+function showError(msg = "Brak dostępu do leada") {
+  document.getElementById("loadingSection").innerHTML = `
+    <h3>⛔ Błąd</h3>
+    <p style="color:#777">${msg}</p>
+  `;
+}
+
+function render(lead) {
+  document.getElementById("loadingSection").innerHTML = `
+    <h3>👤 ${lead["Imię Nazwisko"]}</h3>
+    <p><strong>Telefon:</strong> ${lead["Nr tel"]}</p>
+    <p><strong>Email:</strong> ${lead["Email"]}</p>
+    <p><strong>Cel wizyty:</strong> ${lead["Pytanie 1 (cel wizyty)"]}</p>
+
+    <div class="manual-buttons">
+      <a class="obs" onclick="updateStatus('obsluzony')">✔ Lead obsłużony</a>
+      <a class="nie" onclick="updateStatus('nie_odebral')">📞 Nie odbiera</a>
+      <a class="odrz" onclick="updateStatus('odrzucony')">❌ Lead odrzucony</a>
+    </div>
+  `;
+}
+
+function updateStatus(status) {
+  fetch(`${API_URL}?row=${row}&token=${token}&status=${status}`, {
+    method: "POST",
+    mode: "no-cors"
+  });
+
+  document.body.innerHTML = `
+    <h3 style="text-align:center">✅ Status zapisany</h3>
+    <p style="text-align:center;color:#777">Możesz zamknąć to okno</p>
+  `;
+}
 
 if (!row || !token) {
-  app.innerHTML = "<h3>⛔ Nieprawidłowy link</h3>";
+  showError("Nieprawidłowy link");
 } else {
   fetch(`${API_URL}?row=${row}&token=${token}`)
     .then(r => r.json())
     .then(d => {
-      if (!d.success) {
-        app.innerHTML = "<h3>⛔ Brak dostępu do leada</h3>";
-        return;
-      }
-
-      const l = d.lead;
-
-      app.innerHTML = `
-        <h3>${l["Imię Nazwisko"]}</h3>
-        <p><strong>📞 Telefon:</strong><br>${l["Nr tel"]}</p>
-        <p><strong>✉️ Email:</strong><br>${l["Email"]}</p>
-        <p><strong>🦷 Cel wizyty:</strong><br>${l["Pytanie 1 (cel wizyty)"]}</p>
-        <p><strong>💬 Informacje:</strong><br>${l["Pytanie 2 (Informacje)"]}</p>
-
-        <a class="obs" onclick="update('obsluzony')">✔ Lead obsłużony</a>
-        <a class="nie" onclick="update('nie_odbiera')">📞 Nie odbiera</a>
-        <a class="odrz" onclick="update('odrzucony')">❌ Lead odrzucony</a>
-      `;
+      if (!d.success) showError("Brak dostępu do leada");
+      else render(d.lead);
     })
-    .catch(() => {
-      app.innerHTML = "<h3>⚠️ Błąd połączenia z API</h3>";
-    });
-}
-
-function update(status) {
-  fetch(API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded"
-    },
-    body: `row=${row}&token=${token}&status=${status}`
-  })
-  .then(r => r.json())
-  .then(d => {
-    if (d.success) {
-      app.innerHTML = "<h3>✅ Status zapisany</h3>";
-    } else {
-      app.innerHTML = "<h3>⏰ Minął czas edycji</h3>";
-    }
-  });
+    .catch(() => showError("Błąd połączenia z API"));
 }
 </script>
+
 </body>
 </html>
