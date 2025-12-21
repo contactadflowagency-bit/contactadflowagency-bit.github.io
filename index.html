@@ -1,122 +1,105 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Przetwarzanie statusu...</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Status leada</title>
 
-  <style>
-    html, body { height: 100%; overflow: hidden; }
-    body {
-      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
-      background-color: #f7f8fa;
-      margin: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .container {
-      text-align: center;
-      padding: 20px;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-      max-width: 400px;
-      width: 90%;
-    }
-    /* Animacja ładowania */
-    .loader {
-      border: 5px solid #f3f3f3;
-      border-top: 5px solid #00bcd4;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin: 20px auto;
-    }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    
-    /* Styl dla sytuacji awaryjnej (gdyby ktoś wszedł bez linku z maila) */
-    .manual-buttons a {
-        display: block; margin: 10px 0; padding: 12px; color: white; text-decoration: none; border-radius: 6px; cursor: pointer;
-    }
-    .obs { background-color: #4caf50; }
-    .nie { background-color: #ff9800; }
-    .odrz { background-color: #f44336; }
-    .hidden { display: none; }
-  </style>
+<style>
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background:#f7f8fa;
+  margin:0;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+.container {
+  background:#fff;
+  padding:22px;
+  border-radius:12px;
+  width:90%;
+  max-width:420px;
+  box-shadow:0 4px 15px rgba(0,0,0,.05);
+  text-align:center;
+}
+a {
+  display:block;
+  margin:10px 0;
+  padding:12px;
+  border-radius:6px;
+  color:white;
+  text-decoration:none;
+  font-weight:bold;
+}
+.obs { background:#4caf50; }
+.nie { background:#ff9800; }
+.odrz { background:#f44336; }
+</style>
+</head>
 
-  <script>
-const API_URL = "TU_WKLEJ_LINK_DO_WEB_APP_APPS_SCRIPT";
+<body>
+<div class="container" id="app">
+  <p>⏳ Łączenie z serwerem…</p>
+</div>
 
-const params = new URLSearchParams(window.location.search);
-const id = params.get("id");
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbwH-aLnjU69mtN2lJ8uI76VuKcQV6KaVClBYEb2us0EamlNEdxhE6iJAp0qorH_oixj/exec";
+
+const params = new URLSearchParams(location.search);
+const row = params.get("row");
 const token = params.get("token");
 
-function showError(msg = "Brak dostępu do leada") {
-  document.getElementById("loadingSection").innerHTML = `
-    <h3>⛔ Błąd</h3>
-    <p style="color:#777">${msg}</p>
-  `;
-}
+const app = document.getElementById("app");
 
-function render(lead) {
-  document.getElementById("loadingSection").innerHTML = `
-    <h3>👤 ${lead.name}</h3>
-    <p><strong>Telefon:</strong> ${lead.phone}</p>
-    <p><strong>Email:</strong> ${lead.email}</p>
-    <p><strong>Usługa:</strong> ${lead.service}</p>
-
-    <div class="manual-buttons">
-      <a class="obs" onclick="updateStatus('obsluzony')">✔ Lead obsłużony</a>
-      <a class="nie" onclick="updateStatus('nie_odebral')">📞 Nie odbiera</a>
-      <a class="odrz" onclick="updateStatus('odrzucony')">❌ Lead odrzucony</a>
-    </div>
-  `;
-}
-
-function updateStatus(status) {
-  fetch(`${API_URL}?action=update&id=${id}&token=${token}&status=${status}`, {
-    mode: "no-cors"
-  });
-  document.body.innerHTML = "<h3 style='text-align:center'>✅ Zapisano status</h3>";
-}
-
-if (!id || !token) {
-  showError("Nieprawidłowy link");
+if (!row || !token) {
+  app.innerHTML = "<h3>⛔ Nieprawidłowy link</h3>";
 } else {
-  fetch(`${API_URL}?id=${id}&token=${token}`)
+  fetch(`${API_URL}?row=${row}&token=${token}`)
     .then(r => r.json())
     .then(d => {
-      if (!d.success) showError("Nieautoryzowany dostęp");
-      else render(d.lead);
+      if (!d.success) {
+        app.innerHTML = "<h3>⛔ Brak dostępu do leada</h3>";
+        return;
+      }
+
+      const l = d.lead;
+
+      app.innerHTML = `
+        <h3>${l["Imię Nazwisko"]}</h3>
+        <p><strong>📞 Telefon:</strong><br>${l["Nr tel"]}</p>
+        <p><strong>✉️ Email:</strong><br>${l["Email"]}</p>
+        <p><strong>🦷 Cel wizyty:</strong><br>${l["Pytanie 1 (cel wizyty)"]}</p>
+        <p><strong>💬 Informacje:</strong><br>${l["Pytanie 2 (Informacje)"]}</p>
+
+        <a class="obs" onclick="update('obsluzony')">✔ Lead obsłużony</a>
+        <a class="nie" onclick="update('nie_odbiera')">📞 Nie odbiera</a>
+        <a class="odrz" onclick="update('odrzucony')">❌ Lead odrzucony</a>
+      `;
     })
-    .catch(() => showError("Błąd połączenia z API"));
+    .catch(() => {
+      app.innerHTML = "<h3>⚠️ Błąd połączenia z API</h3>";
+    });
+}
+
+function update(status) {
+  fetch(API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: `row=${row}&token=${token}&status=${status}`
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.success) {
+      app.innerHTML = "<h3>✅ Status zapisany</h3>";
+    } else {
+      app.innerHTML = "<h3>⏰ Minął czas edycji</h3>";
+    }
+  });
 }
 </script>
-
-</head>
-<body>
-
-  <div class="container">
-    
-    <div id="loadingSection">
-      <div class="loader"></div>
-      <h3 id="statusText">Łączenie z serwerem...</h3>
-      <p style="color: #777; font-size: 14px;">Proszę nie zamykać okna.</p>
-    </div>
-
-    <div id="manualSection" class="hidden">
-      <h3>Wybierz status ręcznie</h3>
-      <p>Nie udało się odczytać statusu z linku.</p>
-      <div class="manual-buttons">
-          <a class="obs" onclick="processAction('obsluzony')">✔ Lead obsłużony</a>
-          <a class="nie" onclick="processAction('nie_odbiera')">📞 Nie udało się skontaktować</a>
-          <a class="odrz" onclick="processAction('odrzucony')">❌ Lead odrzucony</a>
-      </div>
-    </div>
-
-  </div>
-
 </body>
 </html>
