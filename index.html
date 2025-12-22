@@ -133,8 +133,8 @@ p {
   
   .disabled {
     opacity:.4;
-    pointer-events:none;
   }
+  
   .modal {
     position: fixed;
     inset: 0;
@@ -147,6 +147,7 @@ p {
   
   .modal.hidden {
     display: none;
+    pointer-events: none;
   }
   
   .modal-box {
@@ -332,6 +333,15 @@ function updateStatus(status) {
     mode: "no-cors"
   });
 
+  app.innerHTML = `
+    <div class="content">
+      <h3>✅ Status zapisany</h3>
+      <p style="color:#777">Możesz zamknąć to okno</p>
+    </div>
+  `;
+}
+
+
 let pendingStatus = null;
 
 function handleStatusClick(newStatus, currentStatus) {
@@ -352,14 +362,6 @@ function handleStatusClick(newStatus, currentStatus) {
 function closeModal() {
   document.getElementById("confirmModal").classList.add("hidden");
   pendingStatus = null;
-}
-
-  app.innerHTML = `
-    <div class="content">
-      <h3>✅ Status zapisany</h3>
-      <p style="color:#777">Możesz zamknąć to okno</p>
-    </div>
-  `;
 }
 
 if (!row || !token) {
