@@ -103,6 +103,39 @@ p {
   color:#999;
 }
 </style>
+  <style>
+.status-badge {
+  display:inline-block;
+  padding:6px 12px;
+  border-radius:999px;
+  font-weight:700;
+  font-size:14px;
+  color:#fff;
+}
+.s-nowy { background:#9c27b0; }
+.s-w_kontakcie { background:#2196f3; }
+.s-nie_odbiera { background:#ff9800; }
+.s-obsluzony { background:#4caf50; }
+.s-odrzucony { background:#f44336; }
+
+.status-row {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+.muted {
+  font-size:13px;
+  color:#777;
+}
+
+.disabled {
+  opacity:.4;
+  pointer-events:none;
+}
+</style>
 </head>
 
 <body>
@@ -140,8 +173,27 @@ function showError(msg) {
     </div>
   `;
 }
+  
+function statusClass(status) {
+  return {
+    "nowy": "s-nowy",
+    "w_kontakcie": "s-w_kontakcie",
+    "nie_odbiera": "s-nie_odbiera",
+    "obsluzony": "s-obsluzony",
+    "odrzucony": "s-odrzucony"
+  }[status] || "s-nowy";
+}
 
+function canEdit(lastUpdate) {
+  if (!lastUpdate) return true;
+  const diffMin = (Date.now() - new Date(lastUpdate)) / 1000 / 60;
+  return diffMin <= 15;
+}
 function render(lead) {
+  const status = lead["Obecny status"] || "nowy";
+  const lastUpdate = lead["Data ostatniej aktualizacji"];
+  const editable = canEdit(lastUpdate);
+
   app.innerHTML = `
     <div class="header">
       <img src="https://scontent-waw2-2.xx.fbcdn.net/v/t39.30808-6/540904522_122143092902741193_6153063326804191448_n.jpg?_nc_cat=102&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=EXFBb3EdkUsQ7kNvwGb2Smp&_nc_oc=Adngi_kLnbg9pQiId6dkbJxk2TSxZhFWngOi9hCe_Ny49faPOIFTWxxq8fgzzJADO7I&_nc_zt=23&_nc_ht=scontent-waw2-2.xx&_nc_gid=w7niD_O83PtXyVLS5FjwZg&oh=00_AfkKwh5kzI8KNfgAR8NLvYEUObCW-JZmOSS3fx9QybdVYg&oe=6949BD8D" alt="AdFlow">
@@ -151,9 +203,21 @@ function render(lead) {
     <div class="content">
 
       <div class="box">
-        <p>🆔 <strong>Lead ID:</strong> ${lead["Id."]}</p>
-        <p>📅 <strong>Data zgłoszenia:</strong> ${formatDate(lead["Data"])}</p>
-        <p class="meta">📍 <strong>Status:</strong> ${lead["Obecny status"] || "nowy"}</p>
+        <div class="status-row">
+          <div>
+            <p>🆔 <strong>Lead ID:</strong> ${lead["Id."]}</p>
+            <p>📅 <strong>Data zgłoszenia:</strong> ${formatDate(lead["Data"])}</p>
+          </div>
+          <div>
+            <span class="status-badge ${statusClass(status)}">
+              ${status.replace("_"," ").toUpperCase()}
+            </span>
+            <div class="muted">
+              Ostatnia zmiana:<br>
+              ${formatDate(lastUpdate)}
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="box data">
@@ -166,17 +230,25 @@ function render(lead) {
 
       <div class="box script">
         💬 <strong>Sugestia rozmowy:</strong><br>
-        „Dzień dobry, dzwonię z gabinetu stomatologicznego.  
+        „Dzień dobry, dzwonię z gabinetu stomatologicznego.<br>
         Widzę, że zgłosił/a się Pan/Pani w sprawie
-        <strong>${lead["Pytanie 1 (cel wizyty)"]}</strong>.
+        <strong>${lead["Pytanie 1 (cel wizyty)"]}</strong>.<br>
         Jaki termin wizyty byłby dla Pana/Pani dogodny?”
       </div>
 
-      <div class="buttons">
-        <a class="obs" onclick="updateStatus('obsluzony')">✔ Lead obsłużony</a>
-        <a class="nie" onclick="updateStatus('nie_odbiera')">📞 Nie odbiera</a>
-        <a class="odrz" onclick="updateStatus('odrzucony')">❌ Lead odrzucony</a>
+      <div class="buttons ${editable ? "" : "disabled"}">
+        <a class="obs" onclick="confirmUpdate('obsluzony')">✔ Lead obsłużony</a>
+        <a class="nie" onclick="confirmUpdate('nie_odbiera')">📞 Nie odbiera</a>
+        <a class="odrz" onclick="confirmUpdate('odrzucony')">❌ Lead odrzucony</a>
       </div>
+
+      ${
+        editable
+          ? ""
+          : `<p class="muted" style="text-align:center">
+               ⛔ Minął limit 15 minut — status zablokowany
+             </p>`
+      }
 
     </div>
 
@@ -186,6 +258,12 @@ function render(lead) {
   `;
 }
 
+  
+function confirmUpdate(status) {
+  if (!confirm("Czy na pewno chcesz zmienić status leada?")) return;
+  updateStatus(status);
+}
+  
 function updateStatus(status) {
   fetch(`${API_URL}?row=${row}&token=${token}&status=${status}`, {
     method: "POST",
