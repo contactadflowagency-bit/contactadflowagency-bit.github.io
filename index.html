@@ -20,9 +20,30 @@ body {
   padding:22px;
   border-radius:12px;
   width:90%;
-  max-width:420px;
+  max-width:460px;
   box-shadow:0 4px 15px rgba(0,0,0,.05);
-  text-align:center;
+}
+.section {
+  background:#f9fafb;
+  padding:14px 16px;
+  border-radius:8px;
+  margin-bottom:14px;
+}
+.section h4 {
+  margin:0 0 8px;
+  font-size:14px;
+  color:#666;
+}
+p {
+  margin:6px 0;
+  font-size:15px;
+}
+.meta {
+  font-size:14px;
+  color:#555;
+}
+.status {
+  font-weight:bold;
 }
 a {
   display:block;
@@ -32,6 +53,7 @@ a {
   color:white;
   text-decoration:none;
   font-weight:bold;
+  text-align:center;
 }
 .obs { background:#4caf50; }
 .nie { background:#ff9800; }
@@ -51,7 +73,6 @@ const API_URL = "https://script.google.com/macros/s/AKfycbzBLTLdMX1DXfLdDjiIit97
 const params = new URLSearchParams(window.location.search);
 const row = params.get("row");
 const token = params.get("token");
-
 const app = document.getElementById("app");
 
 function showError(msg = "Brak dostępu do leada") {
@@ -63,10 +84,26 @@ function showError(msg = "Brak dostępu do leada") {
 
 function render(lead) {
   app.innerHTML = `
-    <h3>👤 ${lead["Imię Nazwisko"]}</h3>
-    <p><strong>Telefon:</strong> ${lead["Nr tel"]}</p>
-    <p><strong>Email:</strong> ${lead["Email"]}</p>
-    <p><strong>Cel wizyty:</strong> ${lead["Pytanie 1 (cel wizyty)"]}</p>
+    <div class="section">
+      <h4>📌 Informacje o leadzie</h4>
+      <p class="meta">🆔 <strong>ID:</strong> ${lead["Id."]}</p>
+      <p class="meta">📅 <strong>Data zgłoszenia:</strong> ${lead["Data"]}</p>
+      <p class="meta">🎯 <strong>Kampania:</strong> ${lead["Nazwa Kampanii"] || "-"}</p>
+      <p class="meta status">📍 <strong>Status:</strong> ${lead["Obecny status"] || "nowy"}</p>
+    </div>
+
+    <div class="section">
+      <h4>👤 Dane pacjenta</h4>
+      <p><strong>Imię i nazwisko:</strong> ${lead["Imię Nazwisko"]}</p>
+      <p><strong>Telefon:</strong> ${lead["Nr tel"]}</p>
+      <p><strong>Email:</strong> ${lead["Email"] || "-"}</p>
+    </div>
+
+    <div class="section">
+      <h4>🦷 Informacje medyczne</h4>
+      <p><strong>Cel wizyty:</strong> ${lead["Pytanie 1 (cel wizyty)"]}</p>
+      <p><strong>Dodatkowe informacje:</strong><br>${lead["Pytanie 2 (Informacje)"] || "-"}</p>
+    </div>
 
     <a class="obs" onclick="updateStatus('obsluzony')">✔ Lead obsłużony</a>
     <a class="nie" onclick="updateStatus('nie_odbiera')">📞 Nie odbiera</a>
