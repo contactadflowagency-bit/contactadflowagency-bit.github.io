@@ -40,6 +40,7 @@ a {
 </head>
 
 <body>
+
 <div class="container" id="app">
   <p>⏳ Łączenie z serwerem…</p>
 </div>
@@ -51,25 +52,25 @@ const params = new URLSearchParams(window.location.search);
 const row = params.get("row");
 const token = params.get("token");
 
+const app = document.getElementById("app");
+
 function showError(msg = "Brak dostępu do leada") {
-  document.getElementById("loadingSection").innerHTML = `
+  app.innerHTML = `
     <h3>⛔ Błąd</h3>
     <p style="color:#777">${msg}</p>
   `;
 }
 
 function render(lead) {
-  document.getElementById("loadingSection").innerHTML = `
+  app.innerHTML = `
     <h3>👤 ${lead["Imię Nazwisko"]}</h3>
     <p><strong>Telefon:</strong> ${lead["Nr tel"]}</p>
     <p><strong>Email:</strong> ${lead["Email"]}</p>
     <p><strong>Cel wizyty:</strong> ${lead["Pytanie 1 (cel wizyty)"]}</p>
 
-    <div class="manual-buttons">
-      <a class="obs" onclick="updateStatus('obsluzony')">✔ Lead obsłużony</a>
-      <a class="nie" onclick="updateStatus('nie_odebral')">📞 Nie odbiera</a>
-      <a class="odrz" onclick="updateStatus('odrzucony')">❌ Lead odrzucony</a>
-    </div>
+    <a class="obs" onclick="updateStatus('obsluzony')">✔ Lead obsłużony</a>
+    <a class="nie" onclick="updateStatus('nie_odbiera')">📞 Nie odbiera</a>
+    <a class="odrz" onclick="updateStatus('odrzucony')">❌ Lead odrzucony</a>
   `;
 }
 
@@ -79,9 +80,9 @@ function updateStatus(status) {
     mode: "no-cors"
   });
 
-  document.body.innerHTML = `
-    <h3 style="text-align:center">✅ Status zapisany</h3>
-    <p style="text-align:center;color:#777">Możesz zamknąć to okno</p>
+  app.innerHTML = `
+    <h3>✅ Status zapisany</h3>
+    <p style="color:#777">Możesz zamknąć to okno</p>
   `;
 }
 
