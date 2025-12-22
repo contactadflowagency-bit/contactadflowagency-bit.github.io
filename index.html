@@ -7,107 +7,182 @@
 
 <style>
 body {
-  font-family: 'Segoe UI', Arial, sans-serif;
+  font-family: 'Segoe UI', Roboto, Arial, sans-serif;
   background:#f7f8fa;
   margin:0;
-  height:100vh;
+  min-height:100vh;
   display:flex;
   justify-content:center;
   align-items:center;
 }
-.container {
-  background:#fff;
-  padding:22px;
-  border-radius:12px;
+
+.wrapper {
+  max-width:600px;
   width:90%;
-  max-width:460px;
-  box-shadow:0 4px 15px rgba(0,0,0,.05);
+  background:#fff;
+  border-radius:12px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.05);
+  overflow:hidden;
 }
-.section {
-  background:#f9fafb;
-  padding:14px 16px;
-  border-radius:8px;
-  margin-bottom:14px;
+
+.header {
+  background: linear-gradient(135deg, #00bcd4, #9c27b0);
+  color:#fff;
+  padding:24px;
+  text-align:center;
 }
-.section h4 {
-  margin:0 0 8px;
+
+.header img {
+  width:70px;
+  border-radius:16px;
+  display:block;
+  margin:0 auto 10px;
+}
+
+.header h2 {
+  margin:0;
+  font-size:22px;
+}
+
+.content {
+  padding:26px 30px;
+}
+
+.box {
+  background:#f4fbfd;
+  border-left:4px solid #00bcd4;
+  padding:16px 20px;
+  border-radius:6px;
+  margin-bottom:20px;
+}
+
+.box.data {
+  background:#f0faff;
+}
+
+.box.script {
+  background:#f9f9f9;
+  border:1px dashed #ccc;
   font-size:14px;
-  color:#666;
+  color:#555;
 }
+
 p {
   margin:6px 0;
   font-size:15px;
 }
+
 .meta {
-  font-size:14px;
   color:#555;
 }
-.status {
-  font-weight:bold;
+
+.buttons {
+  text-align:center;
+  margin:30px 0;
 }
-a {
-  display:block;
-  margin:10px 0;
-  padding:12px;
+
+.buttons a {
+  display:inline-block;
+  margin:6px;
+  padding:12px 20px;
   border-radius:6px;
   color:white;
   text-decoration:none;
   font-weight:bold;
-  text-align:center;
 }
+
 .obs { background:#4caf50; }
 .nie { background:#ff9800; }
 .odrz { background:#f44336; }
+
+.footer {
+  background:#f7f8fa;
+  text-align:center;
+  padding:14px;
+  font-size:12px;
+  color:#999;
+}
 </style>
 </head>
 
 <body>
 
-<div class="container" id="app">
-  <p>⏳ Łączenie z serwerem…</p>
+<div class="wrapper" id="app">
+  <div class="content">
+    ⏳ Łączenie z serwerem…
+  </div>
 </div>
 
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbzBLTLdMX1DXfLdDjiIit97OWNNaIjdiXqj9_bVtWSdytJAy4x9SvRTZdSP8t3Ysd-7/exec";
-
 const params = new URLSearchParams(window.location.search);
 const row = params.get("row");
 const token = params.get("token");
 const app = document.getElementById("app");
 
-function showError(msg = "Brak dostępu do leada") {
+function formatDate(iso) {
+  if (!iso) return "-";
+  const d = new Date(iso);
+  return d.toLocaleString("pl-PL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function showError(msg) {
   app.innerHTML = `
-    <h3>⛔ Błąd</h3>
-    <p style="color:#777">${msg}</p>
+    <div class="content">
+      <h3>⛔ Błąd</h3>
+      <p style="color:#777">${msg}</p>
+    </div>
   `;
 }
 
 function render(lead) {
   app.innerHTML = `
-    <div class="section">
-      <h4>📌 Informacje o leadzie</h4>
-      <p class="meta">🆔 <strong>ID:</strong> ${lead["Id."]}</p>
-      <p class="meta">📅 <strong>Data zgłoszenia:</strong> ${lead["Data"]}</p>
-      <p class="meta">🎯 <strong>Kampania:</strong> ${lead["Nazwa Kampanii"] || "-"}</p>
-      <p class="meta status">📍 <strong>Status:</strong> ${lead["Obecny status"] || "nowy"}</p>
+    <div class="header">
+      <img src="https://scontent-waw2-2.xx.fbcdn.net/v/t39.30808-6/540904522_122143092902741193_6153063326804191448_n.jpg" alt="AdFlow">
+      <h2>Status kontaktu z pacjentem</h2>
     </div>
 
-    <div class="section">
-      <h4>👤 Dane pacjenta</h4>
-      <p><strong>Imię i nazwisko:</strong> ${lead["Imię Nazwisko"]}</p>
-      <p><strong>Telefon:</strong> ${lead["Nr tel"]}</p>
-      <p><strong>Email:</strong> ${lead["Email"] || "-"}</p>
+    <div class="content">
+
+      <div class="box">
+        <p>🆔 <strong>Lead ID:</strong> ${lead["Id."]}</p>
+        <p>📅 <strong>Data zgłoszenia:</strong> ${formatDate(lead["Data"])}</p>
+        <p class="meta">📍 <strong>Status:</strong> ${lead["Obecny status"] || "nowy"}</p>
+      </div>
+
+      <div class="box data">
+        <p><strong>🧾 Imię i nazwisko:</strong> ${lead["Imię Nazwisko"]}</p>
+        <p><strong>📞 Telefon:</strong> ${lead["Nr tel"]}</p>
+        <p><strong>✉️ Email:</strong> ${lead["Email"] || "-"}</p>
+        <p><strong>🦷 Cel wizyty:</strong> ${lead["Pytanie 1 (cel wizyty)"]}</p>
+        <p><strong>💬 Informacje:</strong><br>${lead["Pytanie 2 (Informacje)"] || "-"}</p>
+      </div>
+
+      <div class="box script">
+        💬 <strong>Sugestia rozmowy:</strong><br>
+        „Dzień dobry, dzwonię z gabinetu stomatologicznego.  
+        Widzę, że zgłosił/a się Pan/Pani w sprawie
+        <strong>${lead["Pytanie 1 (cel wizyty)"]}</strong>.
+        Jaki termin wizyty byłby dla Pana/Pani dogodny?”
+      </div>
+
+      <div class="buttons">
+        <a class="obs" onclick="updateStatus('obsluzony')">✔ Lead obsłużony</a>
+        <a class="nie" onclick="updateStatus('nie_odbiera')">📞 Nie odbiera</a>
+        <a class="odrz" onclick="updateStatus('odrzucony')">❌ Lead odrzucony</a>
+      </div>
+
     </div>
 
-    <div class="section">
-      <h4>🦷 Informacje medyczne</h4>
-      <p><strong>Cel wizyty:</strong> ${lead["Pytanie 1 (cel wizyty)"]}</p>
-      <p><strong>Dodatkowe informacje:</strong><br>${lead["Pytanie 2 (Informacje)"] || "-"}</p>
+    <div class="footer">
+      System AdFlow · automatyczna obsługa leadów
     </div>
-
-    <a class="obs" onclick="updateStatus('obsluzony')">✔ Lead obsłużony</a>
-    <a class="nie" onclick="updateStatus('nie_odbiera')">📞 Nie odbiera</a>
-    <a class="odrz" onclick="updateStatus('odrzucony')">❌ Lead odrzucony</a>
   `;
 }
 
@@ -118,8 +193,10 @@ function updateStatus(status) {
   });
 
   app.innerHTML = `
-    <h3>✅ Status zapisany</h3>
-    <p style="color:#777">Możesz zamknąć to okno</p>
+    <div class="content">
+      <h3>✅ Status zapisany</h3>
+      <p style="color:#777">Możesz zamknąć to okno</p>
+    </div>
   `;
 }
 
@@ -128,10 +205,7 @@ if (!row || !token) {
 } else {
   fetch(`${API_URL}?row=${row}&token=${token}`)
     .then(r => r.json())
-    .then(d => {
-      if (!d.success) showError("Brak dostępu do leada");
-      else render(d.lead);
-    })
+    .then(d => d.success ? render(d.lead) : showError("Brak dostępu do leada"))
     .catch(() => showError("Błąd połączenia z API"));
 }
 </script>
