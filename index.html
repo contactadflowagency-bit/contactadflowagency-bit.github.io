@@ -548,6 +548,11 @@ function renderList(rows) {
       <div class="dashboard-toolbar">
         <input type="text" id="searchInput" placeholder="🔍 Szukaj..." oninput="filterTable()" style="flex: 1; min-width: 200px;">
         
+        <select id="sortOrder" onchange="filterTable()">
+          <option value="desc">Najnowsze od góry</option>
+          <option value="asc">Najstarsze od góry</option>
+        </select>
+
         <select id="statusFilter" onchange="filterTable()">
           <option value="">— Wszystkie statusy —</option>
           <option value="nowy">Nowy</option>
@@ -555,16 +560,6 @@ function renderList(rows) {
           <option value="nie_odbiera">Nie odbiera</option>
           <option value="odrzucony">Odrzucony</option>
         </select>
-      
-        <select id="campaignFilter" onchange="filterTable()">
-          <option value="">— Wszystkie kampanie —</option>
-        </select>
-      
-        <div style="display: flex; gap: 5px; align-items: center;">
-          <input type="date" id="dateFrom" onchange="filterTable()">
-          <span>-</span>
-          <input type="date" id="dateTo" onchange="filterTable()">
-        </div>
       
         <button onclick="clearAllFilters()" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; cursor: pointer;">🧹</button>
       </div>
@@ -578,7 +573,7 @@ function renderList(rows) {
               <th onclick="sortTable('name')">Pacjent</th>
               <th onclick="sortTable('status')">Status</th>
               <th onclick="sortTable('updated')">Ost. aktualizacja</th>
-              <th>Czas oczekiwania (Realny)</th>
+              <th>Czas czekania (Realny)</th>
               <th onclick="sortTable('campaign')">Kampania</th>
             </tr>
           </thead>
@@ -586,11 +581,10 @@ function renderList(rows) {
         </table>
       </div>
     </div>
-
-    <div class="footer">System AdFlow · podgląd leadów</div>
   `;
 
-  renderTableRows(allRows);
+  // Uruchomienie filtrowania i domyślnego sortowania na starcie
+  filterTable();
 }
   
 function renderTableRows(rows) {
