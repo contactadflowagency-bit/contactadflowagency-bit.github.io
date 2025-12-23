@@ -557,7 +557,9 @@ function renderList(rows) {
     <div class="content">
       <div class="dashboard-toolbar" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
         <input type="text" id="searchInput" placeholder="🔍 Szukaj..." oninput="filterTable()" style="flex: 1; min-width: 200px;">
-      
+
+        <br>
+        
         <select id="statusFilter" onchange="filterTable()" style="padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
           <option value="">— Wszystkie statusy —</option>
           <option value="nowy">Nowy</option>
@@ -571,8 +573,9 @@ function renderList(rows) {
         </select>
       
         <div style="display: flex; gap: 5px; align-items: center;">
+          <span>Od:</span>
           <input type="date" id="dateFrom" onchange="filterTable()" style="padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
-          <span>do</span>
+          <span>Do:</span>
           <input type="date" id="dateTo" onchange="filterTable()" style="padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
         </div>
       
