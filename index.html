@@ -539,6 +539,7 @@ function loadList() {
         return;
       }
       renderList(d.rows);
+      populateCampaigns(d.rows);
     })
     .catch(() => showError("Błąd połączenia z API"));
 }
@@ -554,16 +555,28 @@ function renderList(rows) {
     </div>
 
     <div class="content">
-      <div class="dashboard-toolbar">
-        <input
-          type="text"
-          id="searchInput"
-          placeholder="🔍 Szukaj (imię, telefon, email, kampania)"
-          oninput="filterTable()"
-        >
-        <div class="muted">
-          Liczba leadów: <strong>${allRows.length}</strong>
+      <div class="dashboard-toolbar" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+        <input type="text" id="searchInput" placeholder="🔍 Szukaj..." oninput="filterTable()" style="flex: 1; min-width: 200px;">
+      
+        <select id="statusFilter" onchange="filterTable()" style="padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
+          <option value="">— Wszystkie statusy —</option>
+          <option value="nowy">Nowy</option>
+          <option value="obsluzony">Obsłużony</option>
+          <option value="nie_odbiera">Nie odbiera</option>
+          <option value="odrzucony">Odrzucony</option>
+        </select>
+      
+        <select id="campaignFilter" onchange="filterTable()" style="padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
+          <option value="">— Wszystkie kampanie —</option>
+        </select>
+      
+        <div style="display: flex; gap: 5px; align-items: center;">
+          <input type="date" id="dateFrom" onchange="filterTable()" style="padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
+          <span>do</span>
+          <input type="date" id="dateTo" onchange="filterTable()" style="padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
         </div>
+      
+        <button onclick="clearAllFilters()" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; cursor: pointer; background: #eee;">🧹 Wyczyść</button>
       </div>
 
       <table class="dashboard-table" id="leadTable">
@@ -608,13 +621,54 @@ function renderTableRows(rows) {
 }
 
   function filterTable() {
-  const q = document.getElementById("searchInput").value.toLowerCase();
+  const query = document.getElementById("searchInput").value.toLowerCase();
+  const statusF = document.getElementById("statusFilter").value;
+  const campaignF = document.getElementById("campaignFilter").value;
+  const df = document.getElementById("dateFrom").value ? new Date(document.getElementById("dateFrom").value + 'T00:00:00') : null;
+  const dt = document.getElementById("dateTo").value ? new Date(document.getElementById("dateTo").value + 'T23:59:59') : null;
 
-  const filtered = allRows.filter(r =>
-    Object.values(r).join(" ").toLowerCase().includes(q)
-  );
+  const filtered = allRows.filter(r => {
+    // 1. Szukanie tekstowe (Imię, Tel, Email)
+    const matchesQuery = !query || Object.values(r).join(" ").toLowerCase().includes(query);
+    
+    // 2. Filtr statusu
+    const matchesStatus = !statusF || (r.status || "nowy") === statusF;
+    
+    // 3. Filtr kampanii
+    const matchesCampaign = !campaignF || r.campaign === campaignF;
+    
+    // 4. Filtr dat
+    const rDate = r.created ? new Date(r.created) : null;
+    const matchesDateFrom = !df || (rDate && rDate >= df);
+    const matchesDateTo = !dt || (rDate && rDate <= dt);
+
+    return matchesQuery && matchesStatus && matchesCampaign && matchesDateFrom && matchesDateTo;
+  });
 
   renderTableRows(filtered);
+  
+  // Aktualizacja licznika
+  const counter = document.querySelector(".dashboard-toolbar .muted strong");
+  if(counter) counter.innerText = filtered.length;
+}
+
+// Funkcja pomocnicza do czyszczenia filtrów
+function clearAllFilters() {
+  document.getElementById("searchInput").value = "";
+  document.getElementById("statusFilter").value = "";
+  document.getElementById("campaignFilter").value = "";
+  document.getElementById("dateFrom").value = "";
+  document.getElementById("dateTo").value = "";
+  filterTable();
+}
+
+// Funkcja do dynamicznego wypełniania listy kampanii (wywołaj ją po załadowaniu danych)
+function populateCampaigns(rows) {
+  const select = document.getElementById("campaignFilter");
+  if(!select) return;
+  const campaigns = [...new Set(rows.map(r => r.campaign).filter(Boolean))].sort();
+  select.innerHTML = '<option value="">— Wszystkie kampanie —</option>' + 
+    campaigns.map(c => `<option value="${c}">${c}</option>`).join("");
 }
 
   let sortDir = 1;
