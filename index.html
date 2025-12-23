@@ -189,28 +189,31 @@ p {
   }
   
   /* ===== DASHBOARD – SZEROKI WIDOK ===== */
-  .dashboard-wide {
-    max-width: 1200px !important;
-  }
+  /* ===== DASHBOARD – SZEROKI WIDOK (ZAKTUALIZOWANY) ===== */
+  .dashboard-wide { max-width: 1400px !important; }
 
-  /* ===== TRYB DASHBOARD ===== */
-  body.dashboard-mode {
-    display: block;
-  }
+  body.dashboard-mode { display: block; }
   
   body.dashboard-mode .wrapper {
-    min-height: 70%;
-    max-width: 1200px;
+    max-width: 1400px;
     width: 95%;
-    margin: 30px auto;
+    margin: 20px auto;
+    min-height: auto;
   }
 
-  /* ===== DASHBOARD TABLE ===== */
+  /* Kontener dla tabeli z przewijaniem bocznym na mobile */
+  .table-scroll {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid #eee;
+    border-radius: 8px;
+  }
+
   .dashboard-table {
     width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
+    border-collapse: collapse;
     font-size: 14px;
+    min-width: 1000px; /* Zapobiega ściskaniu kolumn na małych ekranach */
   }
   
   .dashboard-table thead th {
@@ -218,47 +221,35 @@ p {
     padding: 12px 10px;
     text-align: left;
     font-weight: 700;
-    color: #333;
     border-bottom: 2px solid #e3e7ee;
     cursor: pointer;
-    user-select: none;
   }
   
   .dashboard-table tbody td {
-    padding: 10px;
+    padding: 12px 10px;
     border-bottom: 1px solid #eee;
-    vertical-align: middle;
   }
-  
-  .dashboard-table tbody tr:hover {
-    background: #f8fbff;
-  }
-  
-  .dashboard-table tbody tr:nth-child(even) {
-    background: #fcfdff;
-  }
-  
-  /* status badge już masz – lekko poprawiamy */
-  .status-badge {
-    font-size: 13px;
-    padding: 5px 10px;
-  }
-  
-  /* search box */
+
+  /* Responsywny Toolbar */
   .dashboard-toolbar {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 14px;
+    flex-wrap: wrap;
     gap: 10px;
+    margin-bottom: 15px;
+    align-items: center;
   }
-  
-  .dashboard-toolbar input {
-    padding: 8px 10px;
+
+  .dashboard-toolbar input, .dashboard-toolbar select {
+    padding: 8px;
     border-radius: 8px;
     border: 1px solid #ddd;
-    width: 260px;
     font-size: 14px;
+  }
+
+  @media (max-width: 800px) {
+    .dashboard-toolbar { flex-direction: column; align-items: stretch; }
+    .dashboard-toolbar input { width: 100%; }
+    .dashboard-toolbar div { justify-content: space-between; display: flex; }
   }
   
 </style>
@@ -548,19 +539,16 @@ let allRows = [];
 
 function renderList(rows) {
   allRows = rows.filter(r => r.id);
-
   app.innerHTML = `
     <div class="header">
       <h2>📊 Dashboard leadów</h2>
     </div>
 
     <div class="content">
-      <div class="dashboard-toolbar" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+      <div class="dashboard-toolbar">
         <input type="text" id="searchInput" placeholder="🔍 Szukaj..." oninput="filterTable()" style="flex: 1; min-width: 200px;">
-
-        <br>
         
-        <select id="statusFilter" onchange="filterTable()" style="padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
+        <select id="statusFilter" onchange="filterTable()">
           <option value="">— Wszystkie statusy —</option>
           <option value="nowy">Nowy</option>
           <option value="obsluzony">Obsłużony</option>
@@ -568,38 +556,38 @@ function renderList(rows) {
           <option value="odrzucony">Odrzucony</option>
         </select>
       
-        <select id="campaignFilter" onchange="filterTable()" style="padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
+        <select id="campaignFilter" onchange="filterTable()">
           <option value="">— Wszystkie kampanie —</option>
         </select>
       
         <div style="display: flex; gap: 5px; align-items: center;">
-          <span>Od:</span>
-          <input type="date" id="dateFrom" onchange="filterTable()" style="padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
-          <span>Do:</span>
-          <input type="date" id="dateTo" onchange="filterTable()" style="padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
+          <input type="date" id="dateFrom" onchange="filterTable()">
+          <span>-</span>
+          <input type="date" id="dateTo" onchange="filterTable()">
         </div>
       
-        <button onclick="clearAllFilters()" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; cursor: pointer; background: #eee;">🧹 Wyczyść</button>
+        <button onclick="clearAllFilters()" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; cursor: pointer;">🧹</button>
       </div>
 
-      <table class="dashboard-table" id="leadTable">
-        <thead>
-          <tr>
-            <th onclick="sortTable('id')">ID</th>
-            <th onclick="sortTable('created')">Data</th>
-            <th onclick="sortTable('name')">Pacjent</th>
-            <th onclick="sortTable('phone')">Telefon</th>
-            <th onclick="sortTable('status')">Status</th>
-            <th onclick="sortTable('campaign')">Kampania</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="dashboard-table" id="leadTable">
+          <thead>
+            <tr>
+              <th onclick="sortTable('id')">ID</th>
+              <th onclick="sortTable('created')">Data zgłoszenia</th>
+              <th onclick="sortTable('name')">Pacjent</th>
+              <th onclick="sortTable('status')">Status</th>
+              <th onclick="sortTable('updated')">Ost. aktualizacja</th>
+              <th>Czas oczekiwania (Realny)</th>
+              <th onclick="sortTable('campaign')">Kampania</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
     </div>
 
-    <div class="footer">
-      System AdFlow · podgląd leadów
-    </div>
+    <div class="footer">System AdFlow · podgląd leadów</div>
   `;
 
   renderTableRows(allRows);
@@ -607,20 +595,26 @@ function renderList(rows) {
   
 function renderTableRows(rows) {
   const tbody = document.getElementById("tableBody");
-  tbody.innerHTML = rows.map(r => `
-    <tr>
-      <td>${r.id}</td>
-      <td>${formatDate(r.created)}</td>
-      <td>${r.name || "-"}</td>
-      <td>${r.phone || "-"}</td>
-      <td>
-        <span class="status-badge ${statusClass(r.status)}">
-          ${r.status || "nowy"}
-        </span>
-      </td>
-      <td>${r.campaign || "-"}</td>
-    </tr>
-  `).join("");
+  tbody.innerHTML = rows.map(r => {
+    // Łączymy czas czekania i realny czas czekania w nawiasie
+    const waitInfo = `${r.wait_time || "-"} (${r.real_wait_time || "-"})`;
+    
+    return `
+      <tr>
+        <td>${r.id}</td>
+        <td>${formatDate(r.created)}</td>
+        <td><strong>${r.name || "-"}</strong><br><small class="muted">${r.phone || ""}</small></td>
+        <td>
+          <span class="status-badge ${statusClass(r.status)}">
+            ${(r.status || "nowy").replace("_"," ").toUpperCase()}
+          </span>
+        </td>
+        <td class="muted">${formatDate(r.updated)}</td>
+        <td style="font-size: 13px;">${waitInfo}</td>
+        <td>${r.campaign || "-"}</td>
+      </tr>
+    `;
+  }).join("");
 }
 
   function filterTable() {
