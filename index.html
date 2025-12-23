@@ -377,7 +377,7 @@ async function updateStatus(status) {
     // ❌ BŁĄD
     app.innerHTML = `
       <div class="content">
-        <h3>⛔ Nie udało się zapisać statusu</h3>
+        <h3>⛔ Nie udało się zapisać statusu. Spróbuj odświeżyć przeglądarkę i wysłać jeszcze raz. Jeżeli nie zadziała prosimy o kontakt z Adflow</h3>
         <p class="muted">${err.message}</p>
         <a href="#" onclick="location.reload()" style="
           display:inline-block;
