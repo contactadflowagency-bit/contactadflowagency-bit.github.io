@@ -539,6 +539,10 @@ let allRows = [];
 
 function renderList(rows) {
   allRows = rows.filter(r => r.id);
+  // Filtrujemy i od razu sortujemy domyślnie po dacie (od najnowszych)
+  allRows = rows.filter(r => r.id).sort((a, b) => {
+    return new Date(b.created) - new Date(a.created);
+  });
   app.innerHTML = `
     <div class="header">
       <h2>📊 Dashboard leadów</h2>
@@ -596,8 +600,12 @@ function renderList(rows) {
 function renderTableRows(rows) {
   const tbody = document.getElementById("tableBody");
   tbody.innerHTML = rows.map(r => {
-    // Łączymy czas czekania i realny czas czekania w nawiasie
-    const waitInfo = `${r.wait_time || "-"} (${r.real_wait_time || "-"})`;
+    // Łączymy "Czas czekania na kontakt" oraz "Realny czas czekania na kontakt" w jeden ciąg
+    // Używamy nazw r.wait_time i r.real_wait_time (lub odpowiedników z Twojego API)
+    const waitTime = r.wait_time || r["Czas czekania na kontakt"] || "-";
+    const realWait = r.real_wait_time || r["Realny czas czekania na kontakt"] || "-";
+    
+    const waitInfo = `${waitTime} (${realWait})`;
     
     return `
       <tr>
@@ -678,9 +686,21 @@ function sortTable(key) {
   lastSort = key;
 
   const sorted = [...allRows].sort((a, b) => {
-    const A = (a[key] || "").toString().toLowerCase();
-    const B = (b[key] || "").toString().toLowerCase();
-    return A > B ? sortDir : -sortDir;
+    let valA = a[key];
+    let valB = b[key];
+
+    // Jeśli sortujemy po dacie, zamień na obiekt Date dla poprawnego porównania
+    if (key === 'created' || key === 'updated') {
+      valA = new Date(valA || 0);
+      valB = new Date(valB || 0);
+    } else {
+      valA = (valA || "").toString().toLowerCase();
+      valB = (valB || "").toString().toLowerCase();
+    }
+
+    if (valA < valB) return -1 * sortDir;
+    if (valA > valB) return 1 * sortDir;
+    return 0;
   });
 
   renderTableRows(sorted);
