@@ -538,11 +538,9 @@ function loadList() {
 let allRows = [];
 
 function renderList(rows) {
-  allRows = rows.filter(r => r.id);
-  // Filtrujemy i od razu sortujemy domyślnie po dacie (od najnowszych)
-  allRows = rows.filter(r => r.id).sort((a, b) => {
-    return new Date(b.created) - new Date(a.created);
-  });
+  // Domyślne sortowanie od najnowszych przy ładowaniu
+  allRows = rows.filter(r => r.id).sort((a, b) => new Date(b.created) - new Date(a.created));
+
   app.innerHTML = `
     <div class="header">
       <h2>📊 Dashboard leadów</h2>
@@ -570,6 +568,7 @@ function renderList(rows) {
           <input type="date" id="dateTo" onchange="filterTable()">
         </div>
       
+        <button onclick="toggleDateSort()" id="sortBtn" title="Sortuj datę" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; cursor: pointer; background: #fff;">📅 Najnowsze</button>
         <button onclick="clearAllFilters()" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; cursor: pointer;">🧹</button>
       </div>
 
@@ -599,13 +598,13 @@ function renderList(rows) {
   
 function renderTableRows(rows) {
   const tbody = document.getElementById("tableBody");
+  if (!tbody) return;
+
   tbody.innerHTML = rows.map(r => {
-    // Łączymy "Czas czekania na kontakt" oraz "Realny czas czekania na kontakt" w jeden ciąg
-    // Używamy nazw r.wait_time i r.real_wait_time (lub odpowiedników z Twojego API)
-    const waitTime = r.wait_time || r["Czas czekania na kontakt"] || "-";
-    const realWait = r.real_wait_time || r["Realny czas czekania na kontakt"] || "-";
-    
-    const waitInfo = `${waitTime} (${realWait})`;
+    // Sprawdzamy czy dane istnieją, jeśli nie, dajemy kreskę
+    const wTime = r.wait_time || "-";
+    const rTime = r.real_wait_time || "-";
+    const waitInfo = `${wTime} (${rTime})`;
     
     return `
       <tr>
@@ -704,6 +703,22 @@ function sortTable(key) {
   });
 
   renderTableRows(sorted);
+}
+
+  let dateSortDesc = true;
+
+function toggleDateSort() {
+  dateSortDesc = !dateSortDesc;
+  const btn = document.getElementById("sortBtn");
+  
+  allRows.sort((a, b) => {
+    const dateA = new Date(a.created || 0);
+    const dateB = new Date(b.created || 0);
+    return dateSortDesc ? dateB - dateA : dateA - dateB;
+  });
+
+  btn.innerText = dateSortDesc ? "📅 Najnowsze" : "📅 Najstarsze";
+  filterTable(); // Odśwież widok z uwzględnieniem filtrów
 }
 </script>
 
