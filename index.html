@@ -199,10 +199,68 @@ p {
   }
   
   body.dashboard-mode .wrapper {
+    min-height: 70%;
     max-width: 1200px;
     width: 95%;
     margin: 30px auto;
   }
+
+  /* ===== DASHBOARD TABLE ===== */
+  .dashboard-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 14px;
+  }
+  
+  .dashboard-table thead th {
+    background: #f4f7fb;
+    padding: 12px 10px;
+    text-align: left;
+    font-weight: 700;
+    color: #333;
+    border-bottom: 2px solid #e3e7ee;
+    cursor: pointer;
+    user-select: none;
+  }
+  
+  .dashboard-table tbody td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+  }
+  
+  .dashboard-table tbody tr:hover {
+    background: #f8fbff;
+  }
+  
+  .dashboard-table tbody tr:nth-child(even) {
+    background: #fcfdff;
+  }
+  
+  /* status badge już masz – lekko poprawiamy */
+  .status-badge {
+    font-size: 13px;
+    padding: 5px 10px;
+  }
+  
+  /* search box */
+  .dashboard-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    gap: 10px;
+  }
+  
+  .dashboard-toolbar input {
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    width: 260px;
+    font-size: 14px;
+  }
+  
 </style>
 </head>
 
@@ -485,42 +543,41 @@ function loadList() {
     .catch(() => showError("Błąd połączenia z API"));
 }
 
+let allRows = [];
+
 function renderList(rows) {
+  allRows = rows.filter(r => r.id);
+
   app.innerHTML = `
     <div class="header">
       <h2>📊 Dashboard leadów</h2>
     </div>
 
     <div class="content">
-      <table style="width:100%; border-collapse:collapse">
+      <div class="dashboard-toolbar">
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="🔍 Szukaj (imię, telefon, email, kampania)"
+          oninput="filterTable()"
+        >
+        <div class="muted">
+          Liczba leadów: <strong>${allRows.length}</strong>
+        </div>
+      </div>
+
+      <table class="dashboard-table" id="leadTable">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Data</th>
-            <th>Pacjent</th>
-            <th>Telefon</th>
-            <th>Status</th>
-            <th>Kampania</th>
+            <th onclick="sortTable('id')">ID</th>
+            <th onclick="sortTable('created')">Data</th>
+            <th onclick="sortTable('name')">Pacjent</th>
+            <th onclick="sortTable('phone')">Telefon</th>
+            <th onclick="sortTable('status')">Status</th>
+            <th onclick="sortTable('campaign')">Kampania</th>
           </tr>
         </thead>
-        <tbody>
-          ${rows
-            .filter(r => r.id)   // ⬅️ USUWA PUSTE WIERSZE
-            .map(r => `
-            <tr>
-              <td>${r.id}</td>
-              <td>${formatDate(r.created)}</td>
-              <td>${r.name}</td>
-              <td>${r.phone}</td>
-              <td>
-                <span class="status-badge ${statusClass(r.status)}">
-                  ${r.status ? r.status : "-"}
-                </span>
-              </td>
-              <td>${r.campaign || "-"}</td>
-            </tr>
-          `).join("")}
-        </tbody>
+        <tbody id="tableBody"></tbody>
       </table>
     </div>
 
@@ -528,6 +585,54 @@ function renderList(rows) {
       System AdFlow · podgląd leadów
     </div>
   `;
+
+  renderTableRows(allRows);
+}
+  
+function renderTableRows(rows) {
+  const tbody = document.getElementById("tableBody");
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.id}</td>
+      <td>${formatDate(r.created)}</td>
+      <td>${r.name || "-"}</td>
+      <td>${r.phone || "-"}</td>
+      <td>
+        <span class="status-badge ${statusClass(r.status)}">
+          ${r.status || "nowy"}
+        </span>
+      </td>
+      <td>${r.campaign || "-"}</td>
+    </tr>
+  `).join("");
+}
+
+  function filterTable() {
+  const q = document.getElementById("searchInput").value.toLowerCase();
+
+  const filtered = allRows.filter(r =>
+    Object.values(r).join(" ").toLowerCase().includes(q)
+  );
+
+  renderTableRows(filtered);
+}
+
+  let sortDir = 1;
+let lastSort = null;
+
+function sortTable(key) {
+  if (lastSort === key) sortDir *= -1;
+  else sortDir = 1;
+
+  lastSort = key;
+
+  const sorted = [...allRows].sort((a, b) => {
+    const A = (a[key] || "").toString().toLowerCase();
+    const B = (b[key] || "").toString().toLowerCase();
+    return A > B ? sortDir : -sortDir;
+  });
+
+  renderTableRows(sorted);
 }
 </script>
 
