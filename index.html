@@ -342,18 +342,53 @@ function confirmUpdate(status) {
   updateStatus(status);
 }
   
-function updateStatus(status) {
-  fetch(`${API_URL}?row=${row}&token=${token}&status=${status}`, {
-    method: "POST",
-    mode: "no-cors"
-  });
-
+async function updateStatus(status) {
+  // ekran ładowania
   app.innerHTML = `
     <div class="content">
-      <h3>✅ Status zapisany</h3>
-      <p style="color:#777">Możesz zamknąć to okno</p>
+      <h3>⏳ Zapisywanie statusu…</h3>
+      <p class="muted">Proszę czekać</p>
     </div>
   `;
+
+  try {
+    const res = await fetch(
+      `${API_URL}?row=${row}&token=${token}&status=${status}`,
+      { method: "POST" }
+    );
+
+    const data = await res.json();
+
+    if (!data.success) {
+      throw new Error(data.error || "Błąd zapisu");
+    }
+
+    // ✅ SUKCES
+    app.innerHTML = `
+      <div class="content">
+        <h3>✅ Status został zapisany</h3>
+        <p class="muted">
+          Zmiana została poprawnie zapisana w systemie
+        </p>
+      </div>
+    `;
+
+  } catch (err) {
+    // ❌ BŁĄD
+    app.innerHTML = `
+      <div class="content">
+        <h3>⛔ Nie udało się zapisać statusu</h3>
+        <p class="muted">${err.message}</p>
+        <a href="#" onclick="location.reload()" style="
+          display:inline-block;
+          margin-top:15px;
+          font-weight:bold;
+        ">
+          🔄 Spróbuj ponownie
+        </a>
+      </div>
+    `;
+  }
 }
 
 
