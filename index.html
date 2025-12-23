@@ -192,6 +192,17 @@ p {
   .dashboard-wide {
     max-width: 1200px !important;
   }
+
+  /* ===== TRYB DASHBOARD ===== */
+  body.dashboard-mode {
+    display: block;
+  }
+  
+  body.dashboard-mode .wrapper {
+    max-width: 1200px;
+    width: 95%;
+    margin: 30px auto;
+  }
 </style>
 </head>
 
@@ -443,6 +454,7 @@ if (action === "list") {
 // ===== ROUTING FUNKCJE =====
 
 function loadSingle() {
+  document.body.classList.remove("dashboard-mode");
   fetch(`${API_URL}?row=${row}&token=${token}`)
     .then(r => r.json())
     .then(d => d.success
@@ -453,6 +465,7 @@ function loadSingle() {
 }
 
 function loadList() {
+  document.body.classList.add("dashboard-mode");
   app.innerHTML = `
     <div class="content">
       <h3>📊 Lista leadów</h3>
