@@ -188,8 +188,7 @@ p {
     color: white;
   }
   
-  /* ===== DASHBOARD – SZEROKI WIDOK ===== */
-  /* ===== DASHBOARD – SZEROKI WIDOK (ZAKTUALIZOWANY) ===== */
+  /* ===== DASHBOARD – SZEROKI WIDOK (NAPRAWIONY) ===== */
   .dashboard-wide { max-width: 1400px !important; }
 
   body.dashboard-mode { display: block; }
@@ -201,19 +200,19 @@ p {
     min-height: auto;
   }
 
-  /* Kontener dla tabeli z przewijaniem bocznym na mobile */
   .table-scroll {
     width: 100%;
     overflow-x: auto;
     border: 1px solid #eee;
     border-radius: 8px;
+    background: #fff;
   }
 
   .dashboard-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 14px;
-    min-width: 1000px; /* Zapobiega ściskaniu kolumn na małych ekranach */
+    min-width: 1100px; /* Szerokość minimalna, żeby kolumny się nie gniotły */
   }
   
   .dashboard-table thead th {
@@ -223,6 +222,8 @@ p {
     font-weight: 700;
     border-bottom: 2px solid #e3e7ee;
     cursor: pointer;
+    position: sticky;
+    top: 0;
   }
   
   .dashboard-table tbody td {
@@ -230,26 +231,29 @@ p {
     border-bottom: 1px solid #eee;
   }
 
-  /* Responsywny Toolbar */
+  /* Responsywny Toolbar - poprawiony układ */
   .dashboard-toolbar {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
     margin-bottom: 15px;
     align-items: center;
+    background: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
   }
 
   .dashboard-toolbar input, .dashboard-toolbar select {
     padding: 8px;
-    border-radius: 8px;
+    border-radius: 6px;
     border: 1px solid #ddd;
     font-size: 14px;
   }
 
   @media (max-width: 800px) {
     .dashboard-toolbar { flex-direction: column; align-items: stretch; }
-    .dashboard-toolbar input { width: 100%; }
-    .dashboard-toolbar div { justify-content: space-between; display: flex; }
+    .dashboard-toolbar div { display: flex; gap: 5px; }
   }
   
 </style>
@@ -538,7 +542,17 @@ function loadList() {
 let allRows = [];
 
 function renderList(rows) {
-  allRows = rows.filter(r => r.id);
+  // MAPOWANIE DANYCH: Naprawiamy problem -(-) przypisując odpowiednie klucze z Twojego arkusza
+  allRows = rows.map(r => ({
+    ...r,
+    // Próba pobrania czasu oczekiwania (dopasuj nazwy w [] jeśli w arkuszu są inne)
+    wait_time: r["Czas oczekiwania"] || r["wait_time"] || "-",
+    real_wait_time: r["Realny czas oczekiwania"] || r["real_wait_time"] || "-",
+    // Upewniamy się, że daty są obiektami Date do sortowania
+    createdDate: r.created ? new Date(r.created) : new Date(0),
+    updatedDate: r.updated ? new Date(r.updated) : new Date(0)
+  })).filter(r => r.id);
+
   app.innerHTML = `
     <div class="header">
       <h2>📊 Dashboard leadów</h2>
@@ -546,11 +560,11 @@ function renderList(rows) {
 
     <div class="content">
       <div class="dashboard-toolbar">
-        <input type="text" id="searchInput" placeholder="🔍 Szukaj..." oninput="filterTable()" style="flex: 1; min-width: 200px;">
+        <input type="text" id="searchInput" placeholder="🔍 Szukaj..." oninput="filterTable()" style="flex: 2; min-width: 200px;">
         
         <select id="sortOrder" onchange="filterTable()">
-          <option value="desc">Najnowsze od góry</option>
-          <option value="asc">Najstarsze od góry</option>
+          <option value="desc">📅 Najnowsze od góry</option>
+          <option value="asc">📅 Najstarsze od góry</option>
         </select>
 
         <select id="statusFilter" onchange="filterTable()">
@@ -560,6 +574,15 @@ function renderList(rows) {
           <option value="nie_odbiera">Nie odbiera</option>
           <option value="odrzucony">Odrzucony</option>
         </select>
+      
+        <select id="campaignFilter" onchange="filterTable()">
+          <option value="">— Wszystkie kampanie —</option>
+        </select>
+      
+        <div style="display: flex; gap: 5px; align-items: center;">
+          <input type="date" id="dateFrom" onchange="filterTable()" title="Data od">
+          <input type="date" id="dateTo" onchange="filterTable()" title="Data do">
+        </div>
       
         <button onclick="clearAllFilters()" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; cursor: pointer;">🧹</button>
       </div>
@@ -573,7 +596,7 @@ function renderList(rows) {
               <th onclick="sortTable('name')">Pacjent</th>
               <th onclick="sortTable('status')">Status</th>
               <th onclick="sortTable('updated')">Ost. aktualizacja</th>
-              <th>Czas czekania (Realny)</th>
+              <th>Czas oczekiwania (Realny)</th>
               <th onclick="sortTable('campaign')">Kampania</th>
             </tr>
           </thead>
@@ -581,10 +604,11 @@ function renderList(rows) {
         </table>
       </div>
     </div>
+    <div class="footer">System AdFlow · podgląd leadów</div>
   `;
 
-  // Uruchomienie filtrowania i domyślnego sortowania na starcie
-  filterTable();
+  populateCampaigns(allRows); // Automatycznie wypełni listę kampanii
+  filterTable(); // Wywołuje filtrowanie i domyślne sortowanie "od najnowszych"
 }
   
 function renderTableRows(rows) {
@@ -615,27 +639,35 @@ function renderTableRows(rows) {
   const query = document.getElementById("searchInput").value.toLowerCase();
   const statusF = document.getElementById("statusFilter").value;
   const campaignF = document.getElementById("campaignFilter").value;
-  const df = document.getElementById("dateFrom").value ? new Date(document.getElementById("dateFrom").value + 'T00:00:00') : null;
-  const dt = document.getElementById("dateTo").value ? new Date(document.getElementById("dateTo").value + 'T23:59:59') : null;
+  const sortDir = document.getElementById("sortOrder").value;
+  
+  const dfValue = document.getElementById("dateFrom").value;
+  const dtValue = document.getElementById("dateTo").value;
+  const df = dfValue ? new Date(dfValue + 'T00:00:00') : null;
+  const dt = dtValue ? new Date(dtValue + 'T23:59:59') : null;
 
-  const filtered = allRows.filter(r => {
-    // 1. Szukanie tekstowe (Imię, Tel, Email)
-    const matchesQuery = !query || Object.values(r).join(" ").toLowerCase().includes(query);
-    
-    // 2. Filtr statusu
-    const matchesStatus = !statusF || (r.status || "nowy") === statusF;
-    
-    // 3. Filtr kampanii
+  let filtered = allRows.filter(r => {
+    const matchesSearch = Object.values(r).join(" ").toLowerCase().includes(query);
+    const matchesStatus = !statusF || r.status === statusF;
     const matchesCampaign = !campaignF || r.campaign === campaignF;
     
-    // 4. Filtr dat
-    const rDate = r.created ? new Date(r.created) : null;
-    const matchesDateFrom = !df || (rDate && rDate >= df);
-    const matchesDateTo = !dt || (rDate && rDate <= dt);
+    // Filtrowanie daty
+    let matchesDate = true;
+    if (df && r.createdDate < df) matchesDate = false;
+    if (dt && r.createdDate > dt) matchesDate = false;
 
-    return matchesQuery && matchesStatus && matchesCampaign && matchesDateFrom && matchesDateTo;
+    return matchesSearch && matchesStatus && matchesCampaign && matchesDate;
   });
 
+  // LOGIKA SORTOWANIA (Domyślnie najnowsze na górze)
+  filtered.sort((a, b) => {
+    const timeA = a.createdDate.getTime();
+    const timeB = b.createdDate.getTime();
+    return sortDir === 'desc' ? (timeB - timeA) : (timeA - timeB);
+  });
+
+  renderTableRows(filtered);
+}
   renderTableRows(filtered);
   
   // Aktualizacja licznika
