@@ -287,9 +287,15 @@ function render(lead) {
       </div>
 
       <div class="buttons ${editable ? "" : "disabled"}">
-        <a class="obs" onclick="handleStatusClick('obsluzony', '${status}')">✔ Lead obsłużony</a>
-        <a class="nie" onclick="handleStatusClick('nie_odbiera', '${status}')">📞 Nie odbiera</a>
-        <a class="odrz" onclick="handleStatusClick('odrzucony', '${status}')">❌ Lead odrzucony</a>
+        <a class="obs" onclick="${editable ? `handleStatusClick('obsluzony','${status}')` : ""}">
+          ✔ Lead obsłużony
+        </a>
+        <a class="nie" onclick="${editable ? `handleStatusClick('nie_odbiera','${status}')` : ""}">
+          📞 Nie odbiera
+        </a>
+        <a class="odrz" onclick="${editable ? `handleStatusClick('odrzucony','${status}')` : ""}">
+          ❌ Lead odrzucony
+        </a>
       </div>
 
       ${
@@ -345,11 +351,15 @@ function updateStatus(status) {
 let pendingStatus = null;
 
 function handleStatusClick(newStatus, currentStatus) {
-  if (currentStatus === "nowy" || currentStatus === "") {
+  const normalized = (currentStatus || "").trim().toLowerCase();
+
+  // NOWY LEAD → bez potwierdzenia
+  if (normalized === "" || normalized === "nowy") {
     updateStatus(newStatus);
     return;
   }
 
+  // STARY LEAD → modal
   pendingStatus = newStatus;
   document.getElementById("confirmModal").classList.remove("hidden");
 
