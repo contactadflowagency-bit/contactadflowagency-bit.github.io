@@ -187,6 +187,11 @@ p {
     background: #4caf50;
     color: white;
   }
+  
+  /* ===== DASHBOARD – SZEROKI WIDOK ===== */
+  .dashboard-wide {
+    max-width: 1200px !important;
+  }
 </style>
 </head>
 
@@ -218,6 +223,8 @@ function formatDate(iso) {
 }
 
 function showError(msg) {
+  app.classList.add("dashboard-wide");
+
   app.innerHTML = `
     <div class="content">
       <h3>⛔ Błąd</h3>
@@ -484,7 +491,9 @@ function renderList(rows) {
           </tr>
         </thead>
         <tbody>
-          ${rows.map(r => `
+          ${rows
+            .filter(r => r.id)   // ⬅️ USUWA PUSTE WIERSZE
+            .map(r => `
             <tr>
               <td>${r.id}</td>
               <td>${formatDate(r.created)}</td>
@@ -492,7 +501,7 @@ function renderList(rows) {
               <td>${r.phone}</td>
               <td>
                 <span class="status-badge ${statusClass(r.status)}">
-                  ${r.status || "nowy"}
+                  ${r.status ? r.status : "-"}
                 </span>
               </td>
               <td>${r.campaign || "-"}</td>
