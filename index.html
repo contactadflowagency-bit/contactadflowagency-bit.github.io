@@ -232,8 +232,17 @@ function statusClass(status) {
   }[status] || "s-nowy";
 }
 
-function canEdit(lastUpdate) {
+function canEdit(lastUpdate, status) {
+  const normalized = (status || "").trim().toLowerCase();
+
+  // ZAWSZE edytowalne
+  if (normalized === "" || normalized === "nowy" || normalized === "nie_odbiera") {
+    return true;
+  }
+
+  // Dla pozostałych — limit 15 minut
   if (!lastUpdate) return true;
+
   const diffMin = (Date.now() - new Date(lastUpdate)) / 1000 / 60;
   return diffMin <= 15;
 }
@@ -241,7 +250,7 @@ function canEdit(lastUpdate) {
 function render(lead) {
   const status = lead["Obecny status"] || "nowy";
   const lastUpdate = lead["Data ostatniej aktualizacji"];
-  const editable = canEdit(lastUpdate);
+  const editable = canEdit(lastUpdate, status);
   const isNew = status === "nowy" || status === "";
 
   app.innerHTML = `
