@@ -517,42 +517,46 @@ function loadSingle() {
     .catch(() => showError("Błąd połączenia z API"));
 }
 
-function loadList() {
-  document.body.classList.add("dashboard-mode");
-  app.innerHTML = `
-    <div class="content">
-      <h3>📊 Lista leadów</h3>
-      <p class="muted">Ładowanie danych…</p>
-    </div>
-  `;
+// --- KOPIUJ OD TĄD ---
 
-  fetch(`${API_URL}?action=list&token=${token}`)
+function loadList() {
+  const app = document.getElementById("app");
+  // Zostawiamy komunikat ładowania
+  app.innerHTML = '<div class="content" style="text-align:center;padding:50px;">⏳ Łączenie z serwerem...</div>';
+
+  fetch(API_URL)
     .then(r => r.json())
     .then(d => {
-      if (!d.success) {
-        showError("Brak dostępu do listy leadów");
-        return;
+      if (d.status === "success") {
+        // MAPOWANIE: Tutaj upewniamy się, że JS widzi Twoje kolumny z arkusza
+        allRows = d.rows.map(r => ({
+          ...r,
+          // Mapujemy nazwy z Twojego arkusza na nazwy czytelne dla skryptu
+          // Zakładamy, że w arkuszu nagłówki są dokładnie takie jak podałeś
+          id: r["Id."] || r.id,
+          created: r["Data"] || r.created,
+          name: r["Imię Nazwisko"] || r.name,
+          phone: r["Nr tel"] || r.phone,
+          status: r["Obecny status"] || r.status || "nowy",
+          updated: r["Data ostatniej aktualizacji"] || r.updated,
+          campaign: r["Nazwa Kampanii"] || r.campaign,
+          wait_time: r["Czas czekania na kontakt"] || r.wait_time || "-",
+          real_wait_time: r["Realny czas czekania na kontakt"] || r.real_wait_time || "-"
+        })).filter(r => r.id);
+
+        renderList(allRows);
+      } else {
+        throw new Error("Błąd API");
       }
-      renderList(d.rows);
-      populateCampaigns(d.rows);
     })
-    .catch(() => showError("Błąd połączenia z API"));
+    .catch(err => {
+      console.error(err);
+      app.innerHTML = '<div class="content" style="text-align:center;padding:50px;color:red;">❌ Błąd połączenia z API. Sprawdź konsolę (F12).</div>';
+    });
 }
 
-let allRows = [];
-
 function renderList(rows) {
-  // MAPOWANIE DANYCH: Naprawiamy problem -(-) przypisując odpowiednie klucze z Twojego arkusza
-  allRows = rows.map(r => ({
-    ...r,
-    // Próba pobrania czasu oczekiwania (dopasuj nazwy w [] jeśli w arkuszu są inne)
-    wait_time: r["Czas oczekiwania"] || r["wait_time"] || "-",
-    real_wait_time: r["Realny czas oczekiwania"] || r["real_wait_time"] || "-",
-    // Upewniamy się, że daty są obiektami Date do sortowania
-    createdDate: r.created ? new Date(r.created) : new Date(0),
-    updatedDate: r.updated ? new Date(r.updated) : new Date(0)
-  })).filter(r => r.id);
-
+  const app = document.getElementById("app");
   app.innerHTML = `
     <div class="header">
       <h2>📊 Dashboard leadów</h2>
@@ -568,7 +572,7 @@ function renderList(rows) {
         </select>
 
         <select id="statusFilter" onchange="filterTable()">
-          <option value="">— Wszystkie statusy —</option>
+          <option value="">— Status —</option>
           <option value="nowy">Nowy</option>
           <option value="obsluzony">Obsłużony</option>
           <option value="nie_odbiera">Nie odbiera</option>
@@ -576,15 +580,15 @@ function renderList(rows) {
         </select>
       
         <select id="campaignFilter" onchange="filterTable()">
-          <option value="">— Wszystkie kampanie —</option>
+          <option value="">— Kampania —</option>
         </select>
       
         <div style="display: flex; gap: 5px; align-items: center;">
-          <input type="date" id="dateFrom" onchange="filterTable()" title="Data od">
-          <input type="date" id="dateTo" onchange="filterTable()" title="Data do">
+          <input type="date" id="dateFrom" onchange="filterTable()">
+          <input type="date" id="dateTo" onchange="filterTable()">
         </div>
       
-        <button onclick="clearAllFilters()" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; cursor: pointer;">🧹</button>
+        <button onclick="clearAllFilters()" style="padding: 8px; border-radius: 8px; border: 1px solid #ccc; cursor: pointer;">🧹</button>
       </div>
 
       <div class="table-scroll">
@@ -596,7 +600,7 @@ function renderList(rows) {
               <th onclick="sortTable('name')">Pacjent</th>
               <th onclick="sortTable('status')">Status</th>
               <th onclick="sortTable('updated')">Ost. aktualizacja</th>
-              <th>Czas oczekiwania (Realny)</th>
+              <th>Czas czekania (Realny)</th>
               <th onclick="sortTable('campaign')">Kampania</th>
             </tr>
           </thead>
@@ -604,60 +608,44 @@ function renderList(rows) {
         </table>
       </div>
     </div>
-    <div class="footer">System AdFlow · podgląd leadów</div>
   `;
 
-  populateCampaigns(allRows); // Automatycznie wypełni listę kampanii
-  filterTable(); // Wywołuje filtrowanie i domyślne sortowanie "od najnowszych"
-}
-  
-function renderTableRows(rows) {
-  const tbody = document.getElementById("tableBody");
-  tbody.innerHTML = rows.map(r => {
-    // Łączymy czas czekania i realny czas czekania w nawiasie
-    const waitInfo = `${r.wait_time || "-"} (${r.real_wait_time || "-"})`;
-    
-    return `
-      <tr>
-        <td>${r.id}</td>
-        <td>${formatDate(r.created)}</td>
-        <td><strong>${r.name || "-"}</strong><br><small class="muted">${r.phone || ""}</small></td>
-        <td>
-          <span class="status-badge ${statusClass(r.status)}">
-            ${(r.status || "nowy").replace("_"," ").toUpperCase()}
-          </span>
-        </td>
-        <td class="muted">${formatDate(r.updated)}</td>
-        <td style="font-size: 13px;">${waitInfo}</td>
-        <td>${r.campaign || "-"}</td>
-      </tr>
-    `;
-  }).join("");
+  populateCampaigns(allRows);
+  filterTable(); // To wywoła renderTableRows z domyślnym sortowaniem
 }
 
-  function filterTable() {
+function filterTable() {
   const query = document.getElementById("searchInput").value.toLowerCase();
   const statusF = document.getElementById("statusFilter").value;
   const campaignF = document.getElementById("campaignFilter").value;
   const sortDir = document.getElementById("sortOrder").value;
-  
-  const dfValue = document.getElementById("dateFrom").value;
-  const dtValue = document.getElementById("dateTo").value;
-  const df = dfValue ? new Date(dfValue + 'T00:00:00') : null;
-  const dt = dtValue ? new Date(dtValue + 'T23:59:59') : null;
+  const df = document.getElementById("dateFrom").value;
+  const dt = document.getElementById("dateTo").value;
 
   let filtered = allRows.filter(r => {
     const matchesSearch = Object.values(r).join(" ").toLowerCase().includes(query);
     const matchesStatus = !statusF || r.status === statusF;
     const matchesCampaign = !campaignF || r.campaign === campaignF;
     
-    // Filtrowanie daty
+    // Filtrowanie dat
     let matchesDate = true;
-    if (df && r.createdDate < df) matchesDate = false;
-    if (dt && r.createdDate > dt) matchesDate = false;
+    if (df && r.created < df) matchesDate = false;
+    if (dt && r.created > dt + "T23:59:59") matchesDate = false;
 
     return matchesSearch && matchesStatus && matchesCampaign && matchesDate;
   });
+
+  // SORTOWANIE
+  filtered.sort((a, b) => {
+    const dateA = new Date(a.created).getTime() || 0;
+    const dateB = new Date(b.created).getTime() || 0;
+    return sortDir === 'desc' ? (dateB - dateA) : (dateA - dateB);
+  });
+
+  renderTableRows(filtered);
+}
+
+// --- KONIEC KOPIOWANIA ---
 
   // LOGIKA SORTOWANIA (Domyślnie najnowsze na górze)
   filtered.sort((a, b) => {
