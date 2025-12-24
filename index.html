@@ -548,11 +548,11 @@ function loadList(reset = true) {
     .catch(() => showError("Błąd połączenia z API"));
 }
 
-let allRows = [];
-
 function renderList(rows) {
   // Domyślne sortowanie od najnowszych przy ładowaniu
-  allRows = rows.filter(r => r.id).sort((a, b) => new Date(b.created) - new Date(a.created));
+  const sortedRows = rows
+  .filter(r => r.id)
+  .sort((a, b) => new Date(b.created) - new Date(a.created));
 
   app.innerHTML = `
     <div class="header">
@@ -612,7 +612,7 @@ function renderList(rows) {
 
     <div class="footer">System AdFlow · podgląd leadów</div>
   `;
-
+  
   renderTableRows(allRows);
   const btn = document.getElementById("loadMoreBtn");
     if (btn) {
