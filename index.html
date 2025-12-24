@@ -269,6 +269,17 @@ const params = new URLSearchParams(window.location.search);
 const row = params.get("row");
 const token = params.get("token");
 const app = document.getElementById("app");
+
+window.onerror = function(msg, url, line) {
+  document.getElementById("app").innerHTML = `
+    <div style="color:red; padding:20px;">
+      <h3>Błąd skryptu:</h3>
+      <p>${msg}</p>
+      <p>Linia: ${line}</p>
+    </div>`;
+  return false;
+};
+  
 let allRows = [];
 let currentOffset = 0;
 const LIMIT = 30;
@@ -497,7 +508,7 @@ function closeModal() {
 const action = params.get("action");
 
 if (action === "list") {
-  loadList();
+  loadList(); // Ta funkcja teraz czyści ekran i wywołuje fetchMoreLeads
 } else if (row && token) {
   loadSingle();
 } else {
