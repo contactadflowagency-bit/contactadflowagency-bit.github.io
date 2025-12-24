@@ -513,111 +513,29 @@ function loadSingle() {
     .catch(() => showError("Błąd połączenia z API"));
 }
 
-let currentOffset = 0;
-const PAGE_SIZE = 30;
-let allRows = []; // Tu będziemy doklejać pobrane rekordy
-
 function loadList() {
   document.body.classList.add("dashboard-mode");
-  currentOffset = 0; // Reset przy nowym ładowaniu
-  allRows = [];
-  
-  // Renderujemy szkielet dashboardu
-  renderDashboardSkeleton();
-  
-  // Pobieramy pierwszą paczkę
-  fetchLeads();
-}
-
-function renderDashboardSkeleton() {
   app.innerHTML = `
-    <div class="header">
-      <h2>📊 Dashboard leadów</h2>
-    </div>
     <div class="content">
-      <div class="dashboard-toolbar">
-        </div>
-      <div class="table-scroll">
-        <table class="dashboard-table" id="leadTable">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Data zgłoszenia</th>
-              <th>Pacjent</th>
-              <th>Status</th>
-              <th>Ost. aktualizacja</th>
-              <th>Czas oczekiwania</th>
-              <th>Kampania</th>
-            </tr>
-          </thead>
-          <tbody id="tableBody"></tbody>
-        </table>
-      </div>
-      <div id="loadMoreContainer" style="text-align:center; margin-top:20px;">
-        <button id="loadMoreBtn" onclick="fetchLeads()" style="padding:10px 20px; cursor:pointer; border-radius:8px; border:1px solid #00bcd4; background:#fff; color:#00bcd4; font-weight:bold;">
-          Wczytaj kolejne 30 leadów
-        </button>
-      </div>
+      <h3>📊 Lista leadów</h3>
+      <p class="muted">Ładowanie danych…</p>
     </div>
-    <div class="footer">System AdFlow · podgląd leadów</div>
   `;
-}
 
-async function fetchLeads() {
-  const btn = document.getElementById("loadMoreBtn");
-  if(btn) {
-    btn.innerText = "⏳ Ładowanie...";
-    btn.disabled = true;
-  }
-
-  try {
-    const res = await fetch(`${API_URL}?action=list&token=${token}&limit=${PAGE_SIZE}&offset=${currentOffset}`);
-    const d = await res.json();
-
-    if (d.success) {
-      allRows = [...allRows, ...d.rows]; // Dodajemy nowe wiersze do istniejących
-      appendTableRows(d.rows); // Dopisz tylko nowe wiersze do DOM
-      
-      currentOffset += PAGE_SIZE;
-
-      // Ukryj przycisk, jeśli nie ma więcej danych
-      if (!d.hasMore) {
-        document.getElementById("loadMoreContainer").innerHTML = `<p class="muted">To już wszystkie leady (${d.total})</p>`;
-      } else if (btn) {
-        btn.innerText = "Wczytaj kolejne 30 leadów";
-        btn.disabled = false;
+  fetch(`${API_URL}?action=list&token=${token}`)
+    .then(r => r.json())
+    .then(d => {
+      if (!d.success) {
+        showError("Brak dostępu do listy leadów");
+        return;
       }
-      
-      if (currentOffset <= PAGE_SIZE) populateCampaigns(allRows);
-    } else {
-      showError("Brak dostępu do listy");
-    }
-  } catch (err) {
-    showError("Błąd połączenia z API");
-  }
+      renderList(d.rows);
+      populateCampaigns(d.rows);
+    })
+    .catch(() => showError("Błąd połączenia z API"));
 }
 
-// Funkcja dopisująca wiersze (append zamiast innerHTML)
-function appendTableRows(newRows) {
-  const tbody = document.getElementById("tableBody");
-  if (!tbody) return;
-
-  const html = newRows.map(r => {
-    const waitInfo = `${r.wait_time || "-"} (${r.real_wait_time || "-"})`;
-    return `
-      <tr>
-        <td>${r.id}</td>
-        <td>${formatDate(r.created)}</td>
-        <td><strong>${r.name || "-"}</strong><br><small class="muted">${r.phone || ""}</small></td>
-        <td><span class="status-badge ${statusClass(r.status)}">${(r.status || "nowy").toUpperCase()}</span></td>
-        <td class="muted">${formatDate(r.updated)}</td>
-        <td style="font-size: 13px;">${waitInfo}</td>
-        <td>${r.campaign || "-"}</td>
-      </tr>`;
-  }).join("");
-
-  tbody.insertAdjacentHTML('beforeend', html);
-}
+let allRows = [];
 
 function renderList(rows) {
   // Domyślne sortowanie od najnowszych przy ładowaniu
