@@ -390,6 +390,26 @@ function canEdit(lastUpdate, status) {
   const diffMin = (Date.now() - new Date(lastUpdate)) / 1000 / 60;
   return diffMin <= 15;
 }
+
+function formatPhone(phone) {
+  if (!phone) return "-";
+
+  // zamień na string i usuń wszystko poza cyframi
+  let digits = phone.toString().replace(/\D/g, "");
+
+  // jeśli zaczyna się od 48 i ma 11 cyfr → PL
+  if (digits.startsWith("48") && digits.length === 11) {
+    digits = digits.slice(2);
+  }
+
+  // jeśli dokładnie 9 cyfr → formatuj
+  if (digits.length === 9) {
+    return `+48 ${digits.slice(0,3)} ${digits.slice(3,6)} ${digits.slice(6)}`;
+  }
+
+  // fallback
+  return phone;
+}
   
 function render(lead) {
   const status = lead["Obecny status"] || "nowy";
@@ -425,7 +445,7 @@ function render(lead) {
 
       <div class="box data">
         <p><strong>🧾 Imię i nazwisko:</strong> ${lead["Imię Nazwisko"]}</p>
-        <p><strong>📞 Telefon:</strong> ${lead["Nr tel"]}</p>
+        <p><strong>📞 Telefon:</strong> ${formatPhone(lead["Nr tel"])}</p>
         <p><strong>✉️ Email:</strong> ${lead["Email"] || "-"}</p>
         <p><strong>🦷 Cel wizyty:</strong> ${lead["Pytanie 1 (cel wizyty)"]}</p>
         <p><strong>💬 Informacje:</strong><br>${lead["Pytanie 2 (Informacje)"] || "-"}</p>
@@ -710,7 +730,11 @@ function renderTableRows(rows) {
       <tr>
         <td>${r.id}</td>
         <td>${formatDate(r.created)}</td>
-        <td><strong>${r.name || "-"}</strong><br><small class="muted">${r.phone || ""}</small></td>
+        <td>
+          <strong>${r.name || "-"}</strong><br>
+          <small class="muted">${formatPhone(r.phone)}</small><br>
+          <small class="muted">${r.email || ""}</small>
+        </td>
         <td>
           <span class="status-badge ${statusClass(r.status)}">
             ${(r.status || "nowy").replace("_"," ").toUpperCase()}
