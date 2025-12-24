@@ -304,7 +304,14 @@ p {
     ⏳ Łączenie z serwerem…
   </div>
 </div>
-
+  
+<div id="loader" class="loader hidden">
+  <div class="loader-box">
+    <div class="spinner"></div>
+    <div class="loader-text">Ładowanie leadów…</div>
+  </div>
+</div>
+  
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbzBLTLdMX1DXfLdDjiIit97OWNNaIjdiXqj9_bVtWSdytJAy4x9SvRTZdSP8t3Ysd-7/exec";
 const params = new URLSearchParams(window.location.search);
@@ -330,8 +337,18 @@ function formatDate(iso) {
 
 function showLoader(text = "Ładowanie…") {
   const loader = document.getElementById("loader");
-  loader.querySelector(".loader-text").textContent = text;
+  if (!loader) return; // ✅ zabezpieczenie
+
+  const textEl = loader.querySelector(".loader-text");
+  if (textEl) textEl.textContent = text;
+
   loader.classList.remove("hidden");
+}
+
+function hideLoader() {
+  const loader = document.getElementById("loader");
+  if (!loader) return; // ✅ zabezpieczenie
+  loader.classList.add("hidden");
 }
 
 function hideLoader() {
@@ -599,6 +616,7 @@ function loadList(reset = true) {
       offset += d.rows.length;
 
       renderList(allRows);
+      populateCampaigns(allRows);
     })
     .catch(() => {
       hideLoader();
@@ -803,11 +821,5 @@ function toggleDateSort() {
   filterTable(); // Odśwież widok z uwzględnieniem filtrów
 }
 </script>
-<div id="loader" class="loader hidden">
-  <div class="loader-box">
-    <div class="spinner"></div>
-    <div class="loader-text">Ładowanie leadów…</div>
-  </div>
-</div>
 </body>
 </html>
