@@ -578,20 +578,6 @@ function loadList(reset = true) {
     app.innerHTML = `
       <div class="content">
         <h3>📊 Lista leadów</h3>
-        <p class="muted">Ładowanie danych…</p>
-      </div>
-    `;
-  }
-
-  function loadList(reset = true) {
-  document.body.classList.add("dashboard-mode");
-
-  if (reset) {
-    offset = 0;
-    allRows = [];
-    app.innerHTML = `
-      <div class="content">
-        <h3>📊 Lista leadów</h3>
       </div>
     `;
   }
@@ -601,6 +587,8 @@ function loadList(reset = true) {
   fetch(`${API_URL}?action=list&token=${token}&limit=${LIMIT}&offset=${offset}`)
     .then(r => r.json())
     .then(d => {
+      hideLoader();
+
       if (!d.success) {
         showError("Brak dostępu do listy leadów");
         return;
@@ -612,7 +600,10 @@ function loadList(reset = true) {
 
       renderList(allRows);
     })
-    .catch(() => showError("Błąd połączenia z API"));
+    .catch(() => {
+      hideLoader();
+      showError("Błąd połączenia z API");
+    });
 }
 
 function renderList(rows) {
