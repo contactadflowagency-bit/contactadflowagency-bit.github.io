@@ -613,7 +613,7 @@ function renderList(rows) {
     <div class="footer">System AdFlow · podgląd leadów</div>
   `;
   
-  renderTableRows(allRows);
+  renderTableRows(sortedRows);
   const btn = document.getElementById("loadMoreBtn");
     if (btn) {
       btn.style.display = offset >= totalLeads ? "none" : "inline-block";
