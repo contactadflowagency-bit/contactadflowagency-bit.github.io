@@ -270,21 +270,6 @@ const row = params.get("row");
 const token = params.get("token");
 const app = document.getElementById("app");
 
-window.onerror = function(msg, url, line) {
-  document.getElementById("app").innerHTML = `
-    <div style="color:red; padding:20px;">
-      <h3>Błąd skryptu:</h3>
-      <p>${msg}</p>
-      <p>Linia: ${line}</p>
-    </div>`;
-  return false;
-};
-  
-let allRows = [];
-let currentOffset = 0;
-const LIMIT = 30;
-let hasMore = true;
-
 function formatDate(iso) {
   if (!iso) return "-";
   const d = new Date(iso);
@@ -508,7 +493,7 @@ function closeModal() {
 const action = params.get("action");
 
 if (action === "list") {
-  loadList(); // Ta funkcja teraz czyści ekran i wywołuje fetchMoreLeads
+  loadList();
 } else if (row && token) {
   loadSingle();
 } else {
@@ -530,21 +515,32 @@ function loadSingle() {
 
 function loadList() {
   document.body.classList.add("dashboard-mode");
-  currentOffset = 0;
-  allRows = [];
-  
   app.innerHTML = `
     <div class="content">
       <h3>📊 Lista leadów</h3>
-      <p class="muted" id="loadingStatus">Ładowanie danych…</p>
+      <p class="muted">Ładowanie danych…</p>
     </div>
   `;
-  fetchMoreLeads();
+
+  fetch(`${API_URL}?action=list&token=${token}`)
+    .then(r => r.json())
+    .then(d => {
+      if (!d.success) {
+        showError("Brak dostępu do listy leadów");
+        return;
+      }
+      renderList(d.rows);
+      populateCampaigns(d.rows);
+    })
+    .catch(() => showError("Błąd połączenia z API"));
 }
 
 let allRows = [];
 
-function renderListLayout(total) {
+function renderList(rows) {
+  // Domyślne sortowanie od najnowszych przy ładowaniu
+  allRows = rows.filter(r => r.id).sort((a, b) => new Date(b.created) - new Date(a.created));
+
   app.innerHTML = `
     <div class="header">
       <h2>📊 Dashboard leadów</h2>
@@ -553,6 +549,7 @@ function renderListLayout(total) {
     <div class="content">
       <div class="dashboard-toolbar">
         <input type="text" id="searchInput" placeholder="🔍 Szukaj..." oninput="filterTable()" style="flex: 1; min-width: 200px;">
+        
         <select id="statusFilter" onchange="filterTable()">
           <option value="">— Wszystkie statusy —</option>
           <option value="nowy">Nowy</option>
@@ -560,14 +557,18 @@ function renderListLayout(total) {
           <option value="nie_odbiera">Nie odbiera</option>
           <option value="odrzucony">Odrzucony</option>
         </select>
+      
         <select id="campaignFilter" onchange="filterTable()">
           <option value="">— Wszystkie kampanie —</option>
         </select>
+      
         <div style="display: flex; gap: 5px; align-items: center;">
           <input type="date" id="dateFrom" onchange="filterTable()">
           <span>-</span>
           <input type="date" id="dateTo" onchange="filterTable()">
         </div>
+      
+        <button onclick="toggleDateSort()" id="sortBtn" title="Sortuj datę" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; cursor: pointer; background: #fff;">📅 Najnowsze</button>
         <button onclick="clearAllFilters()" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; cursor: pointer;">🧹</button>
       </div>
 
@@ -575,43 +576,24 @@ function renderListLayout(total) {
         <table class="dashboard-table" id="leadTable">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Data zgłoszenia</th>
-              <th>Pacjent</th>
-              <th>Status</th>
-              <th>Ost. aktualizacja</th>
-              <th>Czas oczekiwania</th>
-              <th>Kampania</th>
+              <th onclick="sortTable('id')">ID</th>
+              <th onclick="sortTable('created')">Data zgłoszenia</th>
+              <th onclick="sortTable('name')">Pacjent</th>
+              <th onclick="sortTable('status')">Status</th>
+              <th onclick="sortTable('updated')">Ost. aktualizacja</th>
+              <th>Czas oczekiwania (Realny)</th>
+              <th onclick="sortTable('campaign')">Kampania</th>
             </tr>
           </thead>
           <tbody id="tableBody"></tbody>
         </table>
       </div>
-
-      <div id="paginationArea" style="text-align:center; margin-top:20px;">
-        <p class="muted" id="counterInfo">Pobrano ${allRows.length} z ${total}</p>
-        <button id="loadMoreBtn" onclick="fetchMoreLeads()" style="padding: 10px 20px; border-radius: 8px; border: 1px solid #00bcd4; background: #fff; color: #00bcd4; font-weight: bold; cursor: pointer;">
-          ⬇️ Załaduj kolejne 30
-        </button>
-      </div>
     </div>
+
     <div class="footer">System AdFlow · podgląd leadów</div>
   `;
-}
 
-function updateLoadMoreButton(total) {
-  const btn = document.getElementById("loadMoreBtn");
-  const info = document.getElementById("counterInfo");
-  if (!btn) return;
-
-  info.innerText = `Widoczne: ${allRows.length} / Wszystkich: ${total}`;
-  
-  if (!hasMore) {
-    btn.style.display = "none";
-  } else {
-    btn.disabled = false;
-    btn.innerText = "⬇️ Załaduj kolejne 30";
-  }
+  renderTableRows(allRows);
 }
   
 function renderTableRows(rows) {
@@ -737,37 +719,6 @@ function toggleDateSort() {
 
   btn.innerText = dateSortDesc ? "📅 Najnowsze" : "📅 Najstarsze";
   filterTable(); // Odśwież widok z uwzględnieniem filtrów
-}
-
-function fetchMoreLeads() {
-  const btn = document.getElementById("loadMoreBtn");
-  if(btn) {
-    btn.disabled = true;
-    btn.innerText = "⏳ Ładowanie...";
-  }
-
-  fetch(`${API_URL}?action=list&token=${token}&limit=${LIMIT}&offset=${currentOffset}`)
-    .then(r => r.json())
-    .then(d => {
-      if (!d.success) {
-        showError("Brak dostępu do listy leadów");
-        return;
-      }
-      
-      allRows = allRows.concat(d.rows);
-      currentOffset += LIMIT;
-      hasMore = d.hasMore;
-
-      if (currentOffset <= LIMIT) {
-        // Pierwsze ładowanie - budujemy strukturę tabeli
-        renderListLayout(d.total);
-      }
-      
-      renderTableRows(allRows);
-      updateLoadMoreButton(d.total);
-      populateCampaigns(allRows);
-    })
-    .catch(() => showError("Błąd połączenia z API"));
 }
 </script>
 
