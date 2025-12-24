@@ -269,6 +269,10 @@ const params = new URLSearchParams(window.location.search);
 const row = params.get("row");
 const token = params.get("token");
 const app = document.getElementById("app");
+let offset = 0;
+const LIMIT = 30;
+let allRows = [];
+let totalLeads = 0;
 
 function formatDate(iso) {
   if (!iso) return "-";
@@ -513,24 +517,33 @@ function loadSingle() {
     .catch(() => showError("Błąd połączenia z API"));
 }
 
-function loadList() {
+function loadList(reset = true) {
   document.body.classList.add("dashboard-mode");
-  app.innerHTML = `
-    <div class="content">
-      <h3>📊 Lista leadów</h3>
-      <p class="muted">Ładowanie danych…</p>
-    </div>
-  `;
 
-  fetch(`${API_URL}?action=list&token=${token}`)
+  if (reset) {
+    offset = 0;
+    allRows = [];
+    app.innerHTML = `
+      <div class="content">
+        <h3>📊 Lista leadów</h3>
+        <p class="muted">Ładowanie danych…</p>
+      </div>
+    `;
+  }
+
+  fetch(`${API_URL}?action=list&token=${token}&limit=${LIMIT}&offset=${offset}`)
     .then(r => r.json())
     .then(d => {
       if (!d.success) {
         showError("Brak dostępu do listy leadów");
         return;
       }
-      renderList(d.rows);
-      populateCampaigns(d.rows);
+
+      totalLeads = d.total;
+      allRows = allRows.concat(d.rows);
+      offset += d.rows.length;
+
+      renderList(allRows);
     })
     .catch(() => showError("Błąd połączenia z API"));
 }
@@ -587,6 +600,13 @@ function renderList(rows) {
           </thead>
           <tbody id="tableBody"></tbody>
         </table>
+        <div style="text-align:center; margin:20px">
+          <button id="loadMoreBtn"
+            onclick="loadList(false)"
+            style="padding:12px 20px;border-radius:8px;border:1px solid #ccc;cursor:pointer">
+            ➕ Załaduj kolejne 30
+          </button>
+        </div>
       </div>
     </div>
 
@@ -594,7 +614,11 @@ function renderList(rows) {
   `;
 
   renderTableRows(allRows);
-}
+  const btn = document.getElementById("loadMoreBtn");
+    if (btn) {
+      btn.style.display = offset >= totalLeads ? "none" : "inline-block";
+    }
+  }
   
 function renderTableRows(rows) {
   const tbody = document.getElementById("tableBody");
