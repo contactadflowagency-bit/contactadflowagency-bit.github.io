@@ -363,13 +363,15 @@ function showError(msg) {
 }
   
 function statusClass(status) {
+  const key = (status || "").toLowerCase().trim();
   return {
-    "Nowy": "s-nowy",
-    "Porzucony": "s-porzucony",
-    "Nie_odbiera": "s-nie_odbiera",
-    "Obsłużony": "s-obsluzony",
-    "Odrzucony": "s-odrzucony"
-  }[status] || "s-nowy";
+    "nowy": "s-nowy",
+    "porzucony": "s-porzucony",
+    "nie_odbiera": "s-nie_odbiera",
+    "obsluzony": "s-obsluzony",
+    "odrzucony": "s-odrzucony"
+  }[key] || "s-nowy";
+  ${(status || "nowy").replace("_"," ").toUpperCase()}
 }
 
 function canEdit(lastUpdate, status) {
