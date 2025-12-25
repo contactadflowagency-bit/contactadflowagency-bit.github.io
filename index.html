@@ -371,7 +371,6 @@ function statusClass(status) {
     "obsluzony": "s-obsluzony",
     "odrzucony": "s-odrzucony"
   }[key] || "s-nowy";
-  ${(status || "nowy").replace("_"," ").toUpperCase()}
 }
 
 function canEdit(lastUpdate, status) {
