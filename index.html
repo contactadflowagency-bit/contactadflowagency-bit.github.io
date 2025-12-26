@@ -647,9 +647,6 @@ function loadList(reset = true) {
 }
 
 function renderList(rows) {
-  // Domyślne sortowanie od najnowszych przy ładowaniu
-  const sortedRows = rows
-  .filter(r => r.id)
   .sort((a, b) => new Date(b.created) - new Date(a.created));
 
   app.innerHTML = `
