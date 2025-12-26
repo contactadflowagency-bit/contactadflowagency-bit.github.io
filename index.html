@@ -322,6 +322,7 @@ let offset = 0;
 const LIMIT = 30;
 let allRows = [];
 let totalLeads = 0;
+let visibleRows = [];
 
 function formatDate(iso) {
   if (!iso) return "-";
@@ -714,6 +715,8 @@ function renderList(rows) {
     if (btn) {
       btn.style.display = offset >= totalLeads ? "none" : "inline-block";
     }
+  visibleRows = [...sortedRows];
+  renderTableRows(visibleRows);
   }
   
 function renderTableRows(rows) {
@@ -755,7 +758,7 @@ function renderTableRows(rows) {
   const df = document.getElementById("dateFrom").value ? new Date(document.getElementById("dateFrom").value + 'T00:00:00') : null;
   const dt = document.getElementById("dateTo").value ? new Date(document.getElementById("dateTo").value + 'T23:59:59') : null;
 
-  const filtered = allRows.filter(r => {
+  const filtered = visibleRows.filter(r => {
     // 1. Szukanie tekstowe (Imię, Tel, Email)
     const matchesQuery = !query || Object.values(r).join(" ").toLowerCase().includes(query);
     
@@ -829,31 +832,24 @@ function sortTable(key) {
   renderTableRows(sorted);
 }
 
-  let dateSortDesc = true;
+let dateSortDesc = true;
 
 function toggleDateSort() {
   dateSortDesc = !dateSortDesc;
   const btn = document.getElementById("sortBtn");
 
-  if (needsFullData()) {
-    showLoader("Ładowanie pełnych danych…");
+  const source = [...allRows];
 
-    fetch(`${API_URL}?action=cache&token=${token}`)
-      .then(r => r.json())
-      .then(d => {
-        hideLoader();
+  source.sort((a, b) => {
+    const da = new Date(a.created || 0);
+    const db = new Date(b.created || 0);
+    return dateSortDesc ? db - da : da - db;
+  });
 
-        if (d.success) {
-          allRows = d.rows;
-          filterTable();
-        }
-      });
+  visibleRows = source;
 
-    btn.innerText = dateSortDesc ? "📅 Najnowsze" : "📅 Najstarsze";
-    return;
-  }
-
-  filterTable();
+  btn.innerText = dateSortDesc ? "📅 Najnowsze" : "📅 Najstarsze";
+  renderTableRows(visibleRows);
 }
 
 function needsFullData() {
