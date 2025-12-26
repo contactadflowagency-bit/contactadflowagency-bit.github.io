@@ -634,8 +634,10 @@ function loadList(reset = true) {
       allRows = allRows.concat(d.rows);
       offset += d.rows.length;
 
+      renderList(allRows);
       applyLocalSort();
       populateCampaigns(allRows);
+
 
       // 🔄 preload pełnych danych w tle
       fetch(`${API_URL}?action=list&token=${token}&preload=1`);
