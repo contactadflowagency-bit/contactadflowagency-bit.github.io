@@ -324,6 +324,8 @@ let allRows = [];
 let totalLeads = 0;
 let visibleRows = [];
 let sortOrder = "desc";
+let fullyLoaded = false;
+let loadingAll = false;
 
 function formatDate(iso) {
   if (!iso) return "-";
@@ -638,9 +640,10 @@ function loadList(reset = true) {
       applyLocalSort();
       populateCampaigns(allRows);
 
-
-      // 🔄 preload pełnych danych w tle
-      fetch(`${API_URL}?action=list&token=${token}&preload=1`);
+      if (!loadingAll && offset < totalLeads) {
+        loadingAll = true;
+        preloadAllLeads();
+      }
     })
     .catch(() => {
       hideLoader();
@@ -852,7 +855,16 @@ function toggleDateSort() {
   document.getElementById("sortBtn").innerText =
     sortOrder === "desc" ? "📅 Najnowsze" : "📅 Najstarsze";
 
-  applyLocalSort(); // ✅ bez API
+  if (!fullyLoaded && sortOrder === "asc") {
+    showLoader("Ładowanie pełnej historii…");
+    preloadAllLeads().then(() => {
+      hideLoader();
+      applyLocalSort();
+    });
+    return;
+  }
+
+  applyLocalSort();
 }
 
 function needsFullData() {
@@ -872,6 +884,11 @@ function applyLocalSort() {
 
   visibleRows = sorted;
   renderTableRows(visibleRows);
+}
+
+if (!loadingAll && offset < totalLeads) {
+  loadingAll = true;
+  preloadAllLeads();
 }
 </script>
 </body>
