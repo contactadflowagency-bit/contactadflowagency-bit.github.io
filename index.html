@@ -412,6 +412,7 @@ function render(lead) {
   const status = lead["Obecny status"] || "nowy";
   const lastUpdate = lead["Data ostatniej aktualizacji"];
   const editable = canEdit(lastUpdate, status);
+  const isNew = status === "nowy" || status === "";
 
   app.innerHTML = `
     <div class="header">
@@ -429,7 +430,7 @@ function render(lead) {
           </div>
           <div>
             <span class="status-badge ${statusClass(status)}">
-              ${(status || "nowy").replace("_"," ").toUpperCase()}
+              ${status.replace("_"," ").toUpperCase()}
             </span>
             <div class="muted">
               Ostatnia zmiana:<br>
@@ -497,6 +498,11 @@ function render(lead) {
   `;
 }
   
+function confirmUpdate(status) {
+  if (!confirm("Czy na pewno chcesz zmienić status leada?")) return;
+  updateStatus(status);
+}
+  
 async function updateStatus(status) {
   // ekran ładowania
   app.innerHTML = `
@@ -514,14 +520,7 @@ async function updateStatus(status) {
 
     const data = await res.json();
 
-    const data = await res.json();
-
     if (!data.success) {
-      if (data.error === "time_limit_exceeded") {
-        showError("⛔ Minął limit 15 minut. Status został zablokowany.");
-        return;
-      }
-    
       throw new Error(data.error || "Błąd zapisu");
     }
 
@@ -610,39 +609,35 @@ function loadList(reset = true) {
   if (reset) {
     offset = 0;
     allRows = [];
+    app.innerHTML = `
+      <div class="content">
+        <h3>📊 Lista leadów</h3>
+      </div>
+    `;
   }
 
-  const analysis = isAnalysisMode();
+  showLoader("Ładowanie leadów…");
 
-  const params = new URLSearchParams({
-    action: "list",
-    token,
-    limit: analysis ? 10000 : LIMIT,
-    offset: analysis ? 0 : offset
-  });
-
-  showLoader(analysis ? "Analiza danych…" : "Ładowanie leadów…");
-
-  fetch(`${API_URL}?${params}`)
+  fetch(`${API_URL}?action=list&token=${token}&limit=${LIMIT}&offset=${offset}`)
     .then(r => r.json())
     .then(d => {
       hideLoader();
 
       if (!d.success) {
-        showError("Błąd pobierania leadów");
+        showError("Brak dostępu do listy leadów");
         return;
       }
 
-      allRows = d.rows;
-      offset = allRows.length;
       totalLeads = d.total;
+      allRows = allRows.concat(d.rows);
+      offset += d.rows.length;
 
       renderList(allRows);
       populateCampaigns(allRows);
     })
     .catch(() => {
       hideLoader();
-      showError("Błąd połączenia");
+      showError("Błąd połączenia z API");
     });
 }
 
@@ -716,10 +711,6 @@ function renderList(rows) {
     if (btn) {
       btn.style.display = offset >= totalLeads ? "none" : "inline-block";
     }
-  const btn = document.getElementById("loadMoreBtn");
-  if (btn) {
-    btn.style.display = isAnalysisMode() ? "none" : "inline-block";
-  }
   }
   
 function renderTableRows(rows) {
@@ -849,16 +840,6 @@ function toggleDateSort() {
 
   btn.innerText = dateSortDesc ? "📅 Najnowsze" : "📅 Najstarsze";
   filterTable(); // Odśwież widok z uwzględnieniem filtrów
-}
-
-function isAnalysisMode() {
-  return (
-    document.getElementById("dateFrom").value ||
-    document.getElementById("dateTo").value ||
-    document.getElementById("statusFilter").value ||
-    document.getElementById("campaignFilter").value ||
-    document.getElementById("searchInput").value.trim()
-  );
 }
 </script>
 </body>
