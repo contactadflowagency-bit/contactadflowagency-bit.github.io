@@ -323,6 +323,7 @@ const LIMIT = 30;
 let allRows = [];
 let totalLeads = 0;
 let visibleRows = [];
+let sortOrder = "desc";
 
 function formatDate(iso) {
   if (!iso) return "-";
@@ -619,7 +620,7 @@ function loadList(reset = true) {
 
   showLoader("Ładowanie leadów…");
 
-  fetch(`${API_URL}?action=list&token=${token}&limit=${LIMIT}&offset=${offset}`)
+  fetch(`${API_URL}?action=list&token=${token}&limit=${LIMIT}&offset=${offset}&order=${sortOrder}`)
     .then(r => r.json())
     .then(d => {
       hideLoader();
@@ -835,21 +836,11 @@ function sortTable(key) {
 let dateSortDesc = true;
 
 function toggleDateSort() {
-  dateSortDesc = !dateSortDesc;
-  const btn = document.getElementById("sortBtn");
+  sortOrder = sortOrder === "desc" ? "asc" : "desc";
+  document.getElementById("sortBtn").innerText =
+    sortOrder === "desc" ? "📅 Najnowsze" : "📅 Najstarsze";
 
-  const source = [...allRows];
-
-  source.sort((a, b) => {
-    const da = new Date(a.created || 0);
-    const db = new Date(b.created || 0);
-    return dateSortDesc ? db - da : da - db;
-  });
-
-  visibleRows = source;
-
-  btn.innerText = dateSortDesc ? "📅 Najnowsze" : "📅 Najstarsze";
-  renderTableRows(visibleRows);
+  loadList(true); // ⬅️ reset + reload z serwera
 }
 
 function needsFullData() {
