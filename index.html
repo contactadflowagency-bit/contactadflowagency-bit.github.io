@@ -647,7 +647,7 @@ function loadList(reset = true) {
 }
 
 function renderList(rows) {
-  .sort((a, b) => new Date(b.created) - new Date(a.created));
+  const sortedRows = rows.filter(r => r.id);
 
   app.innerHTML = `
     <div class="header">
