@@ -634,7 +634,7 @@ function loadList(reset = true) {
       allRows = allRows.concat(d.rows);
       offset += d.rows.length;
 
-      renderList(allRows);
+      applyLocalSort();
       populateCampaigns(allRows);
 
       // 🔄 preload pełnych danych w tle
@@ -647,7 +647,8 @@ function loadList(reset = true) {
 }
 
 function renderList(rows) {
-  const sortedRows = rows.filter(r => r.id);
+  // tylko sanity check
+  const safeRows = rows.filter(r => r && r.id);
 
   app.innerHTML = `
     <div class="header">
@@ -656,7 +657,8 @@ function renderList(rows) {
 
     <div class="content">
       <div class="dashboard-toolbar">
-        <input type="text" id="searchInput" placeholder="🔍 Szukaj..." oninput="filterTable()" style="flex: 1; min-width: 200px;">
+        <input type="text" id="searchInput" placeholder="🔍 Szukaj..."
+          oninput="filterTable()" style="flex: 1; min-width: 200px;">
         
         <select id="statusFilter" onchange="filterTable()">
           <option value="">— Wszystkie statusy —</option>
@@ -670,18 +672,25 @@ function renderList(rows) {
           <option value="">— Wszystkie kampanie —</option>
         </select>
       
-        <div style="display: flex; gap: 5px; align-items: center;">
+        <div style="display:flex; gap:5px; align-items:center;">
           <input type="date" id="dateFrom" onchange="filterTable()">
           <span>-</span>
           <input type="date" id="dateTo" onchange="filterTable()">
         </div>
       
-        <button onclick="toggleDateSort()" id="sortBtn" title="Sortuj datę" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; cursor: pointer; background: #fff;">📅 Najnowsze</button>
-        <button onclick="clearAllFilters()" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; cursor: pointer;">🧹</button>
+        <button onclick="toggleDateSort()" id="sortBtn"
+          style="padding:8px 12px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer">
+          📅 Najnowsze
+        </button>
+
+        <button onclick="clearAllFilters()"
+          style="padding:8px 12px;border-radius:8px;border:1px solid #ccc;cursor:pointer">
+          🧹
+        </button>
       </div>
 
       <div class="table-scroll">
-        <table class="dashboard-table" id="leadTable">
+        <table class="dashboard-table">
           <thead>
             <tr>
               <th onclick="sortTable('id')">ID</th>
@@ -689,17 +698,18 @@ function renderList(rows) {
               <th onclick="sortTable('name')">Pacjent</th>
               <th onclick="sortTable('status')">Status</th>
               <th onclick="sortTable('updated')">Ost. aktualizacja</th>
-              <th>Czas oczekiwania (Realny)</th>
+              <th>Czas oczekiwania</th>
               <th onclick="sortTable('campaign')">Kampania</th>
             </tr>
           </thead>
           <tbody id="tableBody"></tbody>
         </table>
+
         <div style="text-align:center; margin:20px">
           <button id="loadMoreBtn"
             onclick="loadList(false)"
             style="padding:12px 20px;border-radius:8px;border:1px solid #ccc;cursor:pointer">
-            ➕ Załaduj Więcej
+            ➕ Załaduj więcej
           </button>
         </div>
       </div>
@@ -707,15 +717,17 @@ function renderList(rows) {
 
     <div class="footer">System AdFlow · podgląd leadów</div>
   `;
-  
-  renderTableRows(sortedRows);
-  const btn = document.getElementById("loadMoreBtn");
-    if (btn) {
-      btn.style.display = offset >= totalLeads ? "none" : "inline-block";
-    }
-  visibleRows = [...sortedRows];
+
+  // ustaw widok
+  visibleRows = [...safeRows];
   renderTableRows(visibleRows);
+
+  // obsługa przycisku "załaduj więcej"
+  const btn = document.getElementById("loadMoreBtn");
+  if (btn) {
+    btn.style.display = offset >= totalLeads ? "none" : "inline-block";
   }
+}
   
 function renderTableRows(rows) {
   const tbody = document.getElementById("tableBody");
@@ -834,10 +846,11 @@ let dateSortDesc = true;
 
 function toggleDateSort() {
   sortOrder = sortOrder === "desc" ? "asc" : "desc";
+
   document.getElementById("sortBtn").innerText =
     sortOrder === "desc" ? "📅 Najnowsze" : "📅 Najstarsze";
 
-  loadList(true); // ⬅️ reset + reload z serwera
+  applyLocalSort(); // ✅ bez API
 }
 
 function needsFullData() {
@@ -847,7 +860,17 @@ function needsFullData() {
     !dateSortDesc // najstarsze
   );
 }
+  
+function applyLocalSort() {
+  const sorted = [...allRows].sort((a, b) => {
+    const dA = new Date(a.created);
+    const dB = new Date(b.created);
+    return sortOrder === "asc" ? dA - dB : dB - dA;
+  });
 
+  visibleRows = sorted;
+  renderTableRows(visibleRows);
+}
 </script>
 </body>
 </html>
