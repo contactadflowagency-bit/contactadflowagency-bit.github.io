@@ -557,14 +557,136 @@ function populateCampaigns(rows) {
     const campaigns = [...new Set(rows.map(r => r.campaign).filter(Boolean))].sort();
     select.innerHTML = '<option value="">— Kampanie —</option>' + campaigns.map(c => `<option value="${c}">${c}</option>`).join("");
 }
-function formatDate(iso) { if (!iso) return "-"; return new Date(iso).toLocaleString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
-function showLoader(t) { const l = document.getElementById("loader"); if (l) { l.querySelector(".loader-text").textContent = t; l.classList.remove("hidden"); } }
-function hideLoader() { const l = document.getElementById("loader"); if (l) l.classList.add("hidden"); }
-function showError(m) { app.innerHTML = `<div class="content"><h3>⛔ Błąd</h3><p>${m}</p><button onclick="location.reload()">🔄 Spróbuj ponownie</button></div>`; }
-function statusClass(s) { const k = (s || "").toLowerCase().trim(); const m = { "nowy": "s-nowy", "porzucony": "s-porzucony", "nie_odbiera": "s-nie_odbiera", "obsluzony": "s-obsluzony", "odrzucony": "s-odrzucony" }; return m[k] || "s-nowy"; }
-function formatPhone(p) { if (!p) return "-"; let d = p.toString().replace(/\D/g, ""); if (d.startsWith("48") && d.length === 11) d = d.slice(2); return d.length === 9 ? `+48 ${d.slice(0,3)} ${d.slice(3,6)} ${d.slice(6)}` : p; }
-function closeModal() { document.getElementById("confirmModal").classList.add("hidden"); pendingStatus = null; }
-async function ensureFullData() { if (fullyLoaded || loadingAll) return; loadingAll = true; showLoader("Pobieranie bazy..."); try { const res = await fetch(`${API_URL}?action=cache&token=${token}`); const data = await res.json(); if (data.success) { allRows = data.rows; fullyLoaded = true; offset = allRows.length; } } catch (e) {} finally { hideLoader(); loadingAll = false; } }
+  
+function formatDate(iso) { 
+  if (!iso) return "-"; return new Date(iso).toLocaleString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
+
+  function showLoader(t) { 
+  const l = document.getElementById("loader"); 
+  if (l) { 
+    l.querySelector(".loader-text").textContent = t; l.classList.remove("hidden"); 
+  } 
+}
+  
+function hideLoader() { 
+  const l = document.getElementById("loader"); if (l) l.classList.add("hidden"); 
+}
+
+function showError(m) { 
+  app.innerHTML = `<div class="content">
+    <h3>⛔ Błąd</h3>`; 
+}
+
+function statusClass(s) { 
+  const k = (s || "").toLowerCase().trim(); 
+  const m = { 
+    "nowy": "s-nowy", 
+    "porzucony": "s-porzucony", 
+    "nie_odbiera": "s-nie_odbiera", 
+    "obsluzony": "s-obsluzony", 
+    "odrzucony": "s-odrzucony" }; 
+  return m[k] || "s-nowy"; 
+}
+
+function formatPhone(p) {
+  if (!p) return "-";
+  let d = p.toString().replace(/\D/g, "");
+  if (d.startsWith("48") && d.length === 11) d = d.slice(2); return d.length === 9 ? `+48 ${d.slice(0,3)} ${d.slice(3,6)} ${d.slice(6)}` : p; }
+
+function closeModal() { 
+  document.getElementById("confirmModal").classList.add("hidden"); 
+  pendingStatus = null; 
+}
+
+async function ensureFullData() { 
+  if (fullyLoaded || loadingAll) return; 
+  loadingAll = true; showLoader("Pobieranie bazy..."); try { const res = await fetch(`${API_URL}?action=cache&token=${token}`); const data = await res.json(); if (data.success) { allRows = data.rows; fullyLoaded = true; offset = allRows.length; } } catch (e) {} finally { hideLoader(); loadingAll = false; } }
+
+function render(lead) {
+  const status = lead["Obecny status"] || "nowy";
+  const lastUpdate = lead["Data ostatniej aktualizacji"];
+  const editable = canEdit(lastUpdate, status);
+
+  app.innerHTML = `
+    <div class="header">
+      <img src="https://scontent-waw2-2.xx.fbcdn.net/v/t39.30808-6/540904522_122143092902741193_6153063326804191448_n.jpg?_nc_cat=102&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=EXFBb3EdkUsQ7kNvwGb2Smp&_nc_oc=Adngi_kLnbg9pQiId6dkbJxk2TSxZhFWngOi9hCe_Ny49faPOIFTWxxq8fgzzJADO7I&_nc_zt=23&_nc_ht=scontent-waw2-2.xx&_nc_gid=w7niD_O83PtXyVLS5FjwZg&oh=00_AfkKwh5kzI8KNfgAR8NLvYEUObCW-JZmOSS3fx9QybdVYg&oe=6949BD8D" alt="AdFlow">
+      <h2>Status kontaktu z pacjentem</h2>
+    </div>
+
+    <div class="content">
+      <div class="box">
+        <div class="status-row">
+          <div>
+            <p>🆔 <strong>Lead ID:</strong> ${lead["Id."]}</p>
+            <p>📅 <strong>Data zgłoszenia:</strong> ${formatDate(lead["Data"])}</p>
+          </div>
+          <div>
+            <span class="status-badge ${statusClass(status)}">
+              ${status.replace("_"," ").toUpperCase()}
+            </span>
+            <div class="muted">
+              Ostatnia zmiana:<br>
+              ${formatDate(lastUpdate)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="box data">
+        <p><strong>🧾 Imię i nazwisko:</strong> ${lead["Imię Nazwisko"]}</p>
+        <p><strong>📞 Telefon:</strong> ${formatPhone(lead["Nr tel"])}</p>
+        <p><strong>✉️ Email:</strong> ${lead["Email"] || "-"}</p>
+        <p><strong>🦷 Cel wizyty:</strong> ${lead["Pytanie 1 (cel wizyty)"]}</p>
+        <p><strong>💬 Informacje:</strong><br>${lead["Pytanie 2 (Informacje)"] || "-"}</p>
+      </div>
+
+      <div class="box script">
+        💬 <strong>Sugestia rozmowy:</strong><br>
+        „Dzień dobry, dzwonię z gabinetu stomatologicznego.<br>
+        Widzę, że zgłosił/a się Pan/Pani w sprawie
+        <strong>${lead["Pytanie 1 (cel wizyty)"]}</strong>.<br>
+        Jaki termin wizyty byłby dla Pana/Pani dogodny?”
+      </div>
+
+      <div class="buttons ${editable ? "" : "disabled"}">
+        <a class="obs" onclick="${editable ? `handleStatusClick('obsluzony','${status}')` : ""}">
+          ✔ Lead obsłużony
+        </a>
+        <a class="nie" onclick="${editable ? `handleStatusClick('nie_odbiera','${status}')` : ""}">
+          📞 Nie odbiera
+        </a>
+        <a class="odrz" onclick="${editable ? `handleStatusClick('odrzucony','${status}')` : ""}">
+          ❌ Lead odrzucony
+        </a>
+      </div>
+
+      ${
+        editable
+          ? ""
+          : `<p class="muted" style="text-align:center">
+               ⛔ Minął limit 15 minut — status zablokowany
+             </p>`
+      }
+    </div>
+
+    <div class="footer">
+      System AdFlow · automatyczna obsługa leadów
+    </div>
+
+    <div id="confirmModal" class="modal hidden">
+      <div class="modal-box">
+        <h3>Zmienić status?</h3>
+        <p>Ten lead był już wcześniej oznaczony.<br>
+        Czy na pewno chcesz zmienić jego status?</p>
+
+        <div class="modal-actions">
+          <button class="cancel" onclick="closeModal()">Anuluj</button>
+          <button class="confirm" id="confirmBtn">Zmień status</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
 </script>
 </body>
 </html>
