@@ -761,45 +761,48 @@ function renderTableRows(rows) {
   }).join("");
 }
 
-  function filterTable() {
+async function filterTable() {
   const query = document.getElementById("searchInput").value.toLowerCase();
   const statusF = document.getElementById("statusFilter").value;
   const campaignF = document.getElementById("campaignFilter").value;
-  const df = document.getElementById("dateFrom").value ? new Date(document.getElementById("dateFrom").value + 'T00:00:00') : null;
-  const dt = document.getElementById("dateTo").value ? new Date(document.getElementById("dateTo").value + 'T23:59:59') : null;
 
-  async function filterTable() {
   const dfVal = document.getElementById("dateFrom").value;
   const dtVal = document.getElementById("dateTo").value;
 
-  // ⬇⬇⬇ JEŚLI FILTR PO DACIE → MUSI BYĆ FULL DATA
-  if ((dfVal || dtVal) && !fullyLoaded) {
+  const df = dfVal ? new Date(dfVal + "T00:00:00") : null;
+  const dt = dtVal ? new Date(dtVal + "T23:59:59") : null;
+
+  // ⬇⬇⬇ KLUCZ: jeżeli filtr po dacie → pełne dane
+  if ((df || dt) && !fullyLoaded) {
     await ensureFullData();
   }
-  
-  const filtered = visibleRows.filter(r => {
-    // 1. Szukanie tekstowe (Imię, Tel, Email)
-    const matchesQuery = !query || Object.values(r).join(" ").toLowerCase().includes(query);
-    
-    // 2. Filtr statusu
-    const matchesStatus = !statusF || (r.status || "nowy") === statusF;
-    
-    // 3. Filtr kampanii
-    const matchesCampaign = !campaignF || r.campaign === campaignF;
-    
-    // 4. Filtr dat
+
+  const source = fullyLoaded ? allRows : visibleRows;
+
+  const filtered = source.filter(r => {
+    const matchesQuery =
+      !query || Object.values(r).join(" ").toLowerCase().includes(query);
+
+    const matchesStatus =
+      !statusF || (r.status || "nowy") === statusF;
+
+    const matchesCampaign =
+      !campaignF || r.campaign === campaignF;
+
     const rDate = r.created ? new Date(r.created) : null;
     const matchesDateFrom = !df || (rDate && rDate >= df);
     const matchesDateTo = !dt || (rDate && rDate <= dt);
 
-    return matchesQuery && matchesStatus && matchesCampaign && matchesDateFrom && matchesDateTo;
+    return (
+      matchesQuery &&
+      matchesStatus &&
+      matchesCampaign &&
+      matchesDateFrom &&
+      matchesDateTo
+    );
   });
 
   renderTableRows(filtered);
-  
-  // Aktualizacja licznika
-  const counter = document.querySelector(".dashboard-toolbar .muted strong");
-  if(counter) counter.innerText = filtered.length;
 }
 
 // Funkcja pomocnicza do czyszczenia filtrów
