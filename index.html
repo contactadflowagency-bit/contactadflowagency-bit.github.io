@@ -622,7 +622,7 @@ function loadList(reset = true) {
 
   showLoader("Ładowanie leadów…");
 
-  fetch(`${API_URL}?action=list&token=${token}&limit=${LIMIT}&offset=${offset}&order=${sortOrder}`)
+  fetch(`${API_URL}?action=list&token=${token}&limit=${LIMIT}&offset=${offset}`)
     .then(r => r.json())
     .then(d => {
       hideLoader();
@@ -882,12 +882,15 @@ async function toggleDateSort() {
     sortOrder === "desc" ? "📅 Najnowsze" : "📅 Najstarsze";
 
   if (sortOrder === "asc") {
-    await ensureFullData(); // ⬅⬅⬅ KLUCZ
+    await ensureFullData();
+    document.getElementById("loadMoreBtn").style.display = "none";
+  } else {
+    document.getElementById("loadMoreBtn").style.display =
+      offset < totalLeads ? "inline-block" : "none";
   }
 
   applyLocalSort();
 }
-
 
 function needsFullData() {
   return (
