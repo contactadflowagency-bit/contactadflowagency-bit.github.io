@@ -363,6 +363,22 @@ function loadList(reset = true) {
         offset = 0;
         visibleLimit = 30;
         allRows = [];
+        // Rysujemy szkielet tylko przy pierwszym ładowaniu
+        app.innerHTML = renderSkeleton(); 
+    }
+    fetch(`${API_URL}?action=list&token=${token}&limit=${LIMIT}&offset=${offset}`)
+        .then(d => {
+        allRows = allRows.concat(d.rows);
+        // Zamiast renderList(allRows), wywołaj tylko:
+        recomputeView(); 
+    });
+
+/*function loadList(reset = true) {
+    document.body.classList.add("dashboard-mode");
+    if (reset) {
+        offset = 0;
+        visibleLimit = 30;
+        allRows = [];
     }
 
     if (fullyLoaded && !reset) {
@@ -392,9 +408,8 @@ function loadList(reset = true) {
             showError("Błąd połączenia z API (List)");
         });
 }
-
+*/
 // === LOGIKA WIDOKU I FILTROWANIA ===
-
 async function recomputeView() {
     if (!document.getElementById("tableBody")) return;
     if ((sortOrder === "asc" || hasDateFilter()) && !fullyLoaded) {
@@ -573,8 +588,12 @@ function hideLoader() {
 }
 
 function showError(m) { 
-  app.innerHTML = `<div class="content">
-    <h3>⛔ Błąd</h3>`; 
+  app.innerHTML = `
+    <div class="content">
+      <h3>⛔ Błąd</h3>
+      <p>${m}</p>
+      <button onclick="location.reload()">🔄 Spróbuj ponownie</button>
+    </div>`; 
 }
 
 function statusClass(s) { 
