@@ -639,11 +639,6 @@ function loadList(reset = true) {
       renderList(allRows);
       applyLocalSort();
       populateCampaigns(allRows);
-
-      if (!loadingAll && offset < totalLeads) {
-        loadingAll = true;
-        preloadAllLeads();
-      }
     })
     .catch(() => {
       hideLoader();
@@ -773,6 +768,15 @@ function renderTableRows(rows) {
   const df = document.getElementById("dateFrom").value ? new Date(document.getElementById("dateFrom").value + 'T00:00:00') : null;
   const dt = document.getElementById("dateTo").value ? new Date(document.getElementById("dateTo").value + 'T23:59:59') : null;
 
+  async function filterTable() {
+  const dfVal = document.getElementById("dateFrom").value;
+  const dtVal = document.getElementById("dateTo").value;
+
+  // ⬇⬇⬇ JEŚLI FILTR PO DACIE → MUSI BYĆ FULL DATA
+  if ((dfVal || dtVal) && !fullyLoaded) {
+    await ensureFullData();
+  }
+  
   const filtered = visibleRows.filter(r => {
     // 1. Szukanie tekstowe (Imię, Tel, Email)
     const matchesQuery = !query || Object.values(r).join(" ").toLowerCase().includes(query);
@@ -868,23 +872,19 @@ async function preloadAllLeads() {
   }
 }
 
-function toggleDateSort() {
+async function toggleDateSort() {
   sortOrder = sortOrder === "desc" ? "asc" : "desc";
 
   document.getElementById("sortBtn").innerText =
     sortOrder === "desc" ? "📅 Najnowsze" : "📅 Najstarsze";
 
-  if (!fullyLoaded && sortOrder === "asc") {
-    showLoader("Ładowanie pełnej historii…");
-    preloadAllLeads().then(() => {
-      hideLoader();
-      applyLocalSort();
-    });
-    return;
+  if (sortOrder === "asc") {
+    await ensureFullData(); // ⬅⬅⬅ KLUCZ
   }
 
   applyLocalSort();
 }
+
 
 function needsFullData() {
   return (
@@ -904,6 +904,29 @@ function applyLocalSort() {
   visibleRows = sorted;
   renderTableRows(visibleRows);
 }
+
+async function ensureFullData() {
+  if (fullyLoaded || loadingAll) return;
+
+  loadingAll = true;
+  showLoader("Ładowanie pełnej historii…");
+
+  try {
+    const res = await fetch(`${API_URL}?action=cache&token=${token}`);
+    const data = await res.json();
+
+    if (data.success && Array.isArray(data.rows)) {
+      allRows = data.rows;
+      fullyLoaded = true;
+    }
+  } catch (e) {
+    console.error("Cache load failed", e);
+  } finally {
+    hideLoader();
+    loadingAll = false;
+  }
+}
+
 </script>
 </body>
 </html>
