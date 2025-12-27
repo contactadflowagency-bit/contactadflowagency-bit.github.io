@@ -761,6 +761,21 @@ function renderTableRows(rows) {
   }).join("");
 }
 
+function getWorkingSet() {
+  const df = document.getElementById("dateFrom")?.value;
+  const dt = document.getElementById("dateTo")?.value;
+
+  // jeżeli:
+  // - sort = najstarsze
+  // - albo filtr daty
+  // → potrzebujemy pełnych danych
+  if (sortOrder === "asc" || df || dt) {
+    return allRows;
+  }
+
+  return visibleRows;
+}
+
 async function filterTable() {
   const query = document.getElementById("searchInput").value.toLowerCase();
   const statusF = document.getElementById("statusFilter").value;
@@ -777,7 +792,7 @@ async function filterTable() {
     await ensureFullData();
   }
 
-  const source = fullyLoaded ? allRows : visibleRows;
+  const source = getWorkingSet();
 
   const filtered = source.filter(r => {
     const matchesQuery =
@@ -882,22 +897,34 @@ async function toggleDateSort() {
     sortOrder === "desc" ? "📅 Najnowsze" : "📅 Najstarsze";
 
   if (sortOrder === "asc") {
-    await ensureFullData();
+    await ensureFullData();          // ⬅️ jak Allegro
     document.getElementById("loadMoreBtn").style.display = "none";
   } else {
     document.getElementById("loadMoreBtn").style.display =
       offset < totalLeads ? "inline-block" : "none";
   }
 
-  applyLocalSort();
+  applyDateSort();
 }
-
+  
 function needsFullData() {
   return (
     document.getElementById("dateFrom")?.value ||
     document.getElementById("dateTo")?.value ||
     !dateSortDesc // najstarsze
   );
+}
+  
+function applyDateSort() {
+  const source = getWorkingSet();
+
+  const sorted = [...source].sort((a, b) => {
+    const dA = new Date(a.created);
+    const dB = new Date(b.created);
+    return sortOrder === "asc" ? dA - dB : dB - dA;
+  });
+
+  renderTableRows(sorted);
 }
   
 function applyLocalSort() {
