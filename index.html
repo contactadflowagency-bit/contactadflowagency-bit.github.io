@@ -586,7 +586,7 @@ function closeModal() {
 const action = params.get("action");
 
 if (action === "list") {
-  recomputeView();
+  loadList(true);
 } else if (row && token) {
   loadSingle();
 } else {
@@ -937,7 +937,8 @@ async function ensureFullData() {
 }
 
 async function recomputeView() {
-  // 1. upewnij się, że mamy dane
+  if (!document.getElementById("tableBody")) return;
+  
   if ((sortOrder === "asc" || hasDateFilter()) && !fullyLoaded) {
     await ensureFullData();
   }
