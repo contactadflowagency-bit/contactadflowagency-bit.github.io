@@ -587,7 +587,7 @@ function closeModal() {
 const action = params.get("action");
 
 if (action === "list") {
-  loadList();
+  recomputeView();
 } else if (row && token) {
   loadSingle();
 } else {
@@ -647,9 +647,6 @@ function loadList(reset = true) {
 }
 
 function renderList(rows) {
-  // tylko sanity check
-  const safeRows = rows.filter(r => r && r.id);
-
   app.innerHTML = `
     <div class="header">
       <h2>📊 Dashboard leadów</h2>
@@ -658,9 +655,9 @@ function renderList(rows) {
     <div class="content">
       <div class="dashboard-toolbar">
         <input type="text" id="searchInput" placeholder="🔍 Szukaj..."
-          oninput="filterTable()" style="flex: 1; min-width: 200px;">
+          oninput="recomputeView()" style="flex: 1; min-width: 200px;">
         
-        <select id="statusFilter" onchange="filterTable()">
+        <select id="statusFilter" onchange="recomputeView()">
           <option value="">— Wszystkie statusy —</option>
           <option value="nowy">Nowy</option>
           <option value="obsluzony">Obsłużony</option>
@@ -668,17 +665,17 @@ function renderList(rows) {
           <option value="odrzucony">Odrzucony</option>
         </select>
       
-        <select id="campaignFilter" onchange="filterTable()">
+        <select id="campaignFilter" onchange="recomputeView()">
           <option value="">— Wszystkie kampanie —</option>
         </select>
       
         <div style="display:flex; gap:5px; align-items:center;">
-          <input type="date" id="dateFrom" onchange="filterTable()">
+          <input type="date" id="dateFrom" onchange="recomputeView()">
           <span>-</span>
-          <input type="date" id="dateTo" onchange="filterTable()">
+          <input type="date" id="dateTo" onchange="recomputeView()">
         </div>
       
-        <button onclick="toggleDateSort()" id="sortBtn"
+        <button onclick="await recomputeView()" id="sortBtn"
           style="padding:8px 12px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer">
           📅 Najnowsze
         </button>
@@ -718,15 +715,8 @@ function renderList(rows) {
     <div class="footer">System AdFlow · podgląd leadów</div>
   `;
 
-  // ustaw widok
-  visibleRows = [...safeRows];
-  renderTableRows(visibleRows);
-
-  // obsługa przycisku "załaduj więcej"
-  const btn = document.getElementById("loadMoreBtn");
-  if (btn) {
-    btn.style.display = offset >= totalLeads ? "none" : "inline-block";
-  }
+  populateCampaigns(rows);
+  recomputeView();
 }
   
 function renderTableRows(rows) {
@@ -769,14 +759,14 @@ function getWorkingSet() {
   // - sort = najstarsze
   // - albo filtr daty
   // → potrzebujemy pełnych danych
-  if (sortOrder === "asc" || df || dt) {
+  function getWorkingSet() {
     return allRows;
   }
 
   return visibleRows;
 }
 
-async function filterTable() {
+/*async function filterTable() {
   const query = document.getElementById("searchInput").value.toLowerCase();
   const statusF = document.getElementById("statusFilter").value;
   const campaignF = document.getElementById("campaignFilter").value;
@@ -818,7 +808,7 @@ async function filterTable() {
   });
 
   renderTableRows(filtered);
-}
+}*/
 
 // Funkcja pomocnicza do czyszczenia filtrów
 function clearAllFilters() {
@@ -827,7 +817,7 @@ function clearAllFilters() {
   document.getElementById("campaignFilter").value = "";
   document.getElementById("dateFrom").value = "";
   document.getElementById("dateTo").value = "";
-  filterTable();
+  recomputeView();
 }
 
 // Funkcja do dynamicznego wypełniania listy kampanii (wywołaj ją po załadowaniu danych)
@@ -842,7 +832,7 @@ function populateCampaigns(rows) {
   let sortDir = 1;
 let lastSort = null;
 
-function sortTable(key) {
+/*function sortTable(key) {
   if (lastSort === key) sortDir *= -1;
   else sortDir = 1;
 
@@ -867,11 +857,11 @@ function sortTable(key) {
   });
 
   renderTableRows(sorted);
-}
+}*/
 
-let dateSortDesc = true;
+//let dateSortDesc = true;
 
-async function preloadAllLeads() {
+/*async function preloadAllLeads() {
   if (fullyLoaded) return;
 
   try {
@@ -888,7 +878,7 @@ async function preloadAllLeads() {
   } catch (err) {
     console.error("Preload error:", err);
   }
-}
+}*/
 
 async function toggleDateSort() {
   sortOrder = sortOrder === "desc" ? "asc" : "desc";
@@ -904,16 +894,16 @@ async function toggleDateSort() {
       offset < totalLeads ? "inline-block" : "none";
   }
 
-  applyDateSort();
+  await recomputeView();
 }
   
-function needsFullData() {
+/*function needsFullData() {
   return (
     document.getElementById("dateFrom")?.value ||
     document.getElementById("dateTo")?.value ||
     !dateSortDesc // najstarsze
   );
-}
+}*/
   
 function applyDateSort() {
   const source = getWorkingSet();
@@ -927,7 +917,7 @@ function applyDateSort() {
   renderTableRows(sorted);
 }
   
-function applyLocalSort() {
+/*function applyLocalSort() {
   const sorted = [...allRows].sort((a, b) => {
     const dA = new Date(a.created);
     const dB = new Date(b.created);
@@ -936,7 +926,7 @@ function applyLocalSort() {
 
   visibleRows = sorted;
   renderTableRows(visibleRows);
-}
+}*/
 
 async function ensureFullData() {
   if (fullyLoaded || loadingAll) return;
@@ -960,6 +950,59 @@ async function ensureFullData() {
   }
 }
 
+async function recomputeView() {
+  // 1. upewnij się, że mamy dane
+  if ((sortOrder === "asc" || hasDateFilter()) && !fullyLoaded) {
+    await ensureFullData();
+  }
+
+  // 2. źródło
+  let rows = [...getWorkingSet()];
+
+  // 3. sort
+  rows.sort((a, b) => {
+    const dA = new Date(a.created);
+    const dB = new Date(b.created);
+    return sortOrder === "asc" ? dA - dB : dB - dA;
+  });
+
+  // 4. filtry
+  rows = applyFilters(rows);
+
+  // 5. render
+  renderTableRows(rows);
+}
+
+function applyFilters(rows) {
+  const query = document.getElementById("searchInput").value.toLowerCase();
+  const statusF = document.getElementById("statusFilter").value;
+  const campaignF = document.getElementById("campaignFilter").value;
+
+  const dfVal = document.getElementById("dateFrom").value;
+  const dtVal = document.getElementById("dateTo").value;
+
+  const df = dfVal ? new Date(dfVal + "T00:00:00") : null;
+  const dt = dtVal ? new Date(dtVal + "T23:59:59") : null;
+
+  return rows.filter(r => {
+    if (query && !Object.values(r).join(" ").toLowerCase().includes(query)) return false;
+    if (statusF && (r.status || "nowy") !== statusF) return false;
+    if (campaignF && r.campaign !== campaignF) return false;
+
+    const d = r.created ? new Date(r.created) : null;
+    if (df && (!d || d < df)) return false;
+    if (dt && (!d || d > dt)) return false;
+
+    return true;
+  });
+}
+
+function hasDateFilter() {
+  return (
+    document.getElementById("dateFrom")?.value ||
+    document.getElementById("dateTo")?.value
+  );
+}
 </script>
 </body>
 </html>
