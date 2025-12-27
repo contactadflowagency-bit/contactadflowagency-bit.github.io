@@ -322,7 +322,6 @@ let offset = 0;
 const LIMIT = 30;
 let allRows = [];
 let totalLeads = 0;
-let visibleRows = [];
 let sortOrder = "desc";
 let fullyLoaded = false;
 let loadingAll = false;
@@ -637,8 +636,6 @@ function loadList(reset = true) {
       offset += d.rows.length;
 
       renderList(allRows);
-      applyLocalSort();
-      populateCampaigns(allRows);
     })
     .catch(() => {
       hideLoader();
@@ -675,7 +672,7 @@ function renderList(rows) {
           <input type="date" id="dateTo" onchange="recomputeView()">
         </div>
       
-        <button onclick="await recomputeView()" id="sortBtn"
+        <button onclick="toggleDateSort()" id="sortBtn">
           style="padding:8px 12px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer">
           📅 Najnowsze
         </button>
@@ -752,18 +749,7 @@ function renderTableRows(rows) {
 }
 
 function getWorkingSet() {
-  const df = document.getElementById("dateFrom")?.value;
-  const dt = document.getElementById("dateTo")?.value;
-
-  // jeżeli:
-  // - sort = najstarsze
-  // - albo filtr daty
-  // → potrzebujemy pełnych danych
-  function getWorkingSet() {
-    return allRows;
-  }
-
-  return visibleRows;
+  return allRows;
 }
 
 /*async function filterTable() {
