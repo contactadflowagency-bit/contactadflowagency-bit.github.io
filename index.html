@@ -357,30 +357,65 @@ function loadSingle() {
         });
 }
 
+// === FUNKCJE ŁADOWANIA DANYCH (POPRAWIONA WERSJA) ===
+
 function loadList(reset = true) {
     document.body.classList.add("dashboard-mode");
+    
+    // Jeśli to pierwsze ładowanie, resetujemy stan i rysujemy szkielet dashboardu
     if (reset) {
         offset = 0;
         visibleLimit = 30;
         allRows = [];
-        // Rysujemy szkielet tylko przy pierwszym ładowaniu
-        app.innerHTML = renderSkeleton(); 
+        fullyLoaded = false;
+        
+        // Rysujemy szkielet tylko RAZ, aby nie czyścić wpisanych filtrów przy doładowywaniu danych
+        app.innerHTML = `
+            <div class="header"><h2>📊 Dashboard leadów</h2></div>
+            <div class="content">
+                <div class="dashboard-toolbar">
+                    <input type="text" id="searchInput" placeholder="🔍 Szukaj..." oninput="recomputeView()" style="flex: 1; min-width: 200px;">
+                    <select id="statusFilter" onchange="recomputeView()">
+                        <option value="">— Wszystkie statusy —</option>
+                        <option value="nowy">Nowy</option>
+                        <option value="obsluzony">Obsłużony</option>
+                        <option value="nie_odbiera">Nie odbiera</option>
+                        <option value="odrzucony">Odrzucony</option>
+                    </select>
+                    <select id="campaignFilter" onchange="recomputeView()"><option value="">— Kampanie —</option></select>
+                    <div style="display:flex; gap:5px; align-items:center;">
+                        <input type="date" id="dateFrom" onchange="recomputeView()">
+                        <span>-</span>
+                        <input type="date" id="dateTo" onchange="recomputeView()">
+                    </div>
+                    <button onclick="toggleDateSort()" id="sortBtn" style="padding:8px 12px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer">📅 Najnowsze</button>
+                    <button onclick="clearAllFilters()" style="padding:8px 12px;border-radius:8px;border:1px solid #ccc;cursor:pointer">🧹</button>
+                </div>
+                <div class="table-scroll">
+                    <table class="dashboard-table">
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable('id')">ID</th>
+                                <th onclick="sortTable('created')">Data</th>
+                                <th onclick="sortTable('name')">Pacjent</th>
+                                <th onclick="sortTable('status')">Status</th>
+                                <th onclick="sortTable('updated')">Ost. akt.</th>
+                                <th>Czas oczek.</th>
+                                <th onclick="sortTable('campaign')">Kampania</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                    <div style="text-align:center; margin:20px">
+                        <button id="loadMoreBtn" onclick="loadList(false)" style="padding:12px 20px;border-radius:8px;border:1px solid #ccc;cursor:pointer; display:none;">➕ Załaduj więcej</button>
+                    </div>
+                </div>
+            </div>
+            <div class="footer">System AdFlow · podgląd leadów</div>
+        `;
     }
-    fetch(`${API_URL}?action=list&token=${token}&limit=${LIMIT}&offset=${offset}`)
-        .then(d => {
-        allRows = allRows.concat(d.rows);
-        // Zamiast renderList(allRows), wywołaj tylko:
-        recomputeView(); 
-    });
 
-/*function loadList(reset = true) {
-    document.body.classList.add("dashboard-mode");
-    if (reset) {
-        offset = 0;
-        visibleLimit = 30;
-        allRows = [];
-    }
-
+    // Jeśli baza jest już w całości pobrana, po prostu zwiększamy limit wyświetlania
     if (fullyLoaded && !reset) {
         visibleLimit += 30;
         recomputeView();
@@ -399,8 +434,16 @@ function loadList(reset = true) {
             totalLeads = d.total;
             allRows = allRows.concat(d.rows);
             offset += d.rows.length;
+            
+            // Jeśli pobraliśmy wszystko co było na serwerze, oznaczamy jako komplet
+            if (allRows.length >= totalLeads) fullyLoaded = true;
+
             if (!reset) visibleLimit += 30;
-            renderList(allRows);
+            
+            // Aktualizujemy listę kampanii w select-cie (jeśli przybyły nowe)
+            populateCampaigns(allRows);
+            // Odświeżamy widok tabeli
+            recomputeView();
         })
         .catch(err => {
             console.error(err);
@@ -408,20 +451,36 @@ function loadList(reset = true) {
             showError("Błąd połączenia z API (List)");
         });
 }
-*/
-// === LOGIKA WIDOKU I FILTROWANIA ===
+  
+// === LOGIKA WIDOKU I FILTROWANIA (POPRAWIONA WERSJA) ===
+
 async function recomputeView() {
-    if (!document.getElementById("tableBody")) return;
-    if ((sortOrder === "asc" || hasDateFilter()) && !fullyLoaded) {
+    const tbody = document.getElementById("tableBody");
+    if (!tbody) return;
+
+    // KRYTYCZNA POPRAWKA: Jeśli użytkownik chce sortować po czymś innym niż data malejąco 
+    // lub chce użyć filtrów, a nie mamy jeszcze wszystkich danych – dociągamy je.
+    // Dzięki temu sortowanie ID czy Nazwisk będzie działać na całej bazie, a nie tylko na 30 rekordach.
+    const isDefaultSort = (currentSortKey === 'created' && sortOrder === 'desc');
+    const hasAnyFilter = document.getElementById("searchInput").value || 
+                         document.getElementById("statusFilter").value || 
+                         document.getElementById("campaignFilter").value || 
+                         hasDateFilter();
+
+    if ((!isDefaultSort || hasAnyFilter) && !fullyLoaded) {
         await ensureFullData();
     }
 
     let rows = [...allRows];
+
+    // Sortowanie
     rows.sort((a, b) => {
         let valA = a[currentSortKey];
         let valB = b[currentSortKey];
+
         if (currentSortKey === 'created' || currentSortKey === 'updated') {
-            valA = new Date(valA || 0); valB = new Date(valB || 0);
+            valA = new Date(valA || 0); 
+            valB = new Date(valB || 0);
             return sortOrder === "asc" ? valA - valB : valB - valA;
         } else {
             valA = (valA || "").toString().toLowerCase();
@@ -432,13 +491,21 @@ async function recomputeView() {
         }
     });
 
+    // Filtrowanie
     rows = applyFilters(rows);
+
+    // Renderowanie wierszy
     renderTableRows(rows.slice(0, visibleLimit));
 
+    // Obsługa przycisku "Załaduj więcej"
     const loadMoreBtn = document.getElementById("loadMoreBtn");
     if (loadMoreBtn) {
-        const hasMore = (rows.length > visibleLimit) || (!fullyLoaded && totalLeads > allRows.length);
-        loadMoreBtn.style.display = hasMore ? "inline-block" : "none";
+        // Pokazujemy przycisk jeśli: 
+        // 1. Są jeszcze przefiltrowane wiersze do pokazania w pamięci (rows.length > visibleLimit)
+        // 2. LUB serwer ma więcej danych niż pobraliśmy (totalLeads > allRows.length)
+        const hasMoreLocal = rows.length > visibleLimit;
+        const hasMoreServer = !fullyLoaded && totalLeads > allRows.length;
+        loadMoreBtn.style.display = (hasMoreLocal || hasMoreServer) ? "inline-block" : "none";
     }
 }
 
