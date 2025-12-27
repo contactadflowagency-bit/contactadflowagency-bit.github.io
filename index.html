@@ -849,6 +849,25 @@ function sortTable(key) {
 
 let dateSortDesc = true;
 
+async function preloadAllLeads() {
+  if (fullyLoaded) return;
+
+  try {
+    const res = await fetch(`${API_URL}?action=cache&token=${token}`);
+    const data = await res.json();
+
+    if (!data.success || !Array.isArray(data.rows)) {
+      console.warn("Cache miss lub brak danych");
+      return;
+    }
+
+    allRows = data.rows;
+    fullyLoaded = true;
+  } catch (err) {
+    console.error("Preload error:", err);
+  }
+}
+
 function toggleDateSort() {
   sortOrder = sortOrder === "desc" ? "asc" : "desc";
 
@@ -884,11 +903,6 @@ function applyLocalSort() {
 
   visibleRows = sorted;
   renderTableRows(visibleRows);
-}
-
-if (!loadingAll && offset < totalLeads) {
-  loadingAll = true;
-  preloadAllLeads();
 }
 </script>
 </body>
