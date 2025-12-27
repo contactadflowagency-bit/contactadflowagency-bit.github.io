@@ -325,6 +325,7 @@ let totalLeads = 0;
 let sortOrder = "desc";
 let fullyLoaded = false;
 let loadingAll = false;
+let dataMode = "paged";
 
 function formatDate(iso) {
   if (!iso) return "-";
@@ -873,14 +874,19 @@ async function toggleDateSort() {
     sortOrder === "desc" ? "📅 Najnowsze" : "📅 Najstarsze";
 
   if (sortOrder === "asc") {
-    await ensureFullData();          // ⬅️ jak Allegro
+    await ensureFullData();
+    dataMode = "full";
     document.getElementById("loadMoreBtn").style.display = "none";
   } else {
+    // ⬅️ POWRÓT DO PAGINACJI
+    dataMode = "paged";
+    fullyLoaded = false;
+    offset = allRows.length;
     document.getElementById("loadMoreBtn").style.display =
       offset < totalLeads ? "inline-block" : "none";
   }
 
-  await recomputeView();
+  recomputeView();
 }
   
 /*function needsFullData() {
@@ -918,6 +924,7 @@ async function ensureFullData() {
   if (fullyLoaded || loadingAll) return;
 
   loadingAll = true;
+  dataMode = "full"; // ⬅️ KLUCZOWE
   showLoader("Ładowanie pełnej historii…");
 
   try {
@@ -928,8 +935,6 @@ async function ensureFullData() {
       allRows = data.rows;
       fullyLoaded = true;
     }
-  } catch (e) {
-    console.error("Cache load failed", e);
   } finally {
     hideLoader();
     loadingAll = false;
@@ -938,13 +943,13 @@ async function ensureFullData() {
 
 async function recomputeView() {
   if (!document.getElementById("tableBody")) return;
-  
-  if ((sortOrder === "asc" || hasDateFilter()) && !fullyLoaded) {
+
+  // ⬇⬇⬇ JAWNA DECYZJA
+  if ((sortOrder === "asc" || hasDateFilter()) && dataMode !== "full") {
     await ensureFullData();
   }
 
-  // 2. źródło
-  let rows = [...getWorkingSet()];
+  let rows = [...allRows];
 
   // 3. sort
   rows.sort((a, b) => {
@@ -970,6 +975,10 @@ function applyFilters(rows) {
 
   const df = dfVal ? new Date(dfVal + "T00:00:00") : null;
   const dt = dtVal ? new Date(dtVal + "T23:59:59") : null;
+
+  if (hasDateFilter() && dataMode !== "full") {
+    ensureFullData();
+  }
 
   return rows.filter(r => {
     if (query && !Object.values(r).join(" ").toLowerCase().includes(query)) return false;
