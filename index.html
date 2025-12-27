@@ -607,17 +607,22 @@ function loadSingle() {
     .catch(() => showError("Błąd połączenia z API"));
 }
 
+let visibleLimit = 30; // Ile leadów aktualnie pokazujemy na ekranie
+
 function loadList(reset = true) {
   document.body.classList.add("dashboard-mode");
 
   if (reset) {
     offset = 0;
+    visibleLimit = 30; // Resetujemy widoczność do pierwszej paczki
     allRows = [];
-    app.innerHTML = `
-      <div class="content">
-        <h3>📊 Lista leadów</h3>
-      </div>
-    `;
+  }
+
+  // Jeśli mamy już dane w pamięci (np. po ensureFullData), po prostu zwiększamy widoczność
+  if (fullyLoaded && !reset) {
+    visibleLimit += 30;
+    recomputeView();
+    return;
   }
 
   showLoader("Ładowanie leadów…");
@@ -626,7 +631,6 @@ function loadList(reset = true) {
     .then(r => r.json())
     .then(d => {
       hideLoader();
-
       if (!d.success) {
         showError("Brak dostępu do listy leadów");
         return;
@@ -635,6 +639,9 @@ function loadList(reset = true) {
       totalLeads = d.total;
       allRows = allRows.concat(d.rows);
       offset += d.rows.length;
+      
+      // Jeśli dociągnęliśmy dane z przycisku "więcej", zwiększamy też limit wyświetlania
+      if (!reset) visibleLimit += 30;
 
       renderList(allRows);
     })
@@ -717,16 +724,18 @@ function renderList(rows) {
   recomputeView();
 }
   
+// Funkcja renderująca pozostaje niemal bez zmian, ale dodajemy informację o liczniku
 function renderTableRows(rows) {
   const tbody = document.getElementById("tableBody");
   if (!tbody) return;
 
+  if (rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px;">Brak leadów do wyświetlenia</td></tr>`;
+    return;
+  }
+
   tbody.innerHTML = rows.map(r => {
-    // Sprawdzamy czy dane istnieją, jeśli nie, dajemy kreskę
-    const wTime = r.wait_time || "-";
-    const rTime = r.real_wait_time || "-";
-    const waitInfo = `${wTime} (${rTime})`;
-    
+    const waitInfo = `${r.wait_time || "-"} (${r.real_wait_time || "-"})`;
     return `
       <tr>
         <td>${r.id}</td>
@@ -867,14 +876,14 @@ let lastSort = null;
   }
 }*/
 
+// Przy przełączaniu sortowania resetujemy tylko to, ile widać na starcie (30)
 async function toggleDateSort() {
   sortOrder = sortOrder === "desc" ? "asc" : "desc";
+  visibleLimit = 30; // Cofamy się do pierwszej strony po zmianie sortowania
 
   document.getElementById("sortBtn").innerText =
     sortOrder === "desc" ? "📅 Najnowsze" : "📅 Najstarsze";
 
-  // Jeśli chcemy najstarsze, MUSIMY mieć wszystkie dane, 
-  // bo serwer domyślnie wysyła paczki od najnowszych.
   if (sortOrder === "asc" && !fullyLoaded) {
     await ensureFullData();
   }
@@ -937,34 +946,42 @@ async function ensureFullData() {
 async function recomputeView() {
   if (!document.getElementById("tableBody")) return;
 
-  // Jeśli użytkownik używa filtrów dat lub sortowania ASC, musimy mieć całość danych
+  // 1. Jeśli sortujemy ASC lub filtrujemy daty, a nie mamy całości - pobieramy RAZ
   if ((sortOrder === "asc" || hasDateFilter()) && !fullyLoaded) {
     await ensureFullData();
   }
 
   let rows = [...allRows];
 
-  // 1. Sortowanie
+  // 2. Sortowanie całości posiadanych danych
   rows.sort((a, b) => {
     const dA = new Date(a.created || 0);
     const dB = new Date(b.created || 0);
     return sortOrder === "asc" ? dA - dB : dB - dA;
   });
 
-  // 2. Filtrowanie
+  // 3. Filtrowanie
   rows = applyFilters(rows);
 
-  // 3. Renderowanie
-  renderTableRows(rows);
+  // 4. Przycinanie widoku (Lokalna Paginacja)
+  // Wyświetlamy tylko tyle, na ile pozwala visibleLimit
+  const rowsToDisplay = rows.slice(0, visibleLimit);
 
-  // 4. Zarządzanie przyciskiem "Załaduj więcej"
+  renderTableRows(rowsToDisplay);
+
+  // 5. Zarządzanie przyciskiem "Załaduj więcej"
   const loadMoreBtn = document.getElementById("loadMoreBtn");
   if (loadMoreBtn) {
-    // Ukryj przycisk jeśli: mamy już wszystkie dane, sortujemy od najstarszych lub filtrujemy po dacie
-    if (fullyLoaded || sortOrder === "asc" || hasDateFilter()) {
-      loadMoreBtn.style.display = "none";
-    } else {
+    // Pokazuj przycisk jeśli:
+    // a) są jeszcze dane na serwerze do pobrania (nie mamy full cache)
+    // b) lub mamy full cache, ale w aktualnym widoku jest więcej pasujących rekordów niż limit
+    const hasMoreInCache = rows.length > visibleLimit;
+    const hasMoreOnServer = totalLeads > allRows.length;
+
+    if (hasMoreInCache || (!fullyLoaded && hasMoreOnServer)) {
       loadMoreBtn.style.display = "inline-block";
+    } else {
+      loadMoreBtn.style.display = "none";
     }
   }
 }
