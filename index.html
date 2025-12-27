@@ -313,744 +313,11 @@ p {
 </div>
   
 <script>
-/*const API_URL = "https://script.google.com/macros/s/AKfycbzBLTLdMX1DXfLdDjiIit97OWNNaIjdiXqj9_bVtWSdytJAy4x9SvRTZdSP8t3Ysd-7/exec";
-const params = new URLSearchParams(window.location.search);
-const row = params.get("row");
-const token = params.get("token");
-const app = document.getElementById("app");
-let offset = 0;
-const LIMIT = 30;
-let allRows = [];
-let totalLeads = 0;
-let sortOrder = "desc";
-let fullyLoaded = false;
-let loadingAll = false;
-let dataMode = "paged";
-
-function formatDate(iso) {
-  if (!iso) return "-";
-  const d = new Date(iso);
-  return d.toLocaleString("pl-PL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-}
-
-function showLoader(text = "Ładowanie…") {
-  const loader = document.getElementById("loader");
-  if (!loader) return; // ✅ zabezpieczenie
-
-  const textEl = loader.querySelector(".loader-text");
-  if (textEl) textEl.textContent = text;
-
-  loader.classList.remove("hidden");
-}
-
-function hideLoader() {
-  const loader = document.getElementById("loader");
-  if (!loader) return; // ✅ zabezpieczenie
-  loader.classList.add("hidden");
-}
-
-function showError(msg) {
-  app.classList.add("dashboard-wide");
-
-  app.innerHTML = `
-    <div class="content">
-      <h3>⛔ Błąd</h3>
-      <p style="color:#777">${msg}</p>
-    </div>
-  `;
-}
-  
-function statusClass(status) {
-  const key = (status || "").toLowerCase().trim();
-  return {
-    "nowy": "s-nowy",
-    "porzucony": "s-porzucony",
-    "nie_odbiera": "s-nie_odbiera",
-    "obsluzony": "s-obsluzony",
-    "odrzucony": "s-odrzucony"
-  }[key] || "s-nowy";
-}
-
-function canEdit(lastUpdate, status) {
-  const normalized = (status || "").trim().toLowerCase();
-
-  // ZAWSZE edytowalne
-  if (normalized === "" || normalized === "nowy" || normalized === "nie_odbiera") {
-    return true;
-  }
-
-  // Dla pozostałych — limit 15 minut
-  if (!lastUpdate) return true;
-
-  const diffMin = (Date.now() - new Date(lastUpdate)) / 1000 / 60;
-  return diffMin <= 15;
-}
-
-function formatPhone(phone) {
-  if (!phone) return "-";
-
-  // zamień na string i usuń wszystko poza cyframi
-  let digits = phone.toString().replace(/\D/g, "");
-
-  // jeśli zaczyna się od 48 i ma 11 cyfr → PL
-  if (digits.startsWith("48") && digits.length === 11) {
-    digits = digits.slice(2);
-  }
-
-  // jeśli dokładnie 9 cyfr → formatuj
-  if (digits.length === 9) {
-    return `+48 ${digits.slice(0,3)} ${digits.slice(3,6)} ${digits.slice(6)}`;
-  }
-
-  // fallback
-  return phone;
-}
-  
-function render(lead) {
-  const status = lead["Obecny status"] || "nowy";
-  const lastUpdate = lead["Data ostatniej aktualizacji"];
-  const editable = canEdit(lastUpdate, status);
-  const isNew = status === "nowy" || status === "";
-
-  app.innerHTML = `
-    <div class="header">
-      <img src="https://scontent-waw2-2.xx.fbcdn.net/v/t39.30808-6/540904522_122143092902741193_6153063326804191448_n.jpg?_nc_cat=102&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=EXFBb3EdkUsQ7kNvwGb2Smp&_nc_oc=Adngi_kLnbg9pQiId6dkbJxk2TSxZhFWngOi9hCe_Ny49faPOIFTWxxq8fgzzJADO7I&_nc_zt=23&_nc_ht=scontent-waw2-2.xx&_nc_gid=w7niD_O83PtXyVLS5FjwZg&oh=00_AfkKwh5kzI8KNfgAR8NLvYEUObCW-JZmOSS3fx9QybdVYg&oe=6949BD8D" alt="AdFlow">
-      <h2>Status kontaktu z pacjentem</h2>
-    </div>
-
-    <div class="content">
-
-      <div class="box">
-        <div class="status-row">
-          <div>
-            <p>🆔 <strong>Lead ID:</strong> ${lead["Id."]}</p>
-            <p>📅 <strong>Data zgłoszenia:</strong> ${formatDate(lead["Data"])}</p>
-          </div>
-          <div>
-            <span class="status-badge ${statusClass(status)}">
-              ${status.replace("_"," ").toUpperCase()}
-            </span>
-            <div class="muted">
-              Ostatnia zmiana:<br>
-              ${formatDate(lastUpdate)}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="box data">
-        <p><strong>🧾 Imię i nazwisko:</strong> ${lead["Imię Nazwisko"]}</p>
-        <p><strong>📞 Telefon:</strong> ${formatPhone(lead["Nr tel"])}</p>
-        <p><strong>✉️ Email:</strong> ${lead["Email"] || "-"}</p>
-        <p><strong>🦷 Cel wizyty:</strong> ${lead["Pytanie 1 (cel wizyty)"]}</p>
-        <p><strong>💬 Informacje:</strong><br>${lead["Pytanie 2 (Informacje)"] || "-"}</p>
-      </div>
-
-      <div class="box script">
-        💬 <strong>Sugestia rozmowy:</strong><br>
-        „Dzień dobry, dzwonię z gabinetu stomatologicznego.<br>
-        Widzę, że zgłosił/a się Pan/Pani w sprawie
-        <strong>${lead["Pytanie 1 (cel wizyty)"]}</strong>.<br>
-        Jaki termin wizyty byłby dla Pana/Pani dogodny?”
-      </div>
-
-      <div class="buttons ${editable ? "" : "disabled"}">
-        <a class="obs" onclick="${editable ? `handleStatusClick('obsluzony','${status}')` : ""}">
-          ✔ Lead obsłużony
-        </a>
-        <a class="nie" onclick="${editable ? `handleStatusClick('nie_odbiera','${status}')` : ""}">
-          📞 Nie odbiera
-        </a>
-        <a class="odrz" onclick="${editable ? `handleStatusClick('odrzucony','${status}')` : ""}">
-          ❌ Lead odrzucony
-        </a>
-      </div>
-
-      ${
-        editable
-          ? ""
-          : `<p class="muted" style="text-align:center">
-               ⛔ Minął limit 15 minut — status zablokowany
-             </p>`
-      }
-
-    </div>
-
-    <div class="footer">
-      System AdFlow · automatyczna obsługa leadów
-    </div>
-
-    <!-- MODAL POTWIERDZENIA -->
-    <div id="confirmModal" class="modal hidden">
-      <div class="modal-box">
-        <h3>Zmienić status?</h3>
-        <p>Ten lead był już wcześniej oznaczony.<br>
-        Czy na pewno chcesz zmienić jego status?</p>
-
-        <div class="modal-actions">
-          <button class="cancel" onclick="closeModal()">Anuluj</button>
-          <button class="confirm" id="confirmBtn">Zmień status</button>
-        </div>
-      </div>
-    </div>
-  `;
-}
-  
-function confirmUpdate(status) {
-  if (!confirm("Czy na pewno chcesz zmienić status leada?")) return;
-  updateStatus(status);
-}
-  
-async function updateStatus(status) {
-  // ekran ładowania
-  app.innerHTML = `
-    <div class="content">
-      <h3>⏳ Zapisywanie statusu…</h3>
-      <p class="muted">Proszę czekać</p>
-    </div>
-  `;
-
-  try {
-    const res = await fetch(
-      `${API_URL}?row=${row}&token=${token}&status=${status}`,
-      { method: "POST" }
-    );
-
-    const data = await res.json();
-
-    if (!data.success) {
-      throw new Error(data.error || "Błąd zapisu");
-    }
-
-    // ✅ SUKCES
-    app.innerHTML = `
-      <div class="content">
-        <h3>✅ Status został zapisany</h3>
-        <p class="muted">
-          Zmiana została poprawnie zapisana w systemie
-        </p>
-      </div>
-    `;
-
-  } catch (err) {
-    // ❌ BŁĄD
-    app.innerHTML = `
-      <div class="content">
-        <h3>⛔ Nie udało się zapisać statusu. Spróbuj odświeżyć przeglądarkę i wysłać jeszcze raz. Jeżeli nie zadziała prosimy o kontakt z Adflow</h3>
-        <p class="muted">${err.message}</p>
-        <a href="#" onclick="location.reload()" style="
-          display:inline-block;
-          margin-top:15px;
-          font-weight:bold;
-        ">
-          🔄 Spróbuj ponownie
-        </a>
-      </div>
-    `;
-  }
-}
-
-
-let pendingStatus = null;
-
-function handleStatusClick(newStatus, currentStatus) {
-  const normalized = (currentStatus || "").trim().toLowerCase();
-
-  // NOWY LEAD → bez potwierdzenia
-  if (normalized === "" || normalized === "nowy") {
-    updateStatus(newStatus);
-    return;
-  }
-
-  // STARY LEAD → modal
-  pendingStatus = newStatus;
-  document.getElementById("confirmModal").classList.remove("hidden");
-
-  document.getElementById("confirmBtn").onclick = () => {
-    updateStatus(pendingStatus);
-    closeModal();
-  };
-}
-
-function closeModal() {
-  document.getElementById("confirmModal").classList.add("hidden");
-  pendingStatus = null;
-}
-
-// ===== ROUTER =====
-const action = params.get("action");
-
-if (action === "list") {
-  loadList(true);
-} else if (row && token) {
-  loadSingle();
-} else {
-  showError("Nieprawidłowy link");
-}
-
-// ===== ROUTING FUNKCJE =====
-
-function loadSingle() {
-  document.body.classList.remove("dashboard-mode");
-  fetch(`${API_URL}?row=${row}&token=${token}`)
-    .then(r => r.json())
-    .then(d => d.success
-      ? render(d.lead)
-      : showError("Brak dostępu do leada")
-    )
-    .catch(() => showError("Błąd połączenia z API"));
-}
-
-let visibleLimit = 30; // Ile leadów aktualnie pokazujemy na ekranie
-
-function loadList(reset = true) {
-  document.body.classList.add("dashboard-mode");
-
-  if (reset) {
-    offset = 0;
-    visibleLimit = 30; // Resetujemy widoczność do pierwszej paczki
-    allRows = [];
-  }
-
-  // Jeśli mamy już dane w pamięci (np. po ensureFullData), po prostu zwiększamy widoczność
-  if (fullyLoaded && !reset) {
-    visibleLimit += 30;
-    recomputeView();
-    return;
-  }
-
-  showLoader("Ładowanie leadów…");
-
-  fetch(`${API_URL}?action=list&token=${token}&limit=${LIMIT}&offset=${offset}`)
-    .then(r => r.json())
-    .then(d => {
-      hideLoader();
-      if (!d.success) {
-        showError("Brak dostępu do listy leadów");
-        return;
-      }
-
-      totalLeads = d.total;
-      allRows = allRows.concat(d.rows);
-      offset += d.rows.length;
-      
-      // Jeśli dociągnęliśmy dane z przycisku "więcej", zwiększamy też limit wyświetlania
-      if (!reset) visibleLimit += 30;
-
-      renderList(allRows);
-    })
-    .catch(() => {
-      hideLoader();
-      showError("Błąd połączenia z API");
-    });
-}
-
-function renderList(rows) {
-  app.innerHTML = `
-    <div class="header">
-      <h2>📊 Dashboard leadów</h2>
-    </div>
-
-    <div class="content">
-      <div class="dashboard-toolbar">
-        <input type="text" id="searchInput" placeholder="🔍 Szukaj..."
-          oninput="recomputeView()" style="flex: 1; min-width: 200px;">
-        
-        <select id="statusFilter" onchange="recomputeView()">
-          <option value="">— Wszystkie statusy —</option>
-          <option value="nowy">Nowy</option>
-          <option value="obsluzony">Obsłużony</option>
-          <option value="nie_odbiera">Nie odbiera</option>
-          <option value="odrzucony">Odrzucony</option>
-        </select>
-      
-        <select id="campaignFilter" onchange="recomputeView()">
-          <option value="">— Wszystkie kampanie —</option>
-        </select>
-      
-        <div style="display:flex; gap:5px; align-items:center;">
-          <input type="date" id="dateFrom" onchange="recomputeView()">
-          <span>-</span>
-          <input type="date" id="dateTo" onchange="recomputeView()">
-        </div>
-      
-        <button onclick="toggleDateSort()" id="sortBtn"
-          style="padding:8px 12px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer">
-          📅 Najnowsze
-        </button>
-
-        <button onclick="clearAllFilters()"
-          style="padding:8px 12px;border-radius:8px;border:1px solid #ccc;cursor:pointer">
-          🧹
-        </button>
-      </div>
-
-      <div class="table-scroll">
-        <table class="dashboard-table">
-          <thead>
-            <tr>
-              <th onclick="sortTable('id')">ID</th>
-              <th onclick="sortTable('created')">Data zgłoszenia</th>
-              <th onclick="sortTable('name')">Pacjent</th>
-              <th onclick="sortTable('status')">Status</th>
-              <th onclick="sortTable('updated')">Ost. aktualizacja</th>
-              <th>Czas oczekiwania</th>
-              <th onclick="sortTable('campaign')">Kampania</th>
-            </tr>
-          </thead>
-          <tbody id="tableBody"></tbody>
-        </table>
-
-        <div style="text-align:center; margin:20px">
-          <button id="loadMoreBtn"
-            onclick="loadList(false)"
-            style="padding:12px 20px;border-radius:8px;border:1px solid #ccc;cursor:pointer">
-            ➕ Załaduj więcej
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="footer">System AdFlow · podgląd leadów</div>
-  `;
-
-  populateCampaigns(rows);
-  recomputeView();
-}
-  
-// Funkcja renderująca pozostaje niemal bez zmian, ale dodajemy informację o liczniku
-function renderTableRows(rows) {
-  const tbody = document.getElementById("tableBody");
-  if (!tbody) return;
-
-  if (rows.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px;">Brak leadów do wyświetlenia</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = rows.map(r => {
-    const waitInfo = `${r.wait_time || "-"} (${r.real_wait_time || "-"})`;
-    return `
-      <tr>
-        <td>${r.id}</td>
-        <td>${formatDate(r.created)}</td>
-        <td>
-          <strong>${r.name || "-"}</strong><br>
-          <small class="muted">${formatPhone(r.phone)}</small><br>
-          <small class="muted">${r.email || ""}</small>
-        </td>
-        <td>
-          <span class="status-badge ${statusClass(r.status)}">
-            ${(r.status || "nowy").replace("_"," ").toUpperCase()}
-          </span>
-        </td>
-        <td class="muted">${formatDate(r.updated)}</td>
-        <td style="font-size: 13px;">${waitInfo}</td>
-        <td>${r.campaign || "-"}</td>
-      </tr>
-    `;
-  }).join("");
-}
-
-function getWorkingSet() {
-  return allRows;
-}
-
-/*async function filterTable() {
-  const query = document.getElementById("searchInput").value.toLowerCase();
-  const statusF = document.getElementById("statusFilter").value;
-  const campaignF = document.getElementById("campaignFilter").value;
-
-  const dfVal = document.getElementById("dateFrom").value;
-  const dtVal = document.getElementById("dateTo").value;
-
-  const df = dfVal ? new Date(dfVal + "T00:00:00") : null;
-  const dt = dtVal ? new Date(dtVal + "T23:59:59") : null;
-
-  // ⬇⬇⬇ KLUCZ: jeżeli filtr po dacie → pełne dane
-  if ((df || dt) && !fullyLoaded) {
-    await ensureFullData();
-  }
-
-  const source = getWorkingSet();
-
-  const filtered = source.filter(r => {
-    const matchesQuery =
-      !query || Object.values(r).join(" ").toLowerCase().includes(query);
-
-    const matchesStatus =
-      !statusF || (r.status || "nowy") === statusF;
-
-    const matchesCampaign =
-      !campaignF || r.campaign === campaignF;
-
-    const rDate = r.created ? new Date(r.created) : null;
-    const matchesDateFrom = !df || (rDate && rDate >= df);
-    const matchesDateTo = !dt || (rDate && rDate <= dt);
-
-    return (
-      matchesQuery &&
-      matchesStatus &&
-      matchesCampaign &&
-      matchesDateFrom &&
-      matchesDateTo
-    );
-  });
-
-  renderTableRows(filtered);
-}*/
-
-/*// Funkcja pomocnicza do czyszczenia filtrów
-function clearAllFilters() {
-  document.getElementById("searchInput").value = "";
-  document.getElementById("statusFilter").value = "";
-  document.getElementById("campaignFilter").value = "";
-  document.getElementById("dateFrom").value = "";
-  document.getElementById("dateTo").value = "";
-  recomputeView();
-}
-
-// Funkcja do dynamicznego wypełniania listy kampanii (wywołaj ją po załadowaniu danych)
-function populateCampaigns(rows) {
-  const select = document.getElementById("campaignFilter");
-  if(!select) return;
-  const campaigns = [...new Set(rows.map(r => r.campaign).filter(Boolean))].sort();
-  select.innerHTML = '<option value="">— Wszystkie kampanie —</option>' + 
-    campaigns.map(c => `<option value="${c}">${c}</option>`).join("");
-}
-
-  let sortDir = 1;
-let lastSort = null;
-
-/*function sortTable(key) {
-  if (lastSort === key) sortDir *= -1;
-  else sortDir = 1;
-
-  lastSort = key;
-
-  const sorted = [...allRows].sort((a, b) => {
-    let valA = a[key];
-    let valB = b[key];
-
-    // Jeśli sortujemy po dacie, zamień na obiekt Date dla poprawnego porównania
-    if (key === 'created' || key === 'updated') {
-      valA = new Date(valA || 0);
-      valB = new Date(valB || 0);
-    } else {
-      valA = (valA || "").toString().toLowerCase();
-      valB = (valB || "").toString().toLowerCase();
-    }
-
-    if (valA < valB) return -1 * sortDir;
-    if (valA > valB) return 1 * sortDir;
-    return 0;
-  });
-
-  renderTableRows(sorted);
-}*/
-
-//let dateSortDesc = true;
-
-/*async function preloadAllLeads() {
-  if (fullyLoaded) return;
-
-  try {
-    const res = await fetch(`${API_URL}?action=cache&token=${token}`);
-    const data = await res.json();
-
-    if (!data.success || !Array.isArray(data.rows)) {
-      console.warn("Cache miss lub brak danych");
-      return;
-    }
-
-    allRows = data.rows;
-    fullyLoaded = true;
-  } catch (err) {
-    console.error("Preload error:", err);
-  }
-}*/
-
-// Przy przełączaniu sortowania resetujemy tylko to, ile widać na starcie (30)
-/*async function toggleDateSort() {
-  sortOrder = sortOrder === "desc" ? "asc" : "desc";
-  visibleLimit = 30; // Cofamy się do pierwszej strony po zmianie sortowania
-
-  document.getElementById("sortBtn").innerText =
-    sortOrder === "desc" ? "📅 Najnowsze" : "📅 Najstarsze";
-
-  if (sortOrder === "asc" && !fullyLoaded) {
-    await ensureFullData();
-  }
-
-  recomputeView();
-}
-  
-/*function needsFullData() {
-  return (
-    document.getElementById("dateFrom")?.value ||
-    document.getElementById("dateTo")?.value ||
-    !dateSortDesc // najstarsze
-  );
-}*/
-  
-/*function applyDateSort() {
-  const source = getWorkingSet();
-
-  const sorted = [...source].sort((a, b) => {
-    const dA = new Date(a.created);
-    const dB = new Date(b.created);
-    return sortOrder === "asc" ? dA - dB : dB - dA;
-  });
-
-  renderTableRows(sorted);
-}
-  
-/*function applyLocalSort() {
-  const sorted = [...allRows].sort((a, b) => {
-    const dA = new Date(a.created);
-    const dB = new Date(b.created);
-    return sortOrder === "asc" ? dA - dB : dB - dA;
-  });
-
-  visibleRows = sorted;
-  renderTableRows(visibleRows);
-}*/
-
-/*async function ensureFullData() {
-  if (fullyLoaded || loadingAll) return;
-
-  loadingAll = true;
-  dataMode = "full"; // ⬅️ KLUCZOWE
-  showLoader("Ładowanie pełnej historii…");
-
-  try {
-    const res = await fetch(`${API_URL}?action=cache&token=${token}`);
-    const data = await res.json();
-
-    if (data.success && Array.isArray(data.rows)) {
-      allRows = data.rows;
-      fullyLoaded = true;
-    }
-  } finally {
-    hideLoader();
-    loadingAll = false;
-  }
-}
-
-async function recomputeView() {
-  if (!document.getElementById("tableBody")) return;
-
-  // 1. Jeśli sortujemy ASC lub filtrujemy daty, a nie mamy całości - pobieramy RAZ
-  if ((sortOrder === "asc" || hasDateFilter()) && !fullyLoaded) {
-    await ensureFullData();
-  }
-
-  let rows = [...allRows];
-
-  // 2. Sortowanie całości posiadanych danych
-  rows.sort((a, b) => {
-    const dA = new Date(a.created || 0);
-    const dB = new Date(b.created || 0);
-    return sortOrder === "asc" ? dA - dB : dB - dA;
-  });
-
-  // 3. Filtrowanie
-  rows = applyFilters(rows);
-
-  // 4. Przycinanie widoku (Lokalna Paginacja)
-  // Wyświetlamy tylko tyle, na ile pozwala visibleLimit
-  const rowsToDisplay = rows.slice(0, visibleLimit);
-
-  renderTableRows(rowsToDisplay);
-
-  // 5. Zarządzanie przyciskiem "Załaduj więcej"
-  const loadMoreBtn = document.getElementById("loadMoreBtn");
-  if (loadMoreBtn) {
-    // Pokazuj przycisk jeśli:
-    // a) są jeszcze dane na serwerze do pobrania (nie mamy full cache)
-    // b) lub mamy full cache, ale w aktualnym widoku jest więcej pasujących rekordów niż limit
-    const hasMoreInCache = rows.length > visibleLimit;
-    const hasMoreOnServer = totalLeads > allRows.length;
-
-    if (hasMoreInCache || (!fullyLoaded && hasMoreOnServer)) {
-      loadMoreBtn.style.display = "inline-block";
-    } else {
-      loadMoreBtn.style.display = "none";
-    }
-  }
-}
-
-async function ensureFullData() {
-  if (fullyLoaded || loadingAll) return;
-
-  loadingAll = true;
-  showLoader("Pobieranie całej bazy danych...");
-
-  try {
-    const res = await fetch(`${API_URL}?action=cache&token=${token}`);
-    const data = await res.json();
-
-    if (data.success && Array.isArray(data.rows)) {
-      allRows = data.rows;
-      fullyLoaded = true;
-      // Aktualizujemy offset, żeby loadList wiedziało, że już wszystko mamy
-      offset = allRows.length; 
-    } else {
-      console.error("Błąd pobierania bazy:", data.error);
-      alert("Nie udało się pobrać pełnej historii. Spróbuj odświeżyć.");
-    }
-  } catch (err) {
-    console.error("Network error:", err);
-  } finally {
-    hideLoader();
-    loadingAll = false;
-  }
-}
-
-function applyFilters(rows) {
-  const query = document.getElementById("searchInput").value.toLowerCase();
-  const statusF = document.getElementById("statusFilter").value;
-  const campaignF = document.getElementById("campaignFilter").value;
-
-  const dfVal = document.getElementById("dateFrom").value;
-  const dtVal = document.getElementById("dateTo").value;
-
-  const df = dfVal ? new Date(dfVal + "T00:00:00") : null;
-  const dt = dtVal ? new Date(dtVal + "T23:59:59") : null;
-
-  if (hasDateFilter() && dataMode !== "full") {
-    ensureFullData();
-  }
-
-  return rows.filter(r => {
-    if (query && !Object.values(r).join(" ").toLowerCase().includes(query)) return false;
-    if (statusF && (r.status || "nowy") !== statusF) return false;
-    if (campaignF && r.campaign !== campaignF) return false;
-
-    const d = r.created ? new Date(r.created) : null;
-    if (df && (!d || d < df)) return false;
-    if (dt && (!d || d > dt)) return false;
-
-    return true;
-  });
-}
-
-function hasDateFilter() {
-  return (
-    document.getElementById("dateFrom")?.value ||
-    document.getElementById("dateTo")?.value
-  );
-}*/
 const API_URL = "https://script.google.com/macros/s/AKfycbzBLTLdMX1DXfLdDjiIit97OWNNaIjdiXqj9_bVtWSdytJAy4x9SvRTZdSP8t3Ysd-7/exec";
 const params = new URLSearchParams(window.location.search);
 const row = params.get("row");
 const token = params.get("token");
+const action = params.get("action");
 const app = document.getElementById("app");
 
 // Stan aplikacji
@@ -1064,16 +331,18 @@ let loadingAll = false;
 let visibleLimit = 30; 
 let currentSortKey = 'created';
 let sortDir = 1;
+let pendingStatus = null;
 
 // === INICJALIZACJA ===
-const action = params.get("action");
-if (action === "list") {
-    loadList(true);
-} else if (row && token) {
-    loadSingle();
-} else {
-    showError("Nieprawidłowy link");
-}
+window.onload = () => {
+    if (action === "list") {
+        loadList(true);
+    } else if (row && token) {
+        loadSingle();
+    } else {
+        showError("Nieprawidłowy link lub brak parametrów");
+    }
+};
 
 // === FUNKCJE ŁADOWANIA DANYCH ===
 
@@ -1082,12 +351,14 @@ function loadSingle() {
     fetch(`${API_URL}?row=${row}&token=${token}`)
         .then(r => r.json())
         .then(d => d.success ? render(d.lead) : showError("Brak dostępu do leada"))
-        .catch(() => showError("Błąd połączenia z API"));
+        .catch(err => {
+            console.error(err);
+            showError("Błąd połączenia z API (Single)");
+        });
 }
 
 function loadList(reset = true) {
     document.body.classList.add("dashboard-mode");
-
     if (reset) {
         offset = 0;
         visibleLimit = 30;
@@ -1106,7 +377,7 @@ function loadList(reset = true) {
         .then(d => {
             hideLoader();
             if (!d.success) {
-                showError("Brak dostępu do listy leadów");
+                showError("Brak dostępu do listy leadów (Token nieprawidłowy)");
                 return;
             }
             totalLeads = d.total;
@@ -1115,51 +386,27 @@ function loadList(reset = true) {
             if (!reset) visibleLimit += 30;
             renderList(allRows);
         })
-        .catch(() => {
+        .catch(err => {
+            console.error(err);
             hideLoader();
-            showError("Błąd połączenia z API");
+            showError("Błąd połączenia z API (List)");
         });
-}
-
-async function ensureFullData() {
-    if (fullyLoaded || loadingAll) return;
-    loadingAll = true;
-    showLoader("Pobieranie całej bazy...");
-    try {
-        const res = await fetch(`${API_URL}?action=cache&token=${token}`);
-        const data = await res.json();
-        if (data.success && Array.isArray(data.rows)) {
-            allRows = data.rows;
-            fullyLoaded = true;
-            offset = allRows.length;
-        }
-    } catch (err) {
-        console.error("Błąd pobierania:", err);
-    } finally {
-        hideLoader();
-        loadingAll = false;
-    }
 }
 
 // === LOGIKA WIDOKU I FILTROWANIA ===
 
 async function recomputeView() {
     if (!document.getElementById("tableBody")) return;
-
     if ((sortOrder === "asc" || hasDateFilter()) && !fullyLoaded) {
         await ensureFullData();
     }
 
     let rows = [...allRows];
-
-    // 1. Sortowanie (główne po dacie lub kliknięciu w nagłówek)
     rows.sort((a, b) => {
         let valA = a[currentSortKey];
         let valB = b[currentSortKey];
-        
         if (currentSortKey === 'created' || currentSortKey === 'updated') {
-            valA = new Date(valA || 0);
-            valB = new Date(valB || 0);
+            valA = new Date(valA || 0); valB = new Date(valB || 0);
             return sortOrder === "asc" ? valA - valB : valB - valA;
         } else {
             valA = (valA || "").toString().toLowerCase();
@@ -1170,289 +417,154 @@ async function recomputeView() {
         }
     });
 
-    // 2. Filtry
     rows = applyFilters(rows);
+    renderTableRows(rows.slice(0, visibleLimit));
 
-    // 3. Paginacja lokalna
-    const toDisplay = rows.slice(0, visibleLimit);
-    renderTableRows(toDisplay);
-
-    // 4. Przycisk "Więcej"
     const loadMoreBtn = document.getElementById("loadMoreBtn");
     if (loadMoreBtn) {
-        const hasMoreInCache = rows.length > visibleLimit;
-        const hasMoreOnServer = totalLeads > allRows.length;
-        loadMoreBtn.style.display = (hasMoreInCache || (!fullyLoaded && hasMoreOnServer)) ? "inline-block" : "none";
+        const hasMore = (rows.length > visibleLimit) || (!fullyLoaded && totalLeads > allRows.length);
+        loadMoreBtn.style.display = hasMore ? "inline-block" : "none";
     }
 }
 
+function renderList(rows) {
+    app.innerHTML = `
+        <div class="header"><h2>📊 Dashboard leadów</h2></div>
+        <div class="content">
+            <div class="dashboard-toolbar">
+                <input type="text" id="searchInput" placeholder="🔍 Szukaj..." oninput="recomputeView()" style="flex: 1; min-width: 200px;">
+                <select id="statusFilter" onchange="recomputeView()">
+                    <option value="">— Wszystkie statusy —</option>
+                    <option value="nowy">Nowy</option>
+                    <option value="obsluzony">Obsłużony</option>
+                    <option value="nie_odbiera">Nie odbiera</option>
+                    <option value="odrzucony">Odrzucony</option>
+                </select>
+                <select id="campaignFilter" onchange="recomputeView()"><option value="">— Kampanie —</option></select>
+                <div style="display:flex; gap:5px; align-items:center;">
+                    <input type="date" id="dateFrom" onchange="recomputeView()">
+                    <span>-</span>
+                    <input type="date" id="dateTo" onchange="recomputeView()">
+                </div>
+                <button onclick="toggleDateSort()" id="sortBtn" style="padding:8px 12px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer">📅 Najnowsze</button>
+                <button onclick="clearAllFilters()" style="padding:8px 12px;border-radius:8px;border:1px solid #ccc;cursor:pointer">🧹</button>
+            </div>
+            <div class="table-scroll">
+                <table class="dashboard-table">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable('id')">ID</th>
+                            <th onclick="sortTable('created')">Data</th>
+                            <th onclick="sortTable('name')">Pacjent</th>
+                            <th onclick="sortTable('status')">Status</th>
+                            <th onclick="sortTable('updated')">Ost. akt.</th>
+                            <th>Czas oczek.</th>
+                            <th onclick="sortTable('campaign')">Kampania</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+                <div style="text-align:center; margin:20px">
+                    <button id="loadMoreBtn" onclick="loadList(false)" style="padding:12px 20px;border-radius:8px;border:1px solid #ccc;cursor:pointer">➕ Załaduj więcej</button>
+                </div>
+            </div>
+        </div>
+        <div class="footer">System AdFlow · podgląd leadów</div>
+    `;
+    populateCampaigns(rows);
+    recomputeView();
+}
+
+function renderTableRows(rows) {
+    const tbody = document.getElementById("tableBody");
+    if (!tbody) return;
+    if (rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px;">Brak leadów</td></tr>`;
+        return;
+    }
+    tbody.innerHTML = rows.map(r => `
+        <tr>
+            <td>${r.id}</td>
+            <td>${formatDate(r.created)}</td>
+            <td><strong>${r.name || "-"}</strong><br><small class="muted">${formatPhone(r.phone)}</small></td>
+            <td><span class="status-badge ${statusClass(r.status)}">${(r.status || "nowy").toUpperCase()}</span></td>
+            <td>${formatDate(r.updated)}</td>
+            <td style="font-size: 12px;">${r.wait_time || "-"}</td>
+            <td>${r.campaign || "-"}</td>
+        </tr>
+    `).join("");
+}
+
+// === POMOCNICZE / LOGIKA BIZNESOWA ===
+
+function canEdit(lastUpdate, status) {
+    const normalized = (status || "").trim().toLowerCase();
+    if (normalized === "" || normalized === "nowy" || normalized === "nie_odbiera") return true;
+    if (!lastUpdate) return true;
+    const diffMin = (Date.now() - new Date(lastUpdate)) / 60000;
+    return diffMin <= 15;
+}
+
+function handleStatusClick(newStatus, currentStatus) {
+    const normalized = (currentStatus || "").trim().toLowerCase();
+    if (normalized === "" || normalized === "nowy") {
+        updateStatus(newStatus);
+        return;
+    }
+    pendingStatus = newStatus;
+    document.getElementById("confirmModal").classList.remove("hidden");
+    document.getElementById("confirmBtn").onclick = () => { updateStatus(pendingStatus); closeModal(); };
+}
+
+async function updateStatus(status) {
+    showLoader("Zapisywanie...");
+    try {
+        const res = await fetch(`${API_URL}?row=${row}&token=${token}&status=${status}`, { method: "POST" });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error);
+        app.innerHTML = `<div class="content"><h3>✅ Zapisano</h3><p>Status został zaktualizowany.</p><button onclick="location.reload()">Powrót</button></div>`;
+    } catch (err) {
+        showError("Błąd zapisu: " + err.message);
+    } finally {
+        hideLoader();
+    }
+}
+
+// --- Pozostałe funkcje pomocnicze ---
+function sortTable(key) { if (currentSortKey === key) { sortDir *= -1; sortOrder = (sortOrder === "desc" ? "asc" : "desc"); } else { currentSortKey = key; sortDir = 1; sortOrder = "asc"; } recomputeView(); }
+function toggleDateSort() { sortOrder = (sortOrder === "desc" ? "asc" : "desc"); currentSortKey = 'created'; document.getElementById("sortBtn").innerText = sortOrder === "desc" ? "📅 Najnowsze" : "📅 Najstarsze"; recomputeView(); }
+function clearAllFilters() { document.getElementById("searchInput").value = ""; document.getElementById("statusFilter").value = ""; document.getElementById("dateFrom").value = ""; document.getElementById("dateTo").value = ""; recomputeView(); }
+function hasDateFilter() { return document.getElementById("dateFrom")?.value || document.getElementById("dateTo")?.value; }
 function applyFilters(rows) {
-    const query = document.getElementById("searchInput")?.value.toLowerCase() || "";
-    const statusF = document.getElementById("statusFilter")?.value || "";
-    const campaignF = document.getElementById("campaignFilter")?.value || "";
-    const dfVal = document.getElementById("dateFrom")?.value;
-    const dtVal = document.getElementById("dateTo")?.value;
-
-    const df = dfVal ? new Date(dfVal + "T00:00:00") : null;
-    const dt = dtVal ? new Date(dtVal + "T23:59:59") : null;
-
+    const q = document.getElementById("searchInput")?.value.toLowerCase() || "";
+    const s = document.getElementById("statusFilter")?.value || "";
+    const cf = document.getElementById("campaignFilter")?.value || "";
+    const df = document.getElementById("dateFrom")?.value ? new Date(document.getElementById("dateFrom").value + "T00:00:00") : null;
+    const dt = document.getElementById("dateTo")?.value ? new Date(document.getElementById("dateTo").value + "T23:59:59") : null;
     return rows.filter(r => {
-        if (query && !Object.values(r).join(" ").toLowerCase().includes(query)) return false;
-        if (statusF && (r.status || "nowy") !== statusF) return false;
-        if (campaignF && r.campaign !== campaignF) return false;
+        if (q && !Object.values(r).join(" ").toLowerCase().includes(q)) return false;
+        if (s && (r.status || "nowy") !== s) return false;
+        if (cf && r.campaign !== cf) return false;
         const d = r.created ? new Date(r.created) : null;
         if (df && (!d || d < df)) return false;
         if (dt && (!d || d > dt)) return false;
         return true;
     });
 }
-
-// === INTERAKCJA UŻYTKOWNIKA ===
-
-function sortTable(key) {
-    if (currentSortKey === key) {
-        sortDir *= -1;
-        sortOrder = (sortOrder === "desc") ? "asc" : "desc";
-    } else {
-        currentSortKey = key;
-        sortDir = 1;
-        sortOrder = "asc";
-    }
-    recomputeView();
-}
-
-async function toggleDateSort() {
-    sortOrder = (sortOrder === "desc") ? "asc" : "desc";
-    currentSortKey = 'created';
-    visibleLimit = 30;
-    document.getElementById("sortBtn").innerText = sortOrder === "desc" ? "📅 Najnowsze" : "📅 Najstarsze";
-    recomputeView();
-}
-
-function clearAllFilters() {
-    document.getElementById("searchInput").value = "";
-    document.getElementById("statusFilter").value = "";
-    document.getElementById("campaignFilter").value = "";
-    document.getElementById("dateFrom").value = "";
-    document.getElementById("dateTo").value = "";
-    visibleLimit = 30;
-    recomputeView();
-}
-
-// === POMOCNICZE ===
-
-function hasDateFilter() {
-    return document.getElementById("dateFrom")?.value || document.getElementById("dateTo")?.value;
-}
-
 function populateCampaigns(rows) {
     const select = document.getElementById("campaignFilter");
     if(!select) return;
     const campaigns = [...new Set(rows.map(r => r.campaign).filter(Boolean))].sort();
-    select.innerHTML = '<option value="">— Wszystkie kampanie —</option>' + 
-        campaigns.map(c => `<option value="${c}">${c}</option>`).join("");
+    select.innerHTML = '<option value="">— Kampanie —</option>' + campaigns.map(c => `<option value="${c}">${c}</option>`).join("");
 }
-
-function formatDate(iso) {
-    if (!iso) return "-";
-    const d = new Date(iso);
-    return d.toLocaleString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
-}
-
-function showLoader(text = "Ładowanie…") {
-    const loader = document.getElementById("loader");
-    if (loader) {
-        loader.querySelector(".loader-text").textContent = text;
-        loader.classList.remove("hidden");
-    }
-}
-
-function hideLoader() {
-    const loader = document.getElementById("loader");
-    if (loader) loader.classList.add("hidden");
-}
-
-function showError(msg) {
-    app.classList.add("dashboard-wide");
-    app.innerHTML = `<div class="content"><h3>⛔ Błąd</h3><p style="color:#777">${msg}</p></div>`;
-}
-
-function statusClass(status) {
-    const key = (status || "").toLowerCase().trim();
-    const map = { "nowy": "s-nowy", "porzucony": "s-porzucony", "nie_odbiera": "s-nie_odbiera", "obsluzony": "s-obsluzony", "odrzucony": "s-odrzucony" };
-    return map[key] || "s-nowy";
-}
-
-function formatPhone(phone) {
-    if (!phone) return "-";
-    let digits = phone.toString().replace(/\D/g, "");
-    if (digits.startsWith("48") && digits.length === 11) digits = digits.slice(2);
-    return digits.length === 9 ? `+48 ${digits.slice(0,3)} ${digits.slice(3,6)} ${digits.slice(6)}` : phone;
-}
-
-// --- Tutaj wklej funkcje render(), handleStatusClick(), updateStatus() i closeModal() z poprzedniego kodu, jeśli ich nie masz ---
-function render(lead) {
-  const status = lead["Obecny status"] || "nowy";
-  const lastUpdate = lead["Data ostatniej aktualizacji"];
-  const editable = canEdit(lastUpdate, status);
-  const isNew = status === "nowy" || status === "";
-
-  app.innerHTML = `
-    <div class="header">
-      <img src="https://scontent-waw2-2.xx.fbcdn.net/v/t39.30808-6/540904522_122143092902741193_6153063326804191448_n.jpg?_nc_cat=102&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=EXFBb3EdkUsQ7kNvwGb2Smp&_nc_oc=Adngi_kLnbg9pQiId6dkbJxk2TSxZhFWngOi9hCe_Ny49faPOIFTWxxq8fgzzJADO7I&_nc_zt=23&_nc_ht=scontent-waw2-2.xx&_nc_gid=w7niD_O83PtXyVLS5FjwZg&oh=00_AfkKwh5kzI8KNfgAR8NLvYEUObCW-JZmOSS3fx9QybdVYg&oe=6949BD8D" alt="AdFlow">
-      <h2>Status kontaktu z pacjentem</h2>
-    </div>
-
-    <div class="content">
-
-      <div class="box">
-        <div class="status-row">
-          <div>
-            <p>🆔 <strong>Lead ID:</strong> ${lead["Id."]}</p>
-            <p>📅 <strong>Data zgłoszenia:</strong> ${formatDate(lead["Data"])}</p>
-          </div>
-          <div>
-            <span class="status-badge ${statusClass(status)}">
-              ${status.replace("_"," ").toUpperCase()}
-            </span>
-            <div class="muted">
-              Ostatnia zmiana:<br>
-              ${formatDate(lastUpdate)}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="box data">
-        <p><strong>🧾 Imię i nazwisko:</strong> ${lead["Imię Nazwisko"]}</p>
-        <p><strong>📞 Telefon:</strong> ${formatPhone(lead["Nr tel"])}</p>
-        <p><strong>✉️ Email:</strong> ${lead["Email"] || "-"}</p>
-        <p><strong>🦷 Cel wizyty:</strong> ${lead["Pytanie 1 (cel wizyty)"]}</p>
-        <p><strong>💬 Informacje:</strong><br>${lead["Pytanie 2 (Informacje)"] || "-"}</p>
-      </div>
-
-      <div class="box script">
-        💬 <strong>Sugestia rozmowy:</strong><br>
-        „Dzień dobry, dzwonię z gabinetu stomatologicznego.<br>
-        Widzę, że zgłosił/a się Pan/Pani w sprawie
-        <strong>${lead["Pytanie 1 (cel wizyty)"]}</strong>.<br>
-        Jaki termin wizyty byłby dla Pana/Pani dogodny?”
-      </div>
-
-      <div class="buttons ${editable ? "" : "disabled"}">
-        <a class="obs" onclick="${editable ? `handleStatusClick('obsluzony','${status}')` : ""}">
-          ✔ Lead obsłużony
-        </a>
-        <a class="nie" onclick="${editable ? `handleStatusClick('nie_odbiera','${status}')` : ""}">
-          📞 Nie odbiera
-        </a>
-        <a class="odrz" onclick="${editable ? `handleStatusClick('odrzucony','${status}')` : ""}">
-          ❌ Lead odrzucony
-        </a>
-      </div>
-
-      ${
-        editable
-          ? ""
-          : `<p class="muted" style="text-align:center">
-               ⛔ Minął limit 15 minut — status zablokowany
-             </p>`
-      }
-
-    </div>
-
-    <div class="footer">
-      System AdFlow · automatyczna obsługa leadów
-    </div>
-
-    <!-- MODAL POTWIERDZENIA -->
-    <div id="confirmModal" class="modal hidden">
-      <div class="modal-box">
-        <h3>Zmienić status?</h3>
-        <p>Ten lead był już wcześniej oznaczony.<br>
-        Czy na pewno chcesz zmienić jego status?</p>
-
-        <div class="modal-actions">
-          <button class="cancel" onclick="closeModal()">Anuluj</button>
-          <button class="confirm" id="confirmBtn">Zmień status</button>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function handleStatusClick(newStatus, currentStatus) {
-  const normalized = (currentStatus || "").trim().toLowerCase();
-
-  // NOWY LEAD → bez potwierdzenia
-  if (normalized === "" || normalized === "nowy") {
-    updateStatus(newStatus);
-    return;
-  }
-
-  // STARY LEAD → modal
-  pendingStatus = newStatus;
-  document.getElementById("confirmModal").classList.remove("hidden");
-
-  document.getElementById("confirmBtn").onclick = () => {
-    updateStatus(pendingStatus);
-    closeModal();
-  };
-}
-
-async function updateStatus(status) {
-  // ekran ładowania
-  app.innerHTML = `
-    <div class="content">
-      <h3>⏳ Zapisywanie statusu…</h3>
-      <p class="muted">Proszę czekać</p>
-    </div>
-  `;
-
-  try {
-    const res = await fetch(
-      `${API_URL}?row=${row}&token=${token}&status=${status}`,
-      { method: "POST" }
-    );
-
-    const data = await res.json();
-
-    if (!data.success) {
-      throw new Error(data.error || "Błąd zapisu");
-    }
-
-    // ✅ SUKCES
-    app.innerHTML = `
-      <div class="content">
-        <h3>✅ Status został zapisany</h3>
-        <p class="muted">
-          Zmiana została poprawnie zapisana w systemie
-        </p>
-      </div>
-    `;
-
-  } catch (err) {
-    // ❌ BŁĄD
-    app.innerHTML = `
-      <div class="content">
-        <h3>⛔ Nie udało się zapisać statusu. Spróbuj odświeżyć przeglądarkę i wysłać jeszcze raz. Jeżeli nie zadziała prosimy o kontakt z Adflow</h3>
-        <p class="muted">${err.message}</p>
-        <a href="#" onclick="location.reload()" style="
-          display:inline-block;
-          margin-top:15px;
-          font-weight:bold;
-        ">
-          🔄 Spróbuj ponownie
-        </a>
-      </div>
-    `;
-  }
-}
-
-function closeModal() {
-  document.getElementById("confirmModal").classList.add("hidden");
-  pendingStatus = null;
-}
+function formatDate(iso) { if (!iso) return "-"; return new Date(iso).toLocaleString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
+function showLoader(t) { const l = document.getElementById("loader"); if (l) { l.querySelector(".loader-text").textContent = t; l.classList.remove("hidden"); } }
+function hideLoader() { const l = document.getElementById("loader"); if (l) l.classList.add("hidden"); }
+function showError(m) { app.innerHTML = `<div class="content"><h3>⛔ Błąd</h3><p>${m}</p><button onclick="location.reload()">🔄 Spróbuj ponownie</button></div>`; }
+function statusClass(s) { const k = (s || "").toLowerCase().trim(); const m = { "nowy": "s-nowy", "porzucony": "s-porzucony", "nie_odbiera": "s-nie_odbiera", "obsluzony": "s-obsluzony", "odrzucony": "s-odrzucony" }; return m[k] || "s-nowy"; }
+function formatPhone(p) { if (!p) return "-"; let d = p.toString().replace(/\D/g, ""); if (d.startsWith("48") && d.length === 11) d = d.slice(2); return d.length === 9 ? `+48 ${d.slice(0,3)} ${d.slice(3,6)} ${d.slice(6)}` : p; }
+function closeModal() { document.getElementById("confirmModal").classList.add("hidden"); pendingStatus = null; }
+async function ensureFullData() { if (fullyLoaded || loadingAll) return; loadingAll = true; showLoader("Pobieranie bazy..."); try { const res = await fetch(`${API_URL}?action=cache&token=${token}`); const data = await res.json(); if (data.success) { allRows = data.rows; fullyLoaded = true; offset = allRows.length; } } catch (e) {} finally { hideLoader(); loadingAll = false; } }
 </script>
 </body>
 </html>
