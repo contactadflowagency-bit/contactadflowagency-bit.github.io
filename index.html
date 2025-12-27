@@ -313,7 +313,7 @@ p {
 </div>
   
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbzBLTLdMX1DXfLdDjiIit97OWNNaIjdiXqj9_bVtWSdytJAy4x9SvRTZdSP8t3Ysd-7/exec";
+/*const API_URL = "https://script.google.com/macros/s/AKfycbzBLTLdMX1DXfLdDjiIit97OWNNaIjdiXqj9_bVtWSdytJAy4x9SvRTZdSP8t3Ysd-7/exec";
 const params = new URLSearchParams(window.location.search);
 const row = params.get("row");
 const token = params.get("token");
@@ -806,7 +806,7 @@ function getWorkingSet() {
   renderTableRows(filtered);
 }*/
 
-// Funkcja pomocnicza do czyszczenia filtrów
+/*// Funkcja pomocnicza do czyszczenia filtrów
 function clearAllFilters() {
   document.getElementById("searchInput").value = "";
   document.getElementById("statusFilter").value = "";
@@ -877,7 +877,7 @@ let lastSort = null;
 }*/
 
 // Przy przełączaniu sortowania resetujemy tylko to, ile widać na starcie (30)
-async function toggleDateSort() {
+/*async function toggleDateSort() {
   sortOrder = sortOrder === "desc" ? "asc" : "desc";
   visibleLimit = 30; // Cofamy się do pierwszej strony po zmianie sortowania
 
@@ -899,7 +899,7 @@ async function toggleDateSort() {
   );
 }*/
   
-function applyDateSort() {
+/*function applyDateSort() {
   const source = getWorkingSet();
 
   const sorted = [...source].sort((a, b) => {
@@ -922,7 +922,7 @@ function applyDateSort() {
   renderTableRows(visibleRows);
 }*/
 
-async function ensureFullData() {
+/*async function ensureFullData() {
   if (fullyLoaded || loadingAll) return;
 
   loadingAll = true;
@@ -1046,6 +1046,412 @@ function hasDateFilter() {
     document.getElementById("dateFrom")?.value ||
     document.getElementById("dateTo")?.value
   );
+}*/
+const API_URL = "https://script.google.com/macros/s/AKfycbzBLTLdMX1DXfLdDjiIit97OWNNaIjdiXqj9_bVtWSdytJAy4x9SvRTZdSP8t3Ysd-7/exec";
+const params = new URLSearchParams(window.location.search);
+const row = params.get("row");
+const token = params.get("token");
+const app = document.getElementById("app");
+
+// Stan aplikacji
+let offset = 0;
+const LIMIT = 30;
+let allRows = [];
+let totalLeads = 0;
+let sortOrder = "desc";
+let fullyLoaded = false;
+let loadingAll = false;
+let visibleLimit = 30; 
+let currentSortKey = 'created';
+let sortDir = 1;
+
+// === INICJALIZACJA ===
+const action = params.get("action");
+if (action === "list") {
+    loadList(true);
+} else if (row && token) {
+    loadSingle();
+} else {
+    showError("Nieprawidłowy link");
+}
+
+// === FUNKCJE ŁADOWANIA DANYCH ===
+
+function loadSingle() {
+    document.body.classList.remove("dashboard-mode");
+    fetch(`${API_URL}?row=${row}&token=${token}`)
+        .then(r => r.json())
+        .then(d => d.success ? render(d.lead) : showError("Brak dostępu do leada"))
+        .catch(() => showError("Błąd połączenia z API"));
+}
+
+function loadList(reset = true) {
+    document.body.classList.add("dashboard-mode");
+
+    if (reset) {
+        offset = 0;
+        visibleLimit = 30;
+        allRows = [];
+    }
+
+    if (fullyLoaded && !reset) {
+        visibleLimit += 30;
+        recomputeView();
+        return;
+    }
+
+    showLoader("Ładowanie leadów…");
+    fetch(`${API_URL}?action=list&token=${token}&limit=${LIMIT}&offset=${offset}`)
+        .then(r => r.json())
+        .then(d => {
+            hideLoader();
+            if (!d.success) {
+                showError("Brak dostępu do listy leadów");
+                return;
+            }
+            totalLeads = d.total;
+            allRows = allRows.concat(d.rows);
+            offset += d.rows.length;
+            if (!reset) visibleLimit += 30;
+            renderList(allRows);
+        })
+        .catch(() => {
+            hideLoader();
+            showError("Błąd połączenia z API");
+        });
+}
+
+async function ensureFullData() {
+    if (fullyLoaded || loadingAll) return;
+    loadingAll = true;
+    showLoader("Pobieranie całej bazy...");
+    try {
+        const res = await fetch(`${API_URL}?action=cache&token=${token}`);
+        const data = await res.json();
+        if (data.success && Array.isArray(data.rows)) {
+            allRows = data.rows;
+            fullyLoaded = true;
+            offset = allRows.length;
+        }
+    } catch (err) {
+        console.error("Błąd pobierania:", err);
+    } finally {
+        hideLoader();
+        loadingAll = false;
+    }
+}
+
+// === LOGIKA WIDOKU I FILTROWANIA ===
+
+async function recomputeView() {
+    if (!document.getElementById("tableBody")) return;
+
+    if ((sortOrder === "asc" || hasDateFilter()) && !fullyLoaded) {
+        await ensureFullData();
+    }
+
+    let rows = [...allRows];
+
+    // 1. Sortowanie (główne po dacie lub kliknięciu w nagłówek)
+    rows.sort((a, b) => {
+        let valA = a[currentSortKey];
+        let valB = b[currentSortKey];
+        
+        if (currentSortKey === 'created' || currentSortKey === 'updated') {
+            valA = new Date(valA || 0);
+            valB = new Date(valB || 0);
+            return sortOrder === "asc" ? valA - valB : valB - valA;
+        } else {
+            valA = (valA || "").toString().toLowerCase();
+            valB = (valB || "").toString().toLowerCase();
+            if (valA < valB) return -1 * sortDir;
+            if (valA > valB) return 1 * sortDir;
+            return 0;
+        }
+    });
+
+    // 2. Filtry
+    rows = applyFilters(rows);
+
+    // 3. Paginacja lokalna
+    const toDisplay = rows.slice(0, visibleLimit);
+    renderTableRows(toDisplay);
+
+    // 4. Przycisk "Więcej"
+    const loadMoreBtn = document.getElementById("loadMoreBtn");
+    if (loadMoreBtn) {
+        const hasMoreInCache = rows.length > visibleLimit;
+        const hasMoreOnServer = totalLeads > allRows.length;
+        loadMoreBtn.style.display = (hasMoreInCache || (!fullyLoaded && hasMoreOnServer)) ? "inline-block" : "none";
+    }
+}
+
+function applyFilters(rows) {
+    const query = document.getElementById("searchInput")?.value.toLowerCase() || "";
+    const statusF = document.getElementById("statusFilter")?.value || "";
+    const campaignF = document.getElementById("campaignFilter")?.value || "";
+    const dfVal = document.getElementById("dateFrom")?.value;
+    const dtVal = document.getElementById("dateTo")?.value;
+
+    const df = dfVal ? new Date(dfVal + "T00:00:00") : null;
+    const dt = dtVal ? new Date(dtVal + "T23:59:59") : null;
+
+    return rows.filter(r => {
+        if (query && !Object.values(r).join(" ").toLowerCase().includes(query)) return false;
+        if (statusF && (r.status || "nowy") !== statusF) return false;
+        if (campaignF && r.campaign !== campaignF) return false;
+        const d = r.created ? new Date(r.created) : null;
+        if (df && (!d || d < df)) return false;
+        if (dt && (!d || d > dt)) return false;
+        return true;
+    });
+}
+
+// === INTERAKCJA UŻYTKOWNIKA ===
+
+function sortTable(key) {
+    if (currentSortKey === key) {
+        sortDir *= -1;
+        sortOrder = (sortOrder === "desc") ? "asc" : "desc";
+    } else {
+        currentSortKey = key;
+        sortDir = 1;
+        sortOrder = "asc";
+    }
+    recomputeView();
+}
+
+async function toggleDateSort() {
+    sortOrder = (sortOrder === "desc") ? "asc" : "desc";
+    currentSortKey = 'created';
+    visibleLimit = 30;
+    document.getElementById("sortBtn").innerText = sortOrder === "desc" ? "📅 Najnowsze" : "📅 Najstarsze";
+    recomputeView();
+}
+
+function clearAllFilters() {
+    document.getElementById("searchInput").value = "";
+    document.getElementById("statusFilter").value = "";
+    document.getElementById("campaignFilter").value = "";
+    document.getElementById("dateFrom").value = "";
+    document.getElementById("dateTo").value = "";
+    visibleLimit = 30;
+    recomputeView();
+}
+
+// === POMOCNICZE ===
+
+function hasDateFilter() {
+    return document.getElementById("dateFrom")?.value || document.getElementById("dateTo")?.value;
+}
+
+function populateCampaigns(rows) {
+    const select = document.getElementById("campaignFilter");
+    if(!select) return;
+    const campaigns = [...new Set(rows.map(r => r.campaign).filter(Boolean))].sort();
+    select.innerHTML = '<option value="">— Wszystkie kampanie —</option>' + 
+        campaigns.map(c => `<option value="${c}">${c}</option>`).join("");
+}
+
+function formatDate(iso) {
+    if (!iso) return "-";
+    const d = new Date(iso);
+    return d.toLocaleString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+function showLoader(text = "Ładowanie…") {
+    const loader = document.getElementById("loader");
+    if (loader) {
+        loader.querySelector(".loader-text").textContent = text;
+        loader.classList.remove("hidden");
+    }
+}
+
+function hideLoader() {
+    const loader = document.getElementById("loader");
+    if (loader) loader.classList.add("hidden");
+}
+
+function showError(msg) {
+    app.classList.add("dashboard-wide");
+    app.innerHTML = `<div class="content"><h3>⛔ Błąd</h3><p style="color:#777">${msg}</p></div>`;
+}
+
+function statusClass(status) {
+    const key = (status || "").toLowerCase().trim();
+    const map = { "nowy": "s-nowy", "porzucony": "s-porzucony", "nie_odbiera": "s-nie_odbiera", "obsluzony": "s-obsluzony", "odrzucony": "s-odrzucony" };
+    return map[key] || "s-nowy";
+}
+
+function formatPhone(phone) {
+    if (!phone) return "-";
+    let digits = phone.toString().replace(/\D/g, "");
+    if (digits.startsWith("48") && digits.length === 11) digits = digits.slice(2);
+    return digits.length === 9 ? `+48 ${digits.slice(0,3)} ${digits.slice(3,6)} ${digits.slice(6)}` : phone;
+}
+
+// --- Tutaj wklej funkcje render(), handleStatusClick(), updateStatus() i closeModal() z poprzedniego kodu, jeśli ich nie masz ---
+function render(lead) {
+  const status = lead["Obecny status"] || "nowy";
+  const lastUpdate = lead["Data ostatniej aktualizacji"];
+  const editable = canEdit(lastUpdate, status);
+  const isNew = status === "nowy" || status === "";
+
+  app.innerHTML = `
+    <div class="header">
+      <img src="https://scontent-waw2-2.xx.fbcdn.net/v/t39.30808-6/540904522_122143092902741193_6153063326804191448_n.jpg?_nc_cat=102&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=EXFBb3EdkUsQ7kNvwGb2Smp&_nc_oc=Adngi_kLnbg9pQiId6dkbJxk2TSxZhFWngOi9hCe_Ny49faPOIFTWxxq8fgzzJADO7I&_nc_zt=23&_nc_ht=scontent-waw2-2.xx&_nc_gid=w7niD_O83PtXyVLS5FjwZg&oh=00_AfkKwh5kzI8KNfgAR8NLvYEUObCW-JZmOSS3fx9QybdVYg&oe=6949BD8D" alt="AdFlow">
+      <h2>Status kontaktu z pacjentem</h2>
+    </div>
+
+    <div class="content">
+
+      <div class="box">
+        <div class="status-row">
+          <div>
+            <p>🆔 <strong>Lead ID:</strong> ${lead["Id."]}</p>
+            <p>📅 <strong>Data zgłoszenia:</strong> ${formatDate(lead["Data"])}</p>
+          </div>
+          <div>
+            <span class="status-badge ${statusClass(status)}">
+              ${status.replace("_"," ").toUpperCase()}
+            </span>
+            <div class="muted">
+              Ostatnia zmiana:<br>
+              ${formatDate(lastUpdate)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="box data">
+        <p><strong>🧾 Imię i nazwisko:</strong> ${lead["Imię Nazwisko"]}</p>
+        <p><strong>📞 Telefon:</strong> ${formatPhone(lead["Nr tel"])}</p>
+        <p><strong>✉️ Email:</strong> ${lead["Email"] || "-"}</p>
+        <p><strong>🦷 Cel wizyty:</strong> ${lead["Pytanie 1 (cel wizyty)"]}</p>
+        <p><strong>💬 Informacje:</strong><br>${lead["Pytanie 2 (Informacje)"] || "-"}</p>
+      </div>
+
+      <div class="box script">
+        💬 <strong>Sugestia rozmowy:</strong><br>
+        „Dzień dobry, dzwonię z gabinetu stomatologicznego.<br>
+        Widzę, że zgłosił/a się Pan/Pani w sprawie
+        <strong>${lead["Pytanie 1 (cel wizyty)"]}</strong>.<br>
+        Jaki termin wizyty byłby dla Pana/Pani dogodny?”
+      </div>
+
+      <div class="buttons ${editable ? "" : "disabled"}">
+        <a class="obs" onclick="${editable ? `handleStatusClick('obsluzony','${status}')` : ""}">
+          ✔ Lead obsłużony
+        </a>
+        <a class="nie" onclick="${editable ? `handleStatusClick('nie_odbiera','${status}')` : ""}">
+          📞 Nie odbiera
+        </a>
+        <a class="odrz" onclick="${editable ? `handleStatusClick('odrzucony','${status}')` : ""}">
+          ❌ Lead odrzucony
+        </a>
+      </div>
+
+      ${
+        editable
+          ? ""
+          : `<p class="muted" style="text-align:center">
+               ⛔ Minął limit 15 minut — status zablokowany
+             </p>`
+      }
+
+    </div>
+
+    <div class="footer">
+      System AdFlow · automatyczna obsługa leadów
+    </div>
+
+    <!-- MODAL POTWIERDZENIA -->
+    <div id="confirmModal" class="modal hidden">
+      <div class="modal-box">
+        <h3>Zmienić status?</h3>
+        <p>Ten lead był już wcześniej oznaczony.<br>
+        Czy na pewno chcesz zmienić jego status?</p>
+
+        <div class="modal-actions">
+          <button class="cancel" onclick="closeModal()">Anuluj</button>
+          <button class="confirm" id="confirmBtn">Zmień status</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function handleStatusClick(newStatus, currentStatus) {
+  const normalized = (currentStatus || "").trim().toLowerCase();
+
+  // NOWY LEAD → bez potwierdzenia
+  if (normalized === "" || normalized === "nowy") {
+    updateStatus(newStatus);
+    return;
+  }
+
+  // STARY LEAD → modal
+  pendingStatus = newStatus;
+  document.getElementById("confirmModal").classList.remove("hidden");
+
+  document.getElementById("confirmBtn").onclick = () => {
+    updateStatus(pendingStatus);
+    closeModal();
+  };
+}
+
+async function updateStatus(status) {
+  // ekran ładowania
+  app.innerHTML = `
+    <div class="content">
+      <h3>⏳ Zapisywanie statusu…</h3>
+      <p class="muted">Proszę czekać</p>
+    </div>
+  `;
+
+  try {
+    const res = await fetch(
+      `${API_URL}?row=${row}&token=${token}&status=${status}`,
+      { method: "POST" }
+    );
+
+    const data = await res.json();
+
+    if (!data.success) {
+      throw new Error(data.error || "Błąd zapisu");
+    }
+
+    // ✅ SUKCES
+    app.innerHTML = `
+      <div class="content">
+        <h3>✅ Status został zapisany</h3>
+        <p class="muted">
+          Zmiana została poprawnie zapisana w systemie
+        </p>
+      </div>
+    `;
+
+  } catch (err) {
+    // ❌ BŁĄD
+    app.innerHTML = `
+      <div class="content">
+        <h3>⛔ Nie udało się zapisać statusu. Spróbuj odświeżyć przeglądarkę i wysłać jeszcze raz. Jeżeli nie zadziała prosimy o kontakt z Adflow</h3>
+        <p class="muted">${err.message}</p>
+        <a href="#" onclick="location.reload()" style="
+          display:inline-block;
+          margin-top:15px;
+          font-weight:bold;
+        ">
+          🔄 Spróbuj ponownie
+        </a>
+      </div>
+    `;
+  }
+}
+
+function closeModal() {
+  document.getElementById("confirmModal").classList.add("hidden");
+  pendingStatus = null;
 }
 </script>
 </body>
