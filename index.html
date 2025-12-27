@@ -873,17 +873,10 @@ async function toggleDateSort() {
   document.getElementById("sortBtn").innerText =
     sortOrder === "desc" ? "📅 Najnowsze" : "📅 Najstarsze";
 
-  if (sortOrder === "asc") {
+  // Jeśli chcemy najstarsze, MUSIMY mieć wszystkie dane, 
+  // bo serwer domyślnie wysyła paczki od najnowszych.
+  if (sortOrder === "asc" && !fullyLoaded) {
     await ensureFullData();
-    dataMode = "full";
-    document.getElementById("loadMoreBtn").style.display = "none";
-  } else {
-    // ⬅️ POWRÓT DO PAGINACJI
-    dataMode = "paged";
-    fullyLoaded = false;
-    offset = allRows.length;
-    document.getElementById("loadMoreBtn").style.display =
-      offset < totalLeads ? "inline-block" : "none";
   }
 
   recomputeView();
@@ -944,25 +937,63 @@ async function ensureFullData() {
 async function recomputeView() {
   if (!document.getElementById("tableBody")) return;
 
-  // ⬇⬇⬇ JAWNA DECYZJA
-  if ((sortOrder === "asc" || hasDateFilter()) && dataMode !== "full") {
+  // Jeśli użytkownik używa filtrów dat lub sortowania ASC, musimy mieć całość danych
+  if ((sortOrder === "asc" || hasDateFilter()) && !fullyLoaded) {
     await ensureFullData();
   }
 
   let rows = [...allRows];
 
-  // 3. sort
+  // 1. Sortowanie
   rows.sort((a, b) => {
-    const dA = new Date(a.created);
-    const dB = new Date(b.created);
+    const dA = new Date(a.created || 0);
+    const dB = new Date(b.created || 0);
     return sortOrder === "asc" ? dA - dB : dB - dA;
   });
 
-  // 4. filtry
+  // 2. Filtrowanie
   rows = applyFilters(rows);
 
-  // 5. render
+  // 3. Renderowanie
   renderTableRows(rows);
+
+  // 4. Zarządzanie przyciskiem "Załaduj więcej"
+  const loadMoreBtn = document.getElementById("loadMoreBtn");
+  if (loadMoreBtn) {
+    // Ukryj przycisk jeśli: mamy już wszystkie dane, sortujemy od najstarszych lub filtrujemy po dacie
+    if (fullyLoaded || sortOrder === "asc" || hasDateFilter()) {
+      loadMoreBtn.style.display = "none";
+    } else {
+      loadMoreBtn.style.display = "inline-block";
+    }
+  }
+}
+
+async function ensureFullData() {
+  if (fullyLoaded || loadingAll) return;
+
+  loadingAll = true;
+  showLoader("Pobieranie całej bazy danych...");
+
+  try {
+    const res = await fetch(`${API_URL}?action=cache&token=${token}`);
+    const data = await res.json();
+
+    if (data.success && Array.isArray(data.rows)) {
+      allRows = data.rows;
+      fullyLoaded = true;
+      // Aktualizujemy offset, żeby loadList wiedziało, że już wszystko mamy
+      offset = allRows.length; 
+    } else {
+      console.error("Błąd pobierania bazy:", data.error);
+      alert("Nie udało się pobrać pełnej historii. Spróbuj odświeżyć.");
+    }
+  } catch (err) {
+    console.error("Network error:", err);
+  } finally {
+    hideLoader();
+    loadingAll = false;
+  }
 }
 
 function applyFilters(rows) {
