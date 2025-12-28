@@ -391,17 +391,27 @@ function closePreview() {
 }
 
 function handleStatusClick(newS) {
+    // Lead NOWY - brak okna o zatwierdzaniu (edycja całkowicie odblokowana)
     if (currentLeadStatus === "nowy") {
         updateStatus(newS);
-    } else {
+    } 
+    // Lead NIE ODBIERA (i inne) - możliwość edycji z potwierdzeniem
+    else {
         const modal = document.getElementById("confirmModal");
         const msg = document.getElementById("confirmMsg");
         const yesBtn = document.getElementById("confirmYes");
         const noBtn = document.getElementById("confirmNo");
+        
         msg.innerHTML = `Czy na pewno chcesz zmienić status <b>${currentLeadStatus.toUpperCase()}</b> na <b>${newS.toUpperCase()}</b>?`;
         modal.classList.remove("hidden");
-        yesBtn.onclick = () => { modal.classList.add("hidden"); updateStatus(newS); };
-        noBtn.onclick = () => { modal.classList.add("hidden"); };
+        
+        yesBtn.onclick = () => { 
+            modal.classList.add("hidden"); 
+            updateStatus(newS); 
+        };
+        noBtn.onclick = () => { 
+            modal.classList.add("hidden"); 
+        };
     }
 }
 
@@ -423,10 +433,22 @@ async function updateStatus(s) {
 
 function canEdit(lastUpdate, status) {
     const s = String(status).toLowerCase().trim();
-    if (s.includes("nowy") || s.includes("nie_odbiera")) return true;
+    
+    // 1. Porzucony - zablokowany od razu
     if (s.includes("porzucony")) return false;
-    if (!lastUpdate) return true;
-    return (Date.now() - new Date(lastUpdate)) / 60000 <= 20;
+    
+    // 2. Nowy i Nie odbiera - odblokowana edycja
+    if (s === "nowy" || s.includes("nie_odbiera")) return true;
+    
+    // 3. Obsłużony i Odrzucony - zablokowane po 20 minutach
+    if (s.includes("obs") || s === "odrzucony") {
+        if (!lastUpdate) return true; // Jeśli brak daty, pozwól edytować raz
+        const diffMin = (Date.now() - new Date(lastUpdate)) / 60000;
+        return diffMin <= 20;
+    }
+
+    // Domyślnie dla innych stanów (jeśli by wystąpiły)
+    return true;
 }
 
 function toggleSort() {
