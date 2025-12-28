@@ -153,7 +153,7 @@
                     <div class="box data">
                         <p><strong>🧾 Pacjent:</strong> ${lead.name || "-"}</p>
                         <p><strong>📞 Telefon:</strong> ${formatPhone(lead.phone)}</p>
-                        <p><strong>📧 Email:</strong> ${lead.email || "-"}</p>
+                        <p><strong>✉️ Email:</strong> ${lead.email || "-"}</p>
                         <p><strong>⏱️ e:</strong> ${lead.wait_time_combined || "-"}</p>
                         <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
                         <p><strong>🦷 Cel:</strong> ${lead.info1 || "-"}</p>
@@ -297,7 +297,7 @@
                 <tr>
                     <td>${r.id}</td>
                     <td>${formatDate(r.created)}</td>
-                    <td><strong>${r.name || "-"}</strong><br><small class="muted">📞 ${formatPhone(r.phone)}</small><br><small class="muted">✉️ ${r.email || "-"}</small></td>
+                    <td><strong>${r.name || "-"}</strong><br><small class="muted">📞 ${formatPhone(r.phone)}</small><br><small class="muted">✉️ Email: ${r.email || "-"}</small></td>
                     <td><span class="status-badge ${statusClass(r.status)}">${r.status}</span></td>
                     <td>${formatDate(r.updated)}</td>
                     <td>${r.wait_time_combined || "-"}</td>
@@ -336,7 +336,7 @@
                 <div class="box data">
                     <p><strong>🧾 Pacjent:</strong> ${r.name}</p>
                     <p><strong>📞 Telefon:</strong> ${formatPhone(r.phone)}</p>
-                    <p><strong>✉️ ${r.email || "-"}</strong></p>
+                    <p><strong>✉️ Email: ${r.email || "-"}</strong></p>
                     <p><strong>⏱️ Czas kontaktu (realny):</strong> ${r.wait_time_combined}</p>
                     <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
                     <p><strong>🦷 Info 1:</strong> ${r.info1 || "-"}</p>
