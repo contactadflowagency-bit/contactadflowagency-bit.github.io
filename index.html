@@ -14,12 +14,20 @@
     .box { background:#f4fbfd; border-left:4px solid #00bcd4; padding:16px 20px; border-radius:6px; margin-bottom:20px; }
     .box.data { background:#f0faff; }
     p { margin:6px 0; font-size:15px; }
-    .buttons { text-align:center; margin:30px 0; }
-    .buttons a { display:inline-block; margin:6px; padding:12px 20px; border-radius:6px; color:white; text-decoration:none; font-weight:bold; cursor: pointer; transition: opacity 0.2s; }
+    .buttons { text-align:center; margin:30px 0; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+    .buttons a, .btn-modal { display:inline-block; padding:12px 20px; border-radius:6px; color:white; text-decoration:none; font-weight:bold; cursor: pointer; transition: opacity 0.2s; border: none; font-size: 14px; }
     .buttons a:hover { opacity: 0.8; }
+    
     .obs { background:#4caf50; } .nie { background:#ff9800; } .odrz { background:#f44336; }
+    
+    /* STATUS BADGES */
     .status-badge { display:inline-block; padding:6px 12px; border-radius:999px; font-weight:700; font-size:12px; color:#fff; text-transform: uppercase; }
-    .s-nowy { background:#9c27b0; } .s-nie_odbiera { background:#ff9800; } .s-obsluzony { background:#4caf50; } .s-odrzucony { background:#f44336; }
+    .s-nowy { background:#2196F3; } /* Nowy: Blue */
+    .s-nie_odbiera { background:#ff9800; } 
+    .s-obsluzony { background:#4caf50; } 
+    .s-odrzucony { background:#f44336; }
+    .s-porzucony { background:#607d8b; }
+
     .status-row { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
     .muted { font-size:13px; color:#777; }
     .disabled { opacity:.4; pointer-events: none; cursor: default; }
@@ -29,16 +37,21 @@
     .dashboard-toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; align-items: center; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #eee; }
     .dashboard-toolbar input, .dashboard-toolbar select { padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; outline: none; }
     .btn-tool { padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd; background: #fff; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+    
     .table-scroll { width: 100%; overflow-x: auto; border: 1px solid #eee; border-radius: 8px; }
     .dashboard-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 1000px; }
     .dashboard-table thead th { background: #f4f7fb; padding: 12px 10px; text-align: left; border-bottom: 2px solid #e3e7ee; }
     .dashboard-table tbody td { padding: 12px 10px; border-bottom: 1px solid #eee; }
 
-    .loader { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 9999; }
-    .loader.hidden { display: none; }
-    .loader-box { background: #fff; padding: 30px 40px; border-radius: 12px; text-align: center; }
-    .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top-color: #333; border-radius: 50%; animation: spin 0.9s linear infinite; margin: 0 auto; }
+    .loader { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+    .loader.hidden { display: none !important; }
+    .loader-box { background: #fff; padding: 30px; border-radius: 12px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top-color: #333; border-radius: 50%; animation: spin 0.9s linear infinite; margin: 0 auto 15px; }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* MODAL CONFIRMATION */
+    .confirm-title { font-weight: bold; font-size: 18px; margin-bottom: 10px; color: #333; }
+    .confirm-text { font-size: 15px; color: #666; margin-bottom: 20px; line-height: 1.4; }
 </style>
 </head>
 <body>
@@ -54,6 +67,17 @@
     </div>
 </div>
 
+<div id="confirmModal" class="loader hidden">
+    <div class="loader-box">
+        <div class="confirm-title">Potwierdź zmianę</div>
+        <div class="confirm-text" id="confirmMsg">Czy na pewno chcesz zmienić status tego leada?</div>
+        <div class="buttons">
+            <button class="btn-modal obs" id="confirmYes">Tak, zmień</button>
+            <button class="btn-modal odrz" id="confirmNo">Anuluj</button>
+        </div>
+    </div>
+</div>
+
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbzBLTLdMX1DXfLdDjiIit97OWNNaIjdiXqj9_bVtWSdytJAy4x9SvRTZdSP8t3Ysd-7/exec";
 const params = new URLSearchParams(window.location.search);
@@ -66,6 +90,7 @@ let allLeadsMap = new Map();
 let currentTotal = 0;
 let dashboardOffset = 0;
 let dashboardSort = "desc";
+let currentLeadStatus = "nowy";
 
 // === LOGIKA WIDOKU POJEDYNCZEGO ===
 function loadSingle() {
@@ -75,7 +100,12 @@ function loadSingle() {
         .then(r => r.json())
         .then(d => {
             hideLoader();
-            d.success ? renderSingle(d.lead) : showError("Brak dostępu lub nieprawidłowy token.");
+            if(d.success) {
+                currentLeadStatus = String(d.lead["Obecny status"] || "nowy").toLowerCase().trim();
+                renderSingle(d.lead);
+            } else {
+                showError("Brak dostępu lub nieprawidłowy token.");
+            }
         })
         .catch(() => showError("Błąd połączenia z serwerem."));
 }
@@ -85,7 +115,7 @@ function renderSingle(lead) {
         const key = Object.keys(lead).find(k => k.toLowerCase().includes(p.toLowerCase()));
         return key ? lead[key] : null;
     };
-    const status = String(lead["Obecny status"] || "nowy").toLowerCase().trim();
+    const status = currentLeadStatus;
     const lastUpdate = lead["Data ostatniej aktualizacji"];
     const email = getVal("mail") || getVal("email") || "-";
     const info1 = getVal("Pytanie 1") || "-";
@@ -124,7 +154,7 @@ function renderSingle(lead) {
                 <a class="nie" onclick="handleStatusClick('nie_odbiera')">📞 Nie odbiera</a>
                 <a class="odrz" onclick="handleStatusClick('odrzucony')">❌ Odrzucony</a>
             </div>
-            ${!editable ? `<p class="muted" style="text-align:center; color:#f44336;">⛔ Edycja zablokowana</p>` : ''}
+            ${!editable ? `<p class="muted" style="text-align:center; color:#f44336; font-weight:bold; margin-top:20px;">⛔ Edycja zablokowana (status ostateczny lub upłynął czas 20 min)</p>` : ''}
         </div>
     `;
 }
@@ -142,6 +172,7 @@ function renderListLayout() {
                     <option value="obsluzony">Obsłużony</option>
                     <option value="nie_odbiera">Nie odbiera</option>
                     <option value="odrzucony">Odrzucony</option>
+                    <option value="porzucony">Porzucony</option>
                 </select>
                 <input type="date" id="dateFrom" onchange="loadDashboard(true)">
                 <input type="date" id="dateTo" onchange="loadDashboard(true)">
@@ -169,7 +200,8 @@ function loadDashboard(reset = true) {
     if (reset) {
         dashboardOffset = 0;
         allLeadsMap.clear();
-        document.getElementById("tableBody").innerHTML = "";
+        const tbody = document.getElementById("tableBody");
+        if(tbody) tbody.innerHTML = "";
     }
     
     showLoader("Pobieranie danych...");
@@ -178,7 +210,6 @@ function loadDashboard(reset = true) {
     const dt = document.getElementById("dateTo").value;
     const st = document.getElementById("statusFilter").value;
     
-    // Wysyłamy status do API, aby serwer zwrócił przefiltrowane dane
     const url = `${API_URL}?action=list&token=${token}&limit=50&offset=${dashboardOffset}&sort=${dashboardSort}&dateFrom=${df}&dateTo=${dt}&status=${st}`;
 
     fetch(url)
@@ -186,25 +217,21 @@ function loadDashboard(reset = true) {
         .then(d => {
             hideLoader();
             if (!d.success) return;
-            
             currentTotal = d.total;
             d.rows.forEach(r => {
                 r.status = String(r.status || "nowy").toLowerCase().trim();
                 allLeadsMap.set(String(r.id), r);
             });
-            
             dashboardOffset += d.rows.length;
             displayTable();
         })
         .catch(() => {
             hideLoader();
-            alert("Błąd połączenia z serwerem.");
         });
 }
 
 function displayTable() {
     const list = Array.from(allLeadsMap.values());
-    // Sortowanie lokalne dla pewności
     list.sort((a,b) => {
         const da = new Date(a.created), db = new Date(b.created);
         return dashboardSort === "desc" ? db - da : da - db;
@@ -222,16 +249,76 @@ function displayTable() {
         </tr>
     `).join("");
 
-    document.getElementById("tableBody").innerHTML = html;
+    const tbody = document.getElementById("tableBody");
+    if(tbody) tbody.innerHTML = html;
     
-    // Przycisk "Załaduj więcej" pokazuje się, jeśli pobrano mniej niż jest wszystkich dostępnych dla tych filtrów
     const btn = document.getElementById("loadMoreBtn");
     if (btn) {
         btn.style.display = (allLeadsMap.size < currentTotal) ? "inline-flex" : "none";
     }
 }
 
-// === HELPERY ===
+// === SYSTEM POTWIERDZEŃ I ZMIANY STATUSU ===
+function handleStatusClick(newS) {
+    // Jeżeli status to NOWY - zmiana bez pytania
+    if (currentLeadStatus === "nowy") {
+        updateStatus(newS);
+    } else {
+        // Jeżeli status był już zmieniany - ładny modal
+        const modal = document.getElementById("confirmModal");
+        const msg = document.getElementById("confirmMsg");
+        const yesBtn = document.getElementById("confirmYes");
+        const noBtn = document.getElementById("confirmNo");
+
+        msg.innerHTML = `Czy na pewno chcesz zmienić obecny status <b>${currentLeadStatus.toUpperCase()}</b> na <b>${newS.toUpperCase()}</b>?`;
+        modal.classList.remove("hidden");
+
+        yesBtn.onclick = () => {
+            modal.classList.add("hidden");
+            updateStatus(newS);
+        };
+        noBtn.onclick = () => {
+            modal.classList.add("hidden");
+        };
+    }
+}
+
+async function updateStatus(s) {
+    showLoader("Zapisywanie...");
+    try {
+        const res = await fetch(`${API_URL}?row=${row}&token=${token}&status=${s}`, { method: "POST" });
+        const d = await res.json();
+        if (d.success) {
+            app.innerHTML = `<div class="content" style="text-align:center; padding:50px;">
+                <div style="font-size:50px; margin-bottom:20px;">✅</div>
+                <h3>Zapisano pomyślnie</h3>
+                <p>Status został zaktualizowany na: <b>${s.toUpperCase()}</b></p>
+                <p class="muted">Możesz teraz zamknąć to okno.</p>
+            </div>`;
+        } else {
+            alert("Błąd: " + d.error);
+        }
+    } catch (e) { alert("Błąd połączenia"); }
+    finally { hideLoader(); }
+}
+
+// === LOGIKA BLOKOWANIA (20 MIN) ===
+function canEdit(lastUpdate, status) {
+    const s = String(status).toLowerCase().trim();
+    
+    // Nowy i Nie odbiera - zawsze można edytować
+    if (s === "nowy" || s === "nie_odbiera") return true;
+    
+    // Porzucony - blokada natychmiastowa
+    if (s === "porzucony") return false;
+    
+    // Obsłużony i Odrzucony - blokada po 20 minutach
+    if (!lastUpdate) return true;
+    const diffMin = (Date.now() - new Date(lastUpdate)) / 60000;
+    return diffMin <= 20;
+}
+
+// === POMOCNICZE ===
 function toggleSort() {
     dashboardSort = (dashboardSort === "desc") ? "asc" : "desc";
     document.getElementById("sortBtn").innerText = dashboardSort === "desc" ? "📅 Najnowsze" : "📅 Najstarsze";
@@ -245,27 +332,6 @@ function clearFilters() {
     loadDashboard(true);
 }
 
-function handleStatusClick(newS) {
-    if (confirm(`Czy zmienić status na ${newS.toUpperCase()}?`)) updateStatus(newS);
-}
-
-async function updateStatus(s) {
-    showLoader("Zapisywanie...");
-    try {
-        const res = await fetch(`${API_URL}?row=${row}&token=${token}&status=${s}`, { method: "POST" });
-        const d = await res.json();
-        if (d.success) app.innerHTML = `<div class="content" style="text-align:center"><h3>✅ Zapisano</h3><p>Status został zaktualizowany.</p></div>`;
-        else alert("Błąd: " + d.error);
-    } catch (e) { alert("Błąd połączenia"); }
-    finally { hideLoader(); }
-}
-
-function canEdit(lastUpdate, status) {
-    if (status === "nowy" || status === "nie_odbiera") return true;
-    if (!lastUpdate) return true;
-    return (Date.now() - new Date(lastUpdate)) / 60000 <= 15;
-}
-
 function formatDate(iso) { 
     if (!iso) return "-"; 
     const d = new Date(iso);
@@ -273,7 +339,7 @@ function formatDate(iso) {
 }
 
 function statusClass(s) {
-    const m = { "nowy": "s-nowy", "nie_odbiera": "s-nie_odbiera", "obsluzony": "s-obsluzony", "odrzucony": "s-odrzucony" };
+    const m = { "nowy": "s-nowy", "nie_odbiera": "s-nie_odbiera", "obsluzony": "s-obsluzony", "odrzucony": "s-odrzucony", "porzucony": "s-porzucony" };
     return m[s] || "s-nowy";
 }
 
