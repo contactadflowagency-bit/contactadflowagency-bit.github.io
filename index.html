@@ -243,8 +243,8 @@ function renderListLayout() {
                 <table class="dashboard-table">
                     <thead>
                         <tr>
-                            <th>Podgląd</th>
                             <th>ID</th><th>Data</th><th>Pacjent</th><th>Status</th><th>Zmiana</th><th>Czekał</th><th>Kampania</th>
+                            <th style="text-align:center;">Akcja</th> </tr>
                         </tr>
                     </thead>
                     <tbody id="tableBody"></tbody>
@@ -384,39 +384,27 @@ function displayTable() {
     const list = Array.from(allLeadsMap.values());
     const html = list.map(r => `
         <tr>
-            <td style="text-align:center;">
-                <button class="action-btn" onclick="openPreview('${r.id}')" title="Podgląd">👁️</button>
-            </td>
             <td>${r.id}</td>
             <td>${formatDate(r.created)}</td>
             <td>
                 <strong>${r.name || "-"}</strong><br>
-                <small class="muted" style="font-size:12px;">📞 ${formatPhone(r.phone)}</small><br>
-                <small class="muted" style="color:#007bff; font-size:11px;">✉️ ${r.email}</small>
+                <small class="muted" style="font-size:12px;">📞 ${formatPhone(r.phone)}</small>
             </td>
             <td><span class="status-badge ${statusClass(r.status)}">${r.status}</span></td>
             <td>${formatDate(r.updated)}</td>
             <td>${r.wait_time || "-"}</td>
             <td>${r.campaign || "-"}</td>
+            <td style="text-align:center;">
+                <button class="btn-tool" onclick="openPreview('${r.id}')" style="font-size:11px; padding:5px 10px;">Zobacz więcej</button>
+            </td>
         </tr>
     `).join("");
     document.getElementById("tableBody").innerHTML = html;
 }
 
-// === NOWE FUNKCJE DO MODALA PODGLĄDU ===
 function openPreview(id) {
     const r = allLeadsMap.get(String(id));
     if(!r) return;
-
-    // Pobieramy dane. Zakładamy, że API listy zwraca je jako info1/info2 
-    // lub że są dostępne w obiekcie r pod kluczami z "Pytanie".
-    // Jeśli lista nie zwraca tych pól, musielibyśmy dociągnąć je fetch'em loadSingle,
-    // ale tu zakładamy optymistycznie, że są dostępne lub używamy zamienników.
-    
-    // Spróbuj znaleźć pytania w obiekcie wiersza
-    const info1 = r.info1 || getVal(r, "Pytanie 1") || getVal(r, "cel") || "-";
-    const info2 = r.info2 || getVal(r, "Pytanie 2") || getVal(r, "dodatkowe") || "-";
-    const email = r.email || getVal(r, "mail") || "-";
 
     const contentHtml = `
         <div class="box">
@@ -434,23 +422,21 @@ function openPreview(id) {
         <div class="box data">
             <p><strong>🧾 Pacjent:</strong> ${r.name || "-"}</p>
             <p><strong>📞 Telefon:</strong> ${formatPhone(r.phone)}</p>
-            <p><strong>📧 Email:</strong> ${email}</p>
+            <p><strong>📧 Email:</strong> ${r.email}</p>
             <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
-            <p><strong>🦷 Cel wizyty:</strong> ${info1}</p>
-            <p><strong>📝 Dodatkowe info:</strong> ${info2}</p>
+            <p><strong>🦷 Pytanie 1 (cel wizyty):</strong> ${r.info1}</p>
+            <p><strong>📝 Pytanie 2 (Informacje):</strong> ${r.info2}</p>
         </div>
     `;
 
     document.getElementById("previewContent").innerHTML = contentHtml;
     
-    // Ustawienie linku do pełnej edycji
-    const editUrl = `${window.location.pathname}?row=${r.row_index || r.rowIndex || ''}&token=${token}`; // Uwaga: API musi zwracać indeks wiersza w liście, jeśli chcesz linkować bezpośrednio
-    // Jeśli nie mamy row_index w liście, możemy po prostu linkować tak:
-    const directLink = window.location.href.split('?')[0] + `?row=${r.id}&token=${token}`; // O ile ID == Row lub backend to obsługuje
-    // Bezpieczniej, jeśli backend obsługuje szukanie po ID:
-    document.getElementById("previewLink").href = directLink;
-
+    // USUNIĘTO: Blok edycji (przycisk "Przejdź do edycji") został trwale usunięty z modala
     document.getElementById("previewModal").classList.remove("hidden");
+    
+    // Ukrywamy przycisk edycji w stopce modala jeśli istnieje
+    const editBtn = document.getElementById("previewLink");
+    if(editBtn) editBtn.style.display = "none"; 
 }
 
 function closePreview(e) {
