@@ -137,7 +137,7 @@ function renderSingle(lead) {
 
     app.innerHTML = `
         <div class="header">
-            <img src="https://scontent-waw2-2.xx.fbcdn.net/v/t39.30808-6/540904522_122143092902741193_6153063326804191448_n.jpg?_nc_cat=102&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=EXFBb3EdkUsQ7kNvwGb2Smp&oh=00_AfkKwh5kzI8KNfgAR8NLvYEUObCW-JZmOSS3fx9QybdVYg&oe=6949BD8D" alt="AdFlow">
+            <img src="https://scontent-waw2-2.xx.fbcdn.net/v/t39.30808-6/540904522_122143092902741193_6153063326804191448_n.jpg?_nc_cat=102&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=JC77rMjouDAQ7kNvwEt8vB8&_nc_oc=AdnTCBOj0TNVYYZUg4BUVsh6UgUe2DLPoC82tKLDr2CPvDRVG23qtHqs0ZeGFNKzMTA&_nc_zt=23&_nc_ht=scontent-waw2-2.xx&_nc_gid=GMw8v316DO9S0SsJOj-shw&oh=00_AfmJC9N0HeEIKsZbIqP4PsRasw2Ui5qLLpVqM740TenL8Q&oe=695724CD" alt="AdFlow">
             <h2>Status kontaktu z pacjentem</h2>
         </div>
         <div class="content">
@@ -176,7 +176,10 @@ function renderSingle(lead) {
 function renderListLayout() {
     document.body.classList.add("dashboard-mode");
     app.innerHTML = `
-        <div class="header"><h2>📊 Dashboard leadów</h2></div>
+        <div class="header">
+            <img src="https://scontent-waw2-2.xx.fbcdn.net/v/t39.30808-6/540904522_122143092902741193_6153063326804191448_n.jpg?_nc_cat=102&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=JC77rMjouDAQ7kNvwEt8vB8&_nc_oc=AdnTCBOj0TNVYYZUg4BUVsh6UgUe2DLPoC82tKLDr2CPvDRVG23qtHqs0ZeGFNKzMTA&_nc_zt=23&_nc_ht=scontent-waw2-2.xx&_nc_gid=GMw8v316DO9S0SsJOj-shw&oh=00_AfmJC9N0HeEIKsZbIqP4PsRasw2Ui5qLLpVqM740TenL8Q&oe=695724CD" alt="AdFlow">
+            <h2>📊 Dashboard leadów</h2>
+        </div>
         <div class="content">
             <div class="dashboard-toolbar">
                 <select id="statusFilter" onchange="loadDashboard(true)">
