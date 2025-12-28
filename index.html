@@ -380,6 +380,9 @@ function loadDashboard(reset = true) {
         });
 }
 
+JavaScript
+
+// --- POPRAWIONA FUNKCJA WYŚWIETLANIA TABELI ---
 function displayTable() {
     const list = Array.from(allLeadsMap.values());
     const html = list.map(r => `
@@ -388,21 +391,26 @@ function displayTable() {
             <td>${formatDate(r.created)}</td>
             <td>
                 <strong>${r.name || "-"}</strong><br>
-                <small class="muted" style="font-size:12px;"> ${r.email || "-"}</small><br>
-                <small class="muted" style="font-size:12px;"> ${formatPhone(r.phone)}</small>
+                <small class="muted" style="font-size:12px;">✉️ ${r.email || "-"}</small><br>
+                <small class="muted" style="font-size:12px;">📞 ${formatPhone(r.phone)}</small>
             </td>
             <td><span class="status-badge ${statusClass(r.status)}">${r.status}</span></td>
             <td>${formatDate(r.updated)}</td>
-            <td>${r.wait_time || "-"}</td>
+            <td>${r.wait_time_combined || "-"}</td>
             <td>${r.campaign || "-"}</td>
             <td style="text-align:center;">
-                <button class="btn-tool" onclick="openPreview('${r.id}')" style="font-size:11px; padding:5px 10px;">Zobacz więcej</button>
+                <button class="btn-tool" 
+                        onclick="openPreview('${r.id}')" 
+                        style="font-size:11px; padding:5px 10px; display: block; margin: 0 auto;">
+                    Zobacz więcej
+                </button>
             </td>
         </tr>
     `).join("");
     document.getElementById("tableBody").innerHTML = html;
 }
 
+// --- POPRAWIONA FUNKCJA PODGLĄDU (MODAL) ---
 function openPreview(id) {
     const r = allLeadsMap.get(String(id));
     if(!r) return;
@@ -423,19 +431,17 @@ function openPreview(id) {
         <div class="box data">
             <p><strong>🧾 Pacjent:</strong> ${r.name || "-"}</p>
             <p><strong>📞 Telefon:</strong> ${formatPhone(r.phone)}</p>
-            <p><strong>📧 Email:</strong> ${r.email}</p>
+            <p><strong>📧 Email:</strong> ${r.email || "-"}</p>
+            <p><strong>⏱️ Czas oczekiwania:</strong> ${r.wait_time_combined || "-"}</p>
             <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
-            <p><strong>🦷 Pytanie 1 (cel wizyty):</strong> ${r.info1}</p>
-            <p><strong>📝 Pytanie 2 (Informacje):</strong> ${r.info2}</p>
+            <p><strong>🦷 Pytanie 1 (cel wizyty):</strong> ${r.info1 || "-"}</p>
+            <p><strong>📝 Pytanie 2 (Informacje):</strong> ${r.info2 || "-"}</p>
         </div>
     `;
 
     document.getElementById("previewContent").innerHTML = contentHtml;
-    
-    // USUNIĘTO: Blok edycji (przycisk "Przejdź do edycji") został trwale usunięty z modala
     document.getElementById("previewModal").classList.remove("hidden");
     
-    // Ukrywamy przycisk edycji w stopce modala jeśli istnieje
     const editBtn = document.getElementById("previewLink");
     if(editBtn) editBtn.style.display = "none"; 
 }
