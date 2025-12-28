@@ -202,8 +202,9 @@ function loadDashboard(reset = true) {
     if (reset) {
         dashboardOffset = 0;
         allLeadsMap.clear();
-        const tbody = document.getElementById("tableBody");
-        if(tbody) tbody.innerHTML = "";
+        document.getElementById("tableBody").innerHTML = "";
+        // Ukryj przycisk przy nowym wyszukiwaniu
+        document.getElementById("loadMoreBtn").style.display = "none"; 
     }
     
     showLoader("Pobieranie danych...");
@@ -219,16 +220,31 @@ function loadDashboard(reset = true) {
         .then(d => {
             hideLoader();
             if (!d.success) return;
-            currentTotal = d.total;
+            
+            // Aktualizuj total
+            currentTotal = d.total; 
+
             d.rows.forEach(r => {
                 r.status = String(r.status || "nowy").toLowerCase().trim();
                 allLeadsMap.set(String(r.id), r);
             });
+            
             dashboardOffset += d.rows.length;
             displayTable();
+
+            // === NAPRAWA PRZYCISKU ZAŁADUJ WIĘCEJ ===
+            const btn = document.getElementById("loadMoreBtn");
+            // Jeśli mamy w mapie mniej leadów niż wynosi total z serwera -> pokaż przycisk
+            if (allLeadsMap.size < currentTotal) {
+                btn.style.display = "block";
+            } else {
+                btn.style.display = "none";
+            }
         })
-        .catch(() => {
+        .catch((e) => {
+            console.error(e);
             hideLoader();
+            showError("Błąd pobierania danych listy.");
         });
 }
 
