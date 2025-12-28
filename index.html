@@ -7,11 +7,11 @@
 <style>
     body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; background:#f7f8fa; margin:0; min-height:100vh; display:flex; justify-content:center; align-items:center; }
     .wrapper { max-width:600px; width:95%; background:#fff; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.05); overflow:hidden; }
-    .header { background: linear-gradient(135deg, #00bcd4, #9c27b0); color:#fff; padding:24px; text-align:center; }
+    .header { background: linear-gradient(135deg, #00bcd4, #9c27b0); color:#fff; padding:24px; text-align:center; position: relative; }
     .header img { width:70px; border-radius:16px; display:block; margin:0 auto 10px; }
     .header h2 { margin:0; font-size:22px; }
     .content { padding:26px 30px; }
-    .box { background:#f4fbfd; border-left:4px solid #00bcd4; padding:16px 20px; border-radius:6px; margin-bottom:20px; }
+    .box { background:#f4fbfd; border-left:4px solid #00bcd4; padding:16px 20px; border-radius:6px; margin-bottom:20px; text-align: left; }
     .box.data { background:#f0faff; }
     p { margin:6px 0; font-size:15px; }
     .buttons { text-align:center; margin:30px 0; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
@@ -21,6 +21,7 @@
     .obs { background:#2E7D32; } 
     .nie { background:#FF9800; } 
     .odrz { background:#D32F2F; }
+    .close-btn { background:#555; }
     
     /* STATUS BADGES */
     .status-badge { display:inline-block; padding:6px 12px; border-radius:999px; font-weight:700; font-size:12px; color:#fff; text-transform: uppercase; }
@@ -43,10 +44,10 @@
 
     /* MULTISELECT DROPDOWN */
     .multiselect { position: relative; display: inline-block; }
-    .multiselect-btn { padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #fff; cursor: pointer; font-size: 14px; min-width: 150px; text-align: left; display:flex; justify-content: space-between; align-items: center; }
-    .multiselect-content { display: none; position: absolute; background-color: #fff; min-width: 250px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 10; border: 1px solid #eee; border-radius: 8px; max-height: 300px; overflow-y: auto; top: 110%; left: 0; }
+    .multiselect-btn { padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #fff; cursor: pointer; font-size: 14px; min-width: 160px; text-align: left; display:flex; justify-content: space-between; align-items: center; }
+    .multiselect-content { display: none; position: absolute; background-color: #fff; min-width: 250px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 100; border: 1px solid #eee; border-radius: 8px; max-height: 300px; overflow-y: auto; top: 110%; left: 0; }
     .multiselect-content.show { display: block; }
-    .multiselect-content label { color: black; padding: 8px 12px; text-decoration: none; display: block; cursor: pointer; border-bottom: 1px solid #f9f9f9; font-size: 13px; }
+    .multiselect-content label { color: black; padding: 8px 12px; text-decoration: none; display: block; cursor: pointer; border-bottom: 1px solid #f9f9f9; font-size: 13px; text-align: left;}
     .multiselect-content label:hover { background-color: #f1f1f1; }
     .multiselect-content input { margin-right: 10px; }
 
@@ -55,10 +56,17 @@
     .dashboard-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 1000px; }
     .dashboard-table thead th { background: #f4f7fb; padding: 12px 10px; text-align: left; border-bottom: 2px solid #e3e7ee; }
     .dashboard-table tbody td { padding: 12px 10px; border-bottom: 1px solid #eee; }
+    .action-btn { background: none; border: none; cursor: pointer; font-size: 18px; padding: 5px; opacity: 0.7; transition: 0.2s; }
+    .action-btn:hover { opacity: 1; transform: scale(1.1); }
 
     .loader { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; }
     .loader.hidden { display: none !important; }
-    .loader-box { background: #fff; padding: 30px; border-radius: 12px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    .loader-box { background: #fff; padding: 30px; border-radius: 12px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative; }
+    
+    /* MODAL PREVIEW SPECIFIC */
+    .modal-preview-box { max-width: 600px; width: 95%; padding: 0; overflow: hidden; }
+    .modal-close-x { position: absolute; top: 15px; right: 15px; color: white; font-size: 24px; cursor: pointer; z-index: 10; font-weight: bold;}
+
     .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top-color: #333; border-radius: 50%; animation: spin 0.9s linear infinite; margin: 0 auto 15px; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -87,6 +95,22 @@
         <div class="buttons">
             <button class="btn-modal obs" id="confirmYes">Tak, zmień</button>
             <button class="btn-modal odrz" id="confirmNo">Anuluj</button>
+        </div>
+    </div>
+</div>
+
+<div id="previewModal" class="loader hidden" onclick="closePreview(event)">
+    <div class="loader-box modal-preview-box" onclick="event.stopPropagation()">
+        <div class="header">
+            <div class="modal-close-x" onclick="closePreview()">×</div>
+            <img src="https://scontent-waw2-2.xx.fbcdn.net/v/t39.30808-6/540904522_122143092902741193_6153063326804191448_n.jpg?_nc_cat=102&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=JC77rMjouDAQ7kNvwEt8vB8&_nc_oc=AdnTCBOj0TNVYYZUg4BUVsh6UgUe2DLPoC82tKLDr2CPvDRVG23qtHqs0ZeGFNKzMTA&_nc_zt=23&_nc_ht=scontent-waw2-2.xx&_nc_gid=GMw8v316DO9S0SsJOj-shw&oh=00_AfmJC9N0HeEIKsZbIqP4PsRasw2Ui5qLLpVqM740TenL8Q&oe=695724CD" alt="AdFlow">
+            <h2>Szczegóły leada</h2>
+        </div>
+        <div class="content" id="previewContent">
+            </div>
+        <div style="background: #f9f9f9; padding: 15px;">
+            <button class="btn-modal close-btn" onclick="closePreview()">Zamknij podgląd</button>
+            <a id="previewLink" href="#" target="_blank" class="btn-modal s-nowy">Przejdź do edycji ➜</a>
         </div>
     </div>
 </div>
@@ -124,15 +148,11 @@ function loadSingle() {
 }
 
 function renderSingle(lead) {
-    const getVal = (p) => {
-        const key = Object.keys(lead).find(k => k.toLowerCase().includes(p.toLowerCase()));
-        return key ? lead[key] : null;
-    };
     const status = currentLeadStatus;
     const lastUpdate = lead["Data ostatniej aktualizacji"];
-    const email = getVal("mail") || getVal("email") || "-";
-    const info1 = getVal("Pytanie 1") || "-";
-    const info2 = getVal("Pytanie 2") || "-";
+    const email = getVal(lead, "mail") || getVal(lead, "email") || "-";
+    const info1 = getVal(lead, "Pytanie 1") || "-";
+    const info2 = getVal(lead, "Pytanie 2") || "-";
     const editable = canEdit(lastUpdate, status);
 
     app.innerHTML = `
@@ -172,6 +192,13 @@ function renderSingle(lead) {
     `;
 }
 
+// === POMOCNICZA FUNKCJA DO SZUKANIA WARTOŚCI PO KLUCZU (IGNORUJE WIELKOŚĆ LITER) ===
+function getVal(obj, partialKey) {
+    if(!obj) return null;
+    const key = Object.keys(obj).find(k => k.toLowerCase().includes(partialKey.toLowerCase()));
+    return key ? obj[key] : null;
+}
+
 // === LOGIKA DASHBOARDU ===
 function renderListLayout() {
     document.body.classList.add("dashboard-mode");
@@ -182,14 +209,20 @@ function renderListLayout() {
         </div>
         <div class="content">
             <div class="dashboard-toolbar">
-                <select id="statusFilter" onchange="loadDashboard(true)">
-                    <option value="">— Wszystkie statusy —</option>
-                    <option value="nowy">Nowy</option>
-                    <option value="obsluzony">Obsłużony</option>
-                    <option value="nie_odbiera">Nie odbiera</option>
-                    <option value="odrzucony">Odrzucony</option>
-                    <option value="porzucony">Porzucony</option>
-                </select>
+                
+                <div class="multiselect">
+                    <div class="multiselect-btn" onclick="toggleStatuses()">
+                        <span id="statusBtnText">📌 Wybierz statusy</span>
+                        <span>▼</span>
+                    </div>
+                    <div class="multiselect-content" id="statusList">
+                        <label><input type="checkbox" value="nowy" onchange="loadDashboard(true)"> Nowy</label>
+                        <label><input type="checkbox" value="obsluzony" onchange="loadDashboard(true)"> Obsłużony</label>
+                        <label><input type="checkbox" value="nie_odbiera" onchange="loadDashboard(true)"> Nie odbiera</label>
+                        <label><input type="checkbox" value="odrzucony" onchange="loadDashboard(true)"> Odrzucony</label>
+                        <label><input type="checkbox" value="porzucony" onchange="loadDashboard(true)"> Porzucony</label>
+                    </div>
+                </div>
                 
                 <div class="multiselect">
                     <div class="multiselect-btn" onclick="toggleCampaigns()">
@@ -210,6 +243,7 @@ function renderListLayout() {
                 <table class="dashboard-table">
                     <thead>
                         <tr>
+                            <th>Podgląd</th>
                             <th>ID</th><th>Data</th><th>Pacjent</th><th>Status</th><th>Zmiana</th><th>Czekał</th><th>Kampania</th>
                         </tr>
                     </thead>
@@ -225,8 +259,10 @@ function renderListLayout() {
     // Kliknięcie poza multiselect zamyka go
     window.onclick = function(event) {
         if (!event.target.closest('.multiselect')) {
-            const list = document.getElementById("campList");
-            if(list) list.classList.remove('show');
+            const cList = document.getElementById("campList");
+            const sList = document.getElementById("statusList");
+            if(cList) cList.classList.remove('show');
+            if(sList) sList.classList.remove('show');
         }
     }
 
@@ -235,7 +271,13 @@ function renderListLayout() {
 }
 
 function toggleCampaigns() {
+    document.getElementById("statusList").classList.remove("show"); // zamknij drugie
     document.getElementById("campList").classList.toggle("show");
+}
+
+function toggleStatuses() {
+    document.getElementById("campList").classList.remove("show"); // zamknij drugie
+    document.getElementById("statusList").classList.toggle("show");
 }
 
 function fetchCampaigns() {
@@ -259,15 +301,34 @@ function getSelectedCampaigns() {
     const checkboxes = document.querySelectorAll('#campList input[type="checkbox"]:checked');
     const selected = Array.from(checkboxes).map(cb => cb.value);
     
-    // Aktualizacja tekstu przycisku
     const btnText = document.getElementById("campBtnText");
     if(btnText) {
         if(selected.length === 0) btnText.innerText = "📢 Wybierz kampanie";
         else if(selected.length === 1) btnText.innerText = `📢 ${selected[0]}`;
         else btnText.innerText = `📢 Wybrano: ${selected.length}`;
     }
-    
     return selected.join(",");
+}
+
+function getSelectedStatuses() {
+    const checkboxes = document.querySelectorAll('#statusList input[type="checkbox"]:checked');
+    const selected = Array.from(checkboxes).map(cb => cb.value);
+    
+    const btnText = document.getElementById("statusBtnText");
+    if(btnText) {
+        if(selected.length === 0) btnText.innerText = "📌 Wybierz statusy";
+        else if(selected.length === 1) btnText.innerText = `📌 ${statusLabel(selected[0])}`;
+        else btnText.innerText = `📌 Wybrano: ${selected.length}`;
+    }
+    return selected.join(",");
+}
+
+function statusLabel(s) {
+    const map = {
+        'nowy': 'Nowy', 'obsluzony': 'Obsłużony', 'nie_odbiera': 'Nie odbiera', 
+        'odrzucony': 'Odrzucony', 'porzucony': 'Porzucony'
+    };
+    return map[s] || s;
 }
 
 function loadDashboard(reset = true) {
@@ -282,11 +343,12 @@ function loadDashboard(reset = true) {
     
     const df = document.getElementById("dateFrom").value;
     const dt = document.getElementById("dateTo").value;
-    const st = document.getElementById("statusFilter").value;
-    const campaigns = getSelectedCampaigns(); // Pobieramy wybrane kampanie
     
-    // Dodajemy parametr campaigns do URL
-    const url = `${API_URL}?action=list&token=${token}&limit=50&offset=${dashboardOffset}&sort=${dashboardSort}&dateFrom=${df}&dateTo=${dt}&status=${st}&campaigns=${encodeURIComponent(campaigns)}`;
+    // ZMIANA: Pobieramy multiselect statusów
+    const st = getSelectedStatuses();
+    const campaigns = getSelectedCampaigns();
+    
+    const url = `${API_URL}?action=list&token=${token}&limit=50&offset=${dashboardOffset}&sort=${dashboardSort}&dateFrom=${df}&dateTo=${dt}&status=${encodeURIComponent(st)}&campaigns=${encodeURIComponent(campaigns)}`;
 
     fetch(url)
         .then(r => r.json())
@@ -322,6 +384,9 @@ function displayTable() {
     const list = Array.from(allLeadsMap.values());
     const html = list.map(r => `
         <tr>
+            <td style="text-align:center;">
+                <button class="action-btn" onclick="openPreview('${r.id}')" title="Podgląd">👁️</button>
+            </td>
             <td>${r.id}</td>
             <td>${formatDate(r.created)}</td>
             <td>
@@ -338,7 +403,62 @@ function displayTable() {
     document.getElementById("tableBody").innerHTML = html;
 }
 
-// === SYSTEM POTWIERDZEŃ I ZMIANY STATUSU ===
+// === NOWE FUNKCJE DO MODALA PODGLĄDU ===
+function openPreview(id) {
+    const r = allLeadsMap.get(String(id));
+    if(!r) return;
+
+    // Pobieramy dane. Zakładamy, że API listy zwraca je jako info1/info2 
+    // lub że są dostępne w obiekcie r pod kluczami z "Pytanie".
+    // Jeśli lista nie zwraca tych pól, musielibyśmy dociągnąć je fetch'em loadSingle,
+    // ale tu zakładamy optymistycznie, że są dostępne lub używamy zamienników.
+    
+    // Spróbuj znaleźć pytania w obiekcie wiersza
+    const info1 = r.info1 || getVal(r, "Pytanie 1") || getVal(r, "cel") || "-";
+    const info2 = r.info2 || getVal(r, "Pytanie 2") || getVal(r, "dodatkowe") || "-";
+    const email = r.email || getVal(r, "mail") || "-";
+
+    const contentHtml = `
+        <div class="box">
+            <div class="status-row">
+                <div>
+                    <p>🆔 <strong>Lead ID:</strong> ${r.id}</p>
+                    <p>📅 <strong>Zgłoszenie:</strong> ${formatDate(r.created)}</p>
+                    <p>📢 <strong>Kampania:</strong> ${r.campaign || "-"}</p>
+                </div>
+                <div style="text-align:right">
+                    <span class="status-badge ${statusClass(r.status)}">${r.status}</span>
+                </div>
+            </div>
+        </div>
+        <div class="box data">
+            <p><strong>🧾 Pacjent:</strong> ${r.name || "-"}</p>
+            <p><strong>📞 Telefon:</strong> ${formatPhone(r.phone)}</p>
+            <p><strong>📧 Email:</strong> ${email}</p>
+            <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
+            <p><strong>🦷 Cel wizyty:</strong> ${info1}</p>
+            <p><strong>📝 Dodatkowe info:</strong> ${info2}</p>
+        </div>
+    `;
+
+    document.getElementById("previewContent").innerHTML = contentHtml;
+    
+    // Ustawienie linku do pełnej edycji
+    const editUrl = `${window.location.pathname}?row=${r.row_index || r.rowIndex || ''}&token=${token}`; // Uwaga: API musi zwracać indeks wiersza w liście, jeśli chcesz linkować bezpośrednio
+    // Jeśli nie mamy row_index w liście, możemy po prostu linkować tak:
+    const directLink = window.location.href.split('?')[0] + `?row=${r.id}&token=${token}`; // O ile ID == Row lub backend to obsługuje
+    // Bezpieczniej, jeśli backend obsługuje szukanie po ID:
+    document.getElementById("previewLink").href = directLink;
+
+    document.getElementById("previewModal").classList.remove("hidden");
+}
+
+function closePreview(e) {
+    // Jeśli kliknięto w tło (e istnieje) lub przycisk
+    document.getElementById("previewModal").classList.add("hidden");
+}
+
+// === SYSTEM POTWIERDZEŃ I ZMIANY STATUSU (DLA POJEDYNCZEGO LEADA) ===
 function handleStatusClick(newS) {
     if (currentLeadStatus === "nowy") {
         updateStatus(newS);
@@ -396,13 +516,16 @@ function toggleSort() {
 }
 
 function clearFilters() {
-    document.getElementById("statusFilter").value = "";
+    // Czyścimy statusy
+    document.querySelectorAll('#statusList input[type="checkbox"]').forEach(cb => cb.checked = false);
+    document.getElementById("statusBtnText").innerText = "📌 Wybierz statusy";
+
+    // Czyścimy kampanie
+    document.querySelectorAll('#campList input[type="checkbox"]').forEach(cb => cb.checked = false);
+    document.getElementById("campBtnText").innerText = "📢 Wybierz kampanie";
+
     document.getElementById("dateFrom").value = "";
     document.getElementById("dateTo").value = "";
-    // Czyścimy checkboxy kampanii
-    const checkboxes = document.querySelectorAll('#campList input[type="checkbox"]');
-    checkboxes.forEach(cb => cb.checked = false);
-    document.getElementById("campBtnText").innerText = "📢 Wybierz kampanie";
     
     loadDashboard(true);
 }
