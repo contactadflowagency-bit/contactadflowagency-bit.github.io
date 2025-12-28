@@ -330,14 +330,14 @@
             document.getElementById("previewContent").innerHTML = `
                 <div class="box">
                     <p>🆔 <strong>ID:</strong> ${r.id}</p>
-                    <p>📅 <strong>Zgłoszenie:</strong> ${${formatDate(r.created)}</p>
+                    <p>📅 <strong>Zgłoszenie:</strong> ${formatDate(r.created)}</p>
                     <p>📢 <strong>Kampania:</strong> ${r.campaign || "-"}</p>
                 </div>
                 <div class="box data">
                     <p><strong>🧾 Pacjent:</strong> ${r.name}</p>
                     <p><strong>📞 Telefon:</strong> ${formatPhone(r.phone)}</p>
                     <p><strong>✉️ ${r.email || "-"}</strong></p>
-                    <p><strong>⏱️ Czas kontaktu (realny):</strong> ${r.wait_time_combined}</p>
+                    <p><strong>⏱️ Czas kontaktu (realny):</strong> ${formatDate(r.wait_time_combined)}</p>
                     <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
                     <p><strong>🦷 Info 1:</strong> ${r.info1 || "-"}</p>
                     <p><strong>📝 Info 2:</strong> ${r.info2 || "-"}</p>
