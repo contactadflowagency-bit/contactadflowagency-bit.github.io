@@ -328,7 +328,11 @@
             const r = allLeadsMap.get(String(id));
             if(!r) return;
             document.getElementById("previewContent").innerHTML = `
-                <div class="box"><p>🆔 <strong>ID:</strong> ${r.id}</p><p>📅 <strong>Zgłoszenie:</strong> ${r.created}</p></div>
+                <div class="box">
+                    <p>🆔 <strong>ID:</strong> ${r.id}</p>
+                    <p>📅 <strong>Zgłoszenie:</strong> ${r.created}</p>
+                    <p>📢 <strong>Kampania:</strong> ${r.campaign || "-"}</p>
+                </div>
                 <div class="box data">
                     <p><strong>🧾 Pacjent:</strong> ${r.name}</p>
                     <p><strong>📞 Telefon:</strong> ${formatPhone(r.phone)}</p>
