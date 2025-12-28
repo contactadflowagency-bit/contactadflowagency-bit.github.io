@@ -141,12 +141,12 @@
                         <div class="status-row">
                             <div>
                                 <p>🆔 <strong>ID:</strong> ${lead.id || "-"}</p>
-                                <p>📅 <strong>Zgłoszenie:</strong> ${lead.date}</p>
+                                <p>📅 <strong>Zgłoszenie:</strong> ${formatDate(lead.date)}</p>
                                 <p>📢 <strong>Kampania:</strong> ${lead.campaign || "-"}</p>
                             </div>
                             <div style="text-align:right">
                                 <span class="status-badge ${statusClass(lead.statusKey)}">${lead.status}</span>
-                                <div class="muted" style="margin-top:5px">Aktualizacja:<br>${lead.lastUpdate}</div>
+                                <div class="muted" style="margin-top:5px">Aktualizacja:<br>${formatDate(lead.lastUpdate)}</div>
                             </div>
                         </div>
                     </div>
@@ -178,11 +178,6 @@
                 </div>
                 <div class="content">
                     <div class="dashboard-toolbar">
-                        <select id="sortOrder" onchange="toggleSort(this.value)">
-                            <option value="desc" ${dashboardSort==='desc'?'selected':''}>Najnowsze od góry</option>
-                            <option value="asc" ${dashboardSort==='asc'?'selected':''}>Najstarsze od góry</option>
-                        </select>
-                    
                         <div class="multiselect">
                             <div class="multiselect-btn" onclick="toggleDropdown('statusList')">
                                 <span id="statusBtnText">📌 Statusy</span><span>▼</span>
@@ -208,9 +203,10 @@
                         <input type="date" id="dateFrom" title="Data od">
                         <input type="date" id="dateTo" title="Data do">
                         
-                        <button onclick="loadDashboard(true)" class="btn-tool" style="background: #2563eb; color: white; border:none;">
-                            🔍 Zastosuj filtry
-                        </button>
+                        <button onclick="toggleSort()" id="sortBtn" class="btn-tool">📅 Najnowsze</button>
+                        
+                        <button onclick="loadDashboard(true)" class="btn-tool btn-apply">🔍 Zastosuj filtry</button>
+                        
                         <button onclick="clearFilters()" class="btn-tool">🧹 Wyczyść</button>
                     </div>
 
@@ -300,10 +296,10 @@
             const html = list.map(r => `
                 <tr>
                     <td>${r.id}</td>
-                    <td>${r.created}</td>
+                    <td>${formatDate(r.created)}</td>
                     <td><strong>${r.name || "-"}</strong><br><small class="muted">📞 ${formatPhone(r.phone)}</small></td>
                     <td><span class="status-badge ${statusClass(r.status)}">${r.status}</span></td>
-                    <td>${r.updated}</td>
+                    <td>${formatDate(r.updated)}</td>
                     <td>${r.wait_time_combined || "-"}</td>
                     <td>${r.campaign || "-"}</td>
                     <td style="text-align:center;"><button class="btn-tool" onclick="openPreview('${r.id}')">Szczegóły</button></td>
@@ -312,9 +308,12 @@
             document.getElementById("tableBody").innerHTML = html;
         }
 
-        // --- AKCJE I POMOCNICZE ---
-        function toggleSort(val) {
-            dashboardSort = val;
+        function toggleSort() {
+            dashboardSort = (dashboardSort === "desc") ? "asc" : "desc";
+            const btn = document.getElementById("sortBtn");
+            if (btn) {
+                btn.innerText = (dashboardSort === "desc") ? "📅 Najnowsze" : "📅 Najstarsze";
+            }
             loadDashboard(true);
         }
 
@@ -414,6 +413,25 @@
                 showError("Brak wymaganych parametrów linku.");
             }
         };
+
+        function formatDate(dateStr) { 
+            if (!dateStr || dateStr === "-") return "-";
+            
+            // Zakładamy, że dateStr to "RRRR-MM-DD HH:mm:ss" lub ISO
+            // Zamieniamy na format: DD.MM.RRRR HH:mm
+            try {
+                const parts = dateStr.split(' ');
+                const datePart = parts[0]; // RRRR-MM-DD
+                const timePart = parts[1] ? parts[1].substring(0, 5) : ""; // HH:mm
+                
+                const d = datePart.split('-');
+                if (d.length !== 3) return dateStr; // Zwróć oryginał jeśli format jest inny
+                
+                return `${d[2]}.${d[1]}.${d[0]} ${timePart}`;
+            } catch (e) {
+                return dateStr;
+            }
+        }
     </script>
 </body>
 </html>
