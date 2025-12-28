@@ -4,12 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Obsługi Leadów</title>
+    <title>System Obsługi Leadów V2</title>
     <style>
         body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; background:#f7f8fa; margin:0; min-height:100vh; display:flex; justify-content:center; align-items:center; }
         .wrapper { max-width:600px; width:95%; background:#fff; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.05); overflow:hidden; }
         .header { background: linear-gradient(135deg, #00bcd4, #9c27b0); color:#fff; padding:24px; text-align:center; position: relative; }
-        .header img { width:70px; border-radius:16px; display:block; margin:0 auto 10px; }
+        .header img { width:70px; border-radius:16px; display:block; margin:0 auto 10px; object-fit: cover; height: 70px; }
         .header h2 { margin:0; font-size:22px; }
         .content { padding:26px 30px; }
         .box { background:#f4fbfd; border-left:4px solid #00bcd4; padding:16px 20px; border-radius:6px; margin-bottom:20px; text-align: left; }
@@ -36,6 +36,7 @@
         .dashboard-toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; align-items: center; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #eee; }
         .dashboard-toolbar input, .dashboard-toolbar select { padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; outline: none; }
         .btn-tool { padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd; background: #fff; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+        .btn-apply { background: #2563eb !important; color: white !important; border: none; }
         .multiselect { position: relative; display: inline-block; }
         .multiselect-btn { padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #fff; cursor: pointer; font-size: 14px; min-width: 160px; text-align: left; display:flex; justify-content: space-between; align-items: center; }
         .multiselect-content { display: none; position: absolute; background-color: #fff; min-width: 250px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 100; border: 1px solid #eee; border-radius: 8px; max-height: 300px; overflow-y: auto; top: 110%; left: 0; }
@@ -54,8 +55,6 @@
         .modal-close-x { position: absolute; top: 15px; right: 15px; color: white; font-size: 24px; cursor: pointer; z-index: 10; font-weight: bold;}
         .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top-color: #333; border-radius: 50%; animation: spin 0.9s linear infinite; margin: 0 auto 15px; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .confirm-title { font-weight: bold; font-size: 18px; margin-bottom: 10px; color: #333; }
-        .confirm-text { font-size: 15px; color: #666; margin-bottom: 20px; line-height: 1.4; }
     </style>
 </head>
 
@@ -74,8 +73,8 @@
 
     <div id="confirmModal" class="loader hidden">
         <div class="loader-box">
-            <div class="confirm-title">Potwierdź zmianę</div>
-            <div class="confirm-text" id="confirmMsg">Czy na pewno chcesz zmienić status tego leada?</div>
+            <div style="font-weight:bold; font-size:18px; margin-bottom:10px;">Potwierdź zmianę</div>
+            <div id="confirmMsg" style="margin-bottom:20px;"></div>
             <div class="buttons">
                 <button class="btn-modal obs" id="confirmYes">Tak, zmień</button>
                 <button class="btn-modal odrz" id="confirmNo">Anuluj</button>
@@ -110,6 +109,7 @@
         let dashboardSort = "desc";
         let currentLeadStatus = "nowy";
         
+        // --- ŁADOWANIE POJEDYNCZEGO LEADA ---
         function loadSingle() {
             document.body.classList.remove("dashboard-mode");
             showLoader("Pobieranie danych leada...");
@@ -118,7 +118,6 @@
                 .then(d => {
                     hideLoader();
                     if(d.success) {
-                        // Pobieramy statusKey (małe litery) do logiki i status (ładny) do wyświetlania
                         currentLeadStatus = String(d.lead.statusKey || "nowy");
                         renderSingle(d.lead);
                     } else {
@@ -129,30 +128,25 @@
         }
         
         function renderSingle(lead) {
-            // Używamy flagi z serwera. Jeśli undefined (np. stara wersja API), domyślnie false dla bezpieczeństwa.
-            const editable = (lead.canEdit !== undefined) ? lead.canEdit : false; 
-            const statusDisplay = lead.status; // Ładna nazwa z Excela
-            const statusKey = lead.statusKey; // Nazwa techniczna
-            
-            // Stały link do avatara (zmień na własny URL)
-            const avatarUrl = "https://ui-avatars.com/api/?name=Lead&background=0D8ABC&color=fff&size=128";
+            const editable = lead.canEdit; 
+            const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(lead.name)}&background=0D8ABC&color=fff&size=128`;
 
             app.innerHTML = `
                 <div class="header">
                     <img src="${avatarUrl}" alt="Avatar">
-                    <h2>Status kontaktu z pacjentem</h2>
+                    <h2>Status kontaktu</h2>
                 </div>
                 <div class="content">
                     <div class="box">
                         <div class="status-row">
                             <div>
-                                <p>🆔 <strong>Lead ID:</strong> ${lead.id || "-"}</p>
-                                <p>📅 <strong>Zgłoszenie:</strong> ${formatDate(lead.date)}</p>
+                                <p>🆔 <strong>ID:</strong> ${lead.id || "-"}</p>
+                                <p>📅 <strong>Zgłoszenie:</strong> ${lead.date}</p>
                                 <p>📢 <strong>Kampania:</strong> ${lead.campaign || "-"}</p>
                             </div>
                             <div style="text-align:right">
-                                <span class="status-badge ${statusClass(statusKey)}">${statusDisplay}</span>
-                                <div class="muted" style="margin-top:5px">Aktualizacja:<br>${formatDate(lead.lastUpdate)}</div>
+                                <span class="status-badge ${statusClass(lead.statusKey)}">${lead.status}</span>
+                                <div class="muted" style="margin-top:5px">Aktualizacja:<br>${lead.lastUpdate}</div>
                             </div>
                         </div>
                     </div>
@@ -160,62 +154,71 @@
                         <p><strong>🧾 Pacjent:</strong> ${lead.name || "-"}</p>
                         <p><strong>📞 Telefon:</strong> ${formatPhone(lead.phone)}</p>
                         <p><strong>📧 Email:</strong> ${lead.email || "-"}</p>
-                        <p><strong>⏱️ Czas oczekiwania (Realny):</strong> ${lead.wait_time_combined || "-"}</p>
+                        <p><strong>⏱️ Oczekiwanie:</strong> ${lead.wait_time_combined || "-"}</p>
                         <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
-                        <p><strong>🦷 Cel wizyty:</strong> ${lead.info1 || "-"}</p>
-                        <p><strong>📝 Dodatkowe info:</strong> ${lead.info2 || "-"}</p>
+                        <p><strong>🦷 Cel:</strong> ${lead.info1 || "-"}</p>
+                        <p><strong>📝 Info:</strong> ${lead.info2 || "-"}</p>
                     </div>
                     <div class="buttons ${editable ? "" : "disabled"}">
                         <a class="obs" onclick="handleStatusClick('obsluzony')">✔ Obsłużony</a>
                         <a class="nie" onclick="handleStatusClick('nie_odbiera')">📞 Nie odbiera</a>
                         <a class="odrz" onclick="handleStatusClick('odrzucony')">❌ Odrzucony</a>
                     </div>
-                    ${!editable ? `<p class="muted" style="text-align:center; color:#f44336; font-weight:bold; margin-top:20px;">⛔ Edycja zablokowana (status ostateczny lub upłynął czas 20 min)</p>` : ''}
+                    ${!editable ? `<p class="muted" style="text-align:center; color:#f44336; font-weight:bold; margin-top:20px;">⛔ Edycja zablokowana (porzucony lub > 20 min)</p>` : ''}
                 </div>
             `;
         }
         
+        // --- DASHBOARD ---
         function renderListLayout() {
             document.body.classList.add("dashboard-mode");
             app.innerHTML = `
                 <div class="header">
-                    <img src="https://scontent-waw2-2.xx.fbcdn.net/v/t39.30808-6/540904522_122143092902741193_6153063326804191448_n.jpg?_nc_cat=102&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=JC77rMjouDAQ7kNvwEt8vB8&_nc_oc=AdnTCBOj0TNVYYZUg4BUVsh6UgUe2DLPoC82tKLDr2CPvDRVG23qtHqs0ZeGFNKzMTA&_nc_zt=23&_nc_ht=scontent-waw2-2.xx&_nc_gid=GMw8v316DO9S0SsJOj-shw&oh=00_AfmJC9N0HeEIKsZbIqP4PsRasw2Ui5qLLpVqM740TenL8Q&oe=695724CD" alt="AdFlow">
                     <h2>📊 Dashboard leadów</h2>
                 </div>
                 <div class="content">
                     <div class="dashboard-toolbar">
+                        <select id="sortOrder" onchange="toggleSort(this.value)">
+                            <option value="desc" ${dashboardSort==='desc'?'selected':''}>Najnowsze od góry</option>
+                            <option value="asc" ${dashboardSort==='asc'?'selected':''}>Najstarsze od góry</option>
+                        </select>
+                    
                         <div class="multiselect">
-                            <div class="multiselect-btn" onclick="toggleStatuses()">
-                                <span id="statusBtnText">📌 Wybierz statusy</span>
-                                <span>▼</span>
+                            <div class="multiselect-btn" onclick="toggleDropdown('statusList')">
+                                <span id="statusBtnText">📌 Statusy</span><span>▼</span>
                             </div>
                             <div class="multiselect-content" id="statusList">
-                                <label><input type="checkbox" value="nowy" onchange="loadDashboard(true)"> Nowy</label>
-                                <label><input type="checkbox" value="obsluzony" onchange="loadDashboard(true)"> Obsłużony</label>
-                                <label><input type="checkbox" value="nie_odbiera" onchange="loadDashboard(true)"> Nie odbiera</label>
-                                <label><input type="checkbox" value="odrzucony" onchange="loadDashboard(true)"> Odrzucony</label>
-                                <label><input type="checkbox" value="porzucony" onchange="loadDashboard(true)"> Porzucony</label>
+                                <label><input type="checkbox" value="nowy"> Nowy</label>
+                                <label><input type="checkbox" value="obsluzony"> Obsłużony</label>
+                                <label><input type="checkbox" value="nie_odbiera"> Nie odbiera</label>
+                                <label><input type="checkbox" value="odrzucony"> Odrzucony</label>
+                                <label><input type="checkbox" value="porzucony"> Porzucony</label>
                             </div>
                         </div>
+                    
                         <div class="multiselect">
-                            <div class="multiselect-btn" onclick="toggleCampaigns()">
-                                <span id="campBtnText">📢 Wybierz kampanie</span>
-                                <span>▼</span>
+                            <div class="multiselect-btn" onclick="toggleDropdown('campList')">
+                                <span id="campBtnText">📢 Kampanie</span><span>▼</span>
                             </div>
                             <div class="multiselect-content" id="campList">
-                                <div style="padding:10px; color:#888; text-align:center">Ładowanie kampanii...</div>
+                                <div style="padding:10px; color:#888;">Ładowanie...</div>
                             </div>
                         </div>
-                        <input type="date" id="dateFrom" onchange="loadDashboard(true)">
-                        <input type="date" id="dateTo" onchange="loadDashboard(true)">
-                        <button onclick="toggleSort()" id="sortBtn" class="btn-tool">📅 Najnowsze</button>
+                    
+                        <input type="date" id="dateFrom" title="Data od">
+                        <input type="date" id="dateTo" title="Data do">
+                        
+                        <button onclick="loadDashboard(true)" class="btn-tool" style="background: #2563eb; color: white; border:none;">
+                            🔍 Zastosuj filtry
+                        </button>
                         <button onclick="clearFilters()" class="btn-tool">🧹 Wyczyść</button>
                     </div>
+
                     <div class="table-scroll">
                         <table class="dashboard-table">
                             <thead>
                                 <tr>
-                                    <th>ID</th><th>Data</th><th>Pacjent</th><th>Status</th><th>Zmiana</th><th>Czas oczekiwania (Realny)</th><th>Kampania</th>
+                                    <th>ID</th><th>Data</th><th>Pacjent</th><th>Status</th><th>Zmiana</th><th>Oczekiwanie</th><th>Kampania</th>
                                     <th style="text-align:center;">Akcja</th>
                                 </tr>
                             </thead>
@@ -227,297 +230,180 @@
                     </div>
                 </div>
             `;
-            window.onclick = function(event) {
-                if (!event.target.closest('.multiselect')) {
-                    const cList = document.getElementById("campList");
-                    const sList = document.getElementById("statusList");
-                    if(cList) cList.classList.remove('show');
-                    if(sList) sList.classList.remove('show');
+            
+            // Kliknięcie poza dropdowny zamyka je
+            window.onclick = (e) => {
+                if (!e.target.closest('.multiselect')) {
+                    document.querySelectorAll('.multiselect-content').forEach(el => el.classList.remove('show'));
                 }
-            }
+            };
             fetchCampaigns();
         }
-        
-        function toggleCampaigns() {
-            document.getElementById("statusList").classList.remove("show");
-            document.getElementById("campList").classList.toggle("show");
+
+        function toggleDropdown(id) {
+            const el = document.getElementById(id);
+            const isShow = el.classList.contains("show");
+            document.querySelectorAll('.multiselect-content').forEach(c => c.classList.remove('show'));
+            if(!isShow) el.classList.add("show");
         }
-        
-        function toggleStatuses() {
-            document.getElementById("campList").classList.remove("show");
-            document.getElementById("statusList").classList.toggle("show");
-        }
-        
+
         function fetchCampaigns() {
             fetch(`${API_URL}?action=campaigns&token=${token}`)
             .then(r => r.json())
             .then(d => {
                 const container = document.getElementById("campList");
-                if(d.success && d.campaigns.length > 0) {
-                    let html = "";
-                    d.campaigns.forEach(c => {
-                        html += `<label><input type="checkbox" value="${c}" onchange="loadDashboard(true)"> ${c}</label>`;
-                    });
-                    container.innerHTML = html;
-                } else {
-                    container.innerHTML = `<div style="padding:10px; text-align:center">Brak kampanii</div>`;
+                if(d.success) {
+                    // Zmieniono: brak atrybutu onchange w inputach
+                    container.innerHTML = d.campaigns.map(c => `<label><input type="checkbox" value="${c}"> ${c}</label>`).join("");
                 }
             });
         }
-        
-        function getSelectedCampaigns() {
-            const checkboxes = document.querySelectorAll('#campList input[type="checkbox"]:checked');
-            const selected = Array.from(checkboxes).map(cb => cb.value);
-            const btnText = document.getElementById("campBtnText");
-            if(btnText) {
-                if(selected.length === 0) btnText.innerText = "📢 Wybierz kampanie";
-                else if(selected.length === 1) btnText.innerText = `📢 ${selected[0]}`;
-                else btnText.innerText = `📢 Wybrano: ${selected.length}`;
-            }
-            return selected.join(",");
-        }
-        
-        function getSelectedStatuses() {
-            const checkboxes = document.querySelectorAll('#statusList input[type="checkbox"]:checked');
-            const selected = Array.from(checkboxes).map(cb => cb.value);
-            const btnText = document.getElementById("statusBtnText");
-            if(btnText) {
-                if(selected.length === 0) btnText.innerText = "📌 Wybierz statusy";
-                else if(selected.length === 1) btnText.innerText = `📌 ${statusLabel(selected[0])}`;
-                else btnText.innerText = `📌 Wybrano: ${selected.length}`;
-            }
-            return selected.join(",");
-        }
-        
-        function statusLabel(s) {
-            const map = { 'nowy': 'Nowy', 'obsluzony': 'Obsłużony', 'nie_odbiera': 'Nie odbiera', 'odrzucony': 'Odrzucony', 'porzucony': 'Porzucony' };
-            return map[s] || s;
-        }
-        
+
         function loadDashboard(reset = true) {
-            if (reset) {
-                dashboardOffset = 0;
-                allLeadsMap.clear();
-                document.getElementById("tableBody").innerHTML = "";
-                document.getElementById("loadMoreBtn").style.display = "none"; 
-            }
-            showLoader("Pobieranie danych...");
-            const df = document.getElementById("dateFrom").value;
-            const dt = document.getElementById("dateTo").value;
-            const st = getSelectedStatuses();
-            const campaigns = getSelectedCampaigns();
-            const url = `${API_URL}?action=list&token=${token}&limit=50&offset=${dashboardOffset}&sort=${dashboardSort}&dateFrom=${df}&dateTo=${dt}&status=${encodeURIComponent(st)}&campaigns=${encodeURIComponent(campaigns)}`;
-        
-            fetch(url)
-                .then(r => r.json())
-                .then(d => {
-                    hideLoader();
-                    if (!d.success) return;
-                    currentTotal = d.total; 
-                    d.rows.forEach(r => {
-                        r.status = String(r.status || "nowy").toLowerCase().trim();
-                        allLeadsMap.set(String(r.id), r);
-                    });
-                    dashboardOffset += d.rows.length;
-                    displayTable();
-                    const btn = document.getElementById("loadMoreBtn");
-                    if (allLeadsMap.size < currentTotal) { btn.style.display = "block"; } else { btn.style.display = "none"; }
-                })
-                .catch((e) => {
-                    console.error(e);
-                    hideLoader();
-                    showError("Błąd pobierania danych listy.");
-                });
-        }
-        
+    if (reset) {
+        dashboardOffset = 0;
+        allLeadsMap.clear();
+        document.getElementById("tableBody").innerHTML = "";
+    }
+    showLoader("Pobieranie...");
+
+    // Pobieranie wartości dat
+    const df = document.getElementById("dateFrom").value;
+    const dt = document.getElementById("dateTo").value;
+    
+    // Pobieranie zaznaczonych checkboxów dla statusów i kampanii
+    const st = Array.from(document.querySelectorAll('#statusList input:checked')).map(cb => cb.value).join(",");
+    const cp = Array.from(document.querySelectorAll('#campList input:checked')).map(cb => cb.value).join(",");
+
+    // Opcjonalnie: aktualizacja tekstu na przyciskach dropdownów
+    document.getElementById("statusBtnText").innerText = st ? "📌 Wybrano: " + st.split(",").length : "📌 Statusy";
+    document.getElementById("campBtnText").innerText = cp ? "📢 Wybrano: " + cp.split(",").length : "📢 Kampanie";
+
+    const url = `${API_URL}?action=list&token=${token}&limit=50&offset=${dashboardOffset}&sort=${dashboardSort}&dateFrom=${df}&dateTo=${dt}&status=${encodeURIComponent(st)}&campaigns=${encodeURIComponent(cp)}`;
+
+    fetch(url)
+        .then(r => r.json())
+        .then(d => {
+            hideLoader();
+            if (!d.success) return;
+            currentTotal = d.total; 
+            d.rows.forEach(r => allLeadsMap.set(String(r.id), r));
+            dashboardOffset += d.rows.length;
+            displayTable();
+            document.getElementById("loadMoreBtn").style.display = (allLeadsMap.size < currentTotal) ? "block" : "none";
+        })
+        .catch(() => { hideLoader(); alert("Błąd połączenia."); });
+}
+
         function displayTable() {
             const list = Array.from(allLeadsMap.values());
             const html = list.map(r => `
                 <tr>
                     <td>${r.id}</td>
-                    <td>${formatDate(r.created)}</td>
-                    <td>
-                        <strong>${r.name || "-"}</strong><br>
-                        <small class="muted" style="font-size:12px;">✉️ ${r.email || "-"}</small><br>
-                        <small class="muted" style="font-size:12px;">📞 ${formatPhone(r.phone)}</small>
-                    </td>
+                    <td>${r.created}</td>
+                    <td><strong>${r.name || "-"}</strong><br><small class="muted">📞 ${formatPhone(r.phone)}</small></td>
                     <td><span class="status-badge ${statusClass(r.status)}">${r.status}</span></td>
-                    <td>${formatDate(r.updated)}</td>
+                    <td>${r.updated}</td>
                     <td>${r.wait_time_combined || "-"}</td>
                     <td>${r.campaign || "-"}</td>
-                    <td style="text-align:center;">
-                        <button class="btn-tool" onclick="openPreview('${r.id}')" style="font-size:11px; padding:5px 10px; display: block; margin: 0 auto;">
-                            Zobacz więcej
-                        </button>
-                    </td>
+                    <td style="text-align:center;"><button class="btn-tool" onclick="openPreview('${r.id}')">Szczegóły</button></td>
                 </tr>
             `).join("");
             document.getElementById("tableBody").innerHTML = html;
         }
-        
+
+        // --- AKCJE I POMOCNICZE ---
+        function toggleSort(val) {
+            dashboardSort = val;
+            loadDashboard(true);
+        }
+
+        function clearFilters() {
+            document.getElementById("dateFrom").value = "";
+            document.getElementById("dateTo").value = "";
+            document.querySelectorAll('.multiselect-content input').forEach(cb => cb.checked = false);
+            loadDashboard(true);
+        }
+
         function openPreview(id) {
             const r = allLeadsMap.get(String(id));
             if(!r) return;
-            // Zauważ zmianę: r.info1 zamiast r["Pytanie 1"] itp.
-            const contentHtml = `
-                <div class="box">
-                    <div class="status-row">
-                        <div>
-                            <p>🆔 <strong>Lead ID:</strong> ${r.id}</p>
-                            <p>📅 <strong>Zgłoszenie:</strong> ${formatDate(r.created)}</p>
-                            <p>📢 <strong>Kampania:</strong> ${r.campaign || "-"}</p>
-                        </div>
-                        <div style="text-align:right">
-                            <span class="status-badge ${statusClass(r.status)}">${r.status}</span>
-                        </div>
-                    </div>
-                </div>
+            document.getElementById("previewContent").innerHTML = `
+                <div class="box"><p>🆔 <strong>ID:</strong> ${r.id}</p><p>📅 <strong>Zgłoszenie:</strong> ${r.created}</p></div>
                 <div class="box data">
-                    <p><strong>🧾 Pacjent:</strong> ${r.name || "-"}</p>
+                    <p><strong>🧾 Pacjent:</strong> ${r.name}</p>
                     <p><strong>📞 Telefon:</strong> ${formatPhone(r.phone)}</p>
-                    <p><strong>📧 Email:</strong> ${r.email || "-"}</p>
-                    <p><strong>⏱️ Czas oczekiwania (Realny):</strong> ${r.wait_time_combined || "-"}</p>
-                    <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
+                    <p><strong>⏱️ Oczekiwanie:</strong> ${r.wait_time_combined}</p>
+                    <hr>
                     <p><strong>🦷 Info 1:</strong> ${r.info1 || "-"}</p>
                     <p><strong>📝 Info 2:</strong> ${r.info2 || "-"}</p>
-                </div>
-            `;
-            document.getElementById("previewContent").innerHTML = contentHtml;
+                </div>`;
             document.getElementById("previewModal").classList.remove("hidden");
         }
-        
-        function closePreview() {
-            document.getElementById("previewModal").classList.add("hidden");
-        }
-        
+
+        function closePreview() { document.getElementById("previewModal").classList.add("hidden"); }
+
         function handleStatusClick(newS) {
-            // Lead NOWY - brak okna o zatwierdzaniu (edycja całkowicie odblokowana)
             if (currentLeadStatus === "nowy") {
                 updateStatus(newS);
-            } 
-            // Lead NIE ODBIERA (i inne) - możliwość edycji z potwierdzeniem
-            else {
-                const modal = document.getElementById("confirmModal");
-                const msg = document.getElementById("confirmMsg");
-                const yesBtn = document.getElementById("confirmYes");
-                const noBtn = document.getElementById("confirmNo");
-                
-                msg.innerHTML = `Czy na pewno chcesz zmienić status <b>${currentLeadStatus.toUpperCase()}</b> na <b>${newS.toUpperCase()}</b>?`;
-                modal.classList.remove("hidden");
-                
-                yesBtn.onclick = () => { 
-                    modal.classList.add("hidden"); 
-                    updateStatus(newS); 
+            } else {
+                const msg = `Zmienić status z <b>${currentLeadStatus.toUpperCase()}</b> na <b>${newS.toUpperCase()}</b>?`;
+                document.getElementById("confirmMsg").innerHTML = msg;
+                document.getElementById("confirmModal").classList.remove("hidden");
+                document.getElementById("confirmYes").onclick = () => {
+                    document.getElementById("confirmModal").classList.add("hidden");
+                    updateStatus(newS);
                 };
-                noBtn.onclick = () => { 
-                    modal.classList.add("hidden"); 
-                };
+                document.getElementById("confirmNo").onclick = () => document.getElementById("confirmModal").classList.add("hidden");
             }
         }
-        
+
         async function updateStatus(s) {
             showLoader("Zapisywanie...");
-            
-            // FIX: Timeout / Network Error Handling
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 sekund timeout
+            const tid = setTimeout(() => controller.abort(), 10000);
 
             try {
-                // FIX: Security & POST Method correct usage
-                // Wysyłamy dane w BODY jako JSON. Token nie jest widoczny w pasku adresu przy tym zapytaniu.
                 const res = await fetch(API_URL, { 
                     method: "POST",
-                    // Ważne: GAS wymaga text/plain przy CORS simple requests, ale parsujemy to jako JSON w backendzie
                     headers: { "Content-Type": "text/plain;charset=utf-8" },
-                    body: JSON.stringify({
-                        action: 'update',
-                        row: row,
-                        token: token,
-                        status: s
-                    }),
+                    body: JSON.stringify({ action: 'update', row: row, token: token, status: s }),
                     signal: controller.signal
                 });
-                
-                clearTimeout(timeoutId);
                 const d = await res.json();
-                
                 if (d.success) {
-                    app.innerHTML = `<div class="content" style="text-align:center; padding:50px;">
-                        <div style="font-size:50px; margin-bottom:20px;">✅</div>
-                        <h3>Zapisano pomyślnie</h3>
-                        <p>Status: <b>${(d.newStatus || s).toUpperCase()}</b></p>
-                        <button class="btn-tool" onclick="location.reload()" style="margin:20px auto;">Wróć do leada</button>
-                    </div>`;
-                } else { 
-                    alert("Błąd zapisu: " + d.error); 
-                    if(d.error.includes("zablokowana")) location.reload();
-                }
-            } catch (e) { 
-                console.error(e);
-                if (e.name === 'AbortError') {
-                    alert("Błąd: Przekroczono czas oczekiwania. Sprawdź internet.");
+                    app.innerHTML = `<div class="content" style="text-align:center; padding:50px;"><h2>✅ Zapisano</h2><button class="btn-tool" onclick="location.reload()" style="margin:20px auto;">Wróć</button></div>`;
                 } else {
-                    alert("Błąd połączenia z serwerem."); 
+                    alert("Błąd: " + d.error);
+                    location.reload();
                 }
-            } finally { 
-                hideLoader(); 
-            }
+            } catch (e) { alert("Błąd połączenia."); } 
+            finally { hideLoader(); clearTimeout(tid); }
         }
-        
-        function toggleSort() {
-            dashboardSort = (dashboardSort === "desc") ? "asc" : "desc";
-            document.getElementById("sortBtn").innerText = dashboardSort === "desc" ? "📅 Najnowsze" : "📅 Najstarsze";
-            loadDashboard(true);
-        }
-        
-        function clearFilters() {
-            document.querySelectorAll('#statusList input[type="checkbox"]').forEach(cb => cb.checked = false);
-            document.getElementById("statusBtnText").innerText = "📌 Wybierz statusy";
-            document.querySelectorAll('#campList input[type="checkbox"]').forEach(cb => cb.checked = false);
-            document.getElementById("campBtnText").innerText = "📢 Wybierz kampanie";
-            document.getElementById("dateFrom").value = "";
-            document.getElementById("dateTo").value = "";
-            loadDashboard(true);
-        }
-        
-        // FIX: Date Formatting (Timezone)
-        // Teraz data przychodzi sformatowana z serwera (np. "2023-10-20 14:00"), 
-        // więc nie używamy "new Date()", żeby przeglądarka nie dodała przesunięcia czasu.
-        function formatDate(dateStr) { 
-            if (!dateStr || dateStr === "-") return "-";
-            // Jeśli jakimś cudem przyjdzie ISO, to obsłużymy, ale Backend wysyła teraz gotowy tekst.
-            return dateStr.replace("T", " ").substring(0, 16); 
-        }
-        
+
         function statusClass(s) {
-            if (!s) return "s-nowy";
-            const status = s.toLowerCase().trim();
-            
-            // Ważne: sprawdzamy specyficzne słowa najpierw
+            const status = String(s || "").toLowerCase();
             if (status === "odrzucony") return "s-odrzucony";
             if (status.includes("porzucony")) return "s-porzucony";
             if (status.includes("nie") && status.includes("odbiera")) return "s-nie_odbiera";
             if (status.includes("obs") || status === "obsłużony") return "s-obsluzony";
-            if (status === "nowy") return "s-nowy";
-            
             return "s-nowy";
         }
-        
+
         function formatPhone(p) {
             if (!p) return "-";
             let d = p.toString().replace(/\D/g, "");
             if (d.startsWith("48") && d.length === 11) d = d.slice(2);
             return d.length === 9 ? `+48 ${d.slice(0,3)} ${d.slice(3,6)} ${d.slice(6)}` : p;
         }
-        
+
         function showLoader(t) { 
-            const l = document.getElementById("loader"); 
-            l.querySelector(".loader-text").textContent = t; 
-            l.classList.remove("hidden"); 
+            document.getElementById("loader").querySelector(".loader-text").textContent = t; 
+            document.getElementById("loader").classList.remove("hidden"); 
         }
         function hideLoader() { document.getElementById("loader").classList.add("hidden"); }
         function showError(m) { app.innerHTML = `<div class="content"><h3>⛔ Błąd</h3><p>${m}</p></div>`; }
-        
+
         window.onload = () => {
             if (action === "list") {
                 renderListLayout();
@@ -525,10 +411,9 @@
             } else if (row && token) {
                 loadSingle();
             } else {
-                showError("Brak parametrów (row/token/action).");
+                showError("Brak wymaganych parametrów linku.");
             }
         };
     </script>
 </body>
-
 </html>
