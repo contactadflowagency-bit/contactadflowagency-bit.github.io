@@ -3,63 +3,59 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Status leada</title>
-
+<title>System Obsługi Leadów</title>
 <style>
-  body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; background:#f7f8fa; margin:0; min-height:100vh; display:flex; justify-content:center; align-items:center; }
-  .wrapper { max-width:600px; width:90%; background:#fff; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.05); overflow:hidden; }
-  .header { background: linear-gradient(135deg, #00bcd4, #9c27b0); color:#fff; padding:24px; text-align:center; }
-  .header img { width:70px; border-radius:16px; display:block; margin:0 auto 10px; }
-  .header h2 { margin:0; font-size:22px; }
-  .content { padding:26px 30px; }
-  .box { background:#f4fbfd; border-left:4px solid #00bcd4; padding:16px 20px; border-radius:6px; margin-bottom:20px; }
-  .box.data { background:#f0faff; }
-  p { margin:6px 0; font-size:15px; }
-  .buttons { text-align:center; margin:30px 0; }
-  .buttons a { display:inline-block; margin:6px; padding:12px 20px; border-radius:6px; color:white; text-decoration:none; font-weight:bold; cursor: pointer; transition: opacity 0.2s; }
-  .buttons a:hover { opacity: 0.8; }
-  .obs { background:#4caf50; } .nie { background:#ff9800; } .odrz { background:#f44336; }
-  .footer { background:#f7f8fa; text-align:center; padding:14px; font-size:12px; color:#999; }
-  .status-badge { display:inline-block; padding:6px 12px; border-radius:999px; font-weight:700; font-size:14px; color:#fff; }
-  .s-nowy { background:#9c27b0; } .s-porzucony { background: #9e9e9e; } .s-nie_odbiera { background:#ff9800; } .s-obsluzony { background:#4caf50; } .s-odrzucony { background:#f44336; }
-  .status-row { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
-  .muted { font-size:13px; color:#777; }
-  .disabled { opacity:.4; pointer-events: none; cursor: default; }
-  
-  /* DASHBOARD UI */
-  body.dashboard-mode .wrapper { max-width: 1400px; width: 95%; margin: 20px auto; }
-  .dashboard-toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; align-items: center; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #eee; }
-  .dashboard-toolbar input, .dashboard-toolbar select { padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; outline: none; }
-  .btn-tool { padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd; background: #fff; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 5px; }
-  .btn-tool:hover { background: #f9f9f9; border-color: #bbb; }
-  .table-scroll { width: 100%; overflow-x: auto; border: 1px solid #eee; border-radius: 8px; }
-  .dashboard-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 1000px; }
-  .dashboard-table thead th { background: #f4f7fb; padding: 12px 10px; text-align: left; border-bottom: 2px solid #e3e7ee; cursor: pointer; }
-  .dashboard-table tbody td { padding: 12px 10px; border-bottom: 1px solid #eee; }
+    body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; background:#f7f8fa; margin:0; min-height:100vh; display:flex; justify-content:center; align-items:center; }
+    .wrapper { max-width:600px; width:95%; background:#fff; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.05); overflow:hidden; }
+    .header { background: linear-gradient(135deg, #00bcd4, #9c27b0); color:#fff; padding:24px; text-align:center; }
+    .header img { width:70px; border-radius:16px; display:block; margin:0 auto 10px; }
+    .header h2 { margin:0; font-size:22px; }
+    .content { padding:26px 30px; }
+    .box { background:#f4fbfd; border-left:4px solid #00bcd4; padding:16px 20px; border-radius:6px; margin-bottom:20px; }
+    .box.data { background:#f0faff; }
+    p { margin:6px 0; font-size:15px; }
+    .buttons { text-align:center; margin:30px 0; }
+    .buttons a { display:inline-block; margin:6px; padding:12px 20px; border-radius:6px; color:white; text-decoration:none; font-weight:bold; cursor: pointer; transition: opacity 0.2s; }
+    .buttons a:hover { opacity: 0.8; }
+    .obs { background:#4caf50; } .nie { background:#ff9800; } .odrz { background:#f44336; }
+    .footer { background:#f7f8fa; text-align:center; padding:14px; font-size:12px; color:#999; }
+    .status-badge { display:inline-block; padding:6px 12px; border-radius:999px; font-weight:700; font-size:12px; color:#fff; text-transform: uppercase; }
+    .s-nowy { background:#9c27b0; } .s-nie_odbiera { background:#ff9800; } .s-obsluzony { background:#4caf50; } .s-odrzucony { background:#f44336; }
+    .status-row { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+    .muted { font-size:13px; color:#777; }
+    .disabled { opacity:.4; pointer-events: none; cursor: default; }
+    
+    body.dashboard-mode { align-items: flex-start; }
+    body.dashboard-mode .wrapper { max-width: 1400px; margin: 20px auto; }
+    .dashboard-toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; align-items: center; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #eee; }
+    .dashboard-toolbar input, .dashboard-toolbar select { padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; outline: none; }
+    .btn-tool { padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd; background: #fff; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+    .table-scroll { width: 100%; overflow-x: auto; border: 1px solid #eee; border-radius: 8px; }
+    .dashboard-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 1000px; }
+    .dashboard-table thead th { background: #f4f7fb; padding: 12px 10px; text-align: left; border-bottom: 2px solid #e3e7ee; }
+    .dashboard-table tbody td { padding: 12px 10px; border-bottom: 1px solid #eee; }
 
-  .loader { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 9999; }
-  .loader.hidden { display: none; }
-  .loader-box { background: #fff; padding: 30px 40px; border-radius: 12px; text-align: center; }
-  .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top-color: #333; border-radius: 50%; animation: spin 0.9s linear infinite; margin: 0 auto; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+    .loader { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+    .loader.hidden { display: none; }
+    .loader-box { background: #fff; padding: 30px 40px; border-radius: 12px; text-align: center; }
+    .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top-color: #333; border-radius: 50%; animation: spin 0.9s linear infinite; margin: 0 auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
-
 <body>
 
 <div class="wrapper" id="app">
-  <div class="content">⏳ Łączenie z serwerem…</div>
+    <div class="content" style="text-align:center;">⏳ Łączenie z serwerem...</div>
 </div>
 
 <div id="loader" class="loader hidden">
-  <div class="loader-box">
-    <div class="spinner"></div>
-    <div class="loader-text">Ładowanie...</div>
-  </div>
+    <div class="loader-box">
+        <div class="spinner"></div>
+        <div class="loader-text">Ładowanie...</div>
+    </div>
 </div>
 
-
-<script id="single-lead-logic">
+<script>
 const API_URL = "https://script.google.com/macros/s/AKfycbzBLTLdMX1DXfLdDjiIit97OWNNaIjdiXqj9_bVtWSdytJAy4x9SvRTZdSP8t3Ysd-7/exec";
 const params = new URLSearchParams(window.location.search);
 const row = params.get("row");
@@ -67,7 +63,7 @@ const token = params.get("token");
 const action = params.get("action");
 const app = document.getElementById("app");
 
-// === WIDOK POJEDYNCZEGO LEADA ===
+// === LOGIKA WIDOKU POJEDYNCZEGO ===
 function loadSingle() {
     document.body.classList.remove("dashboard-mode");
     showLoader("Pobieranie danych leada...");
@@ -77,17 +73,16 @@ function loadSingle() {
             hideLoader();
             d.success ? renderSingle(d.lead) : showError("Brak dostępu lub nieprawidłowy token.");
         })
-        .catch(err => showError("Błąd połączenia z serwerem."));
+        .catch(() => showError("Błąd połączenia z serwerem."));
 }
 
 function renderSingle(lead) {
-    // Dynamiczne szukanie pól, jeśli nagłówki by się różniły (np. "Pytanie 2 (opcjonalne)")
     const getVal = (pattern) => {
         const key = Object.keys(lead).find(k => k.toLowerCase().includes(pattern.toLowerCase()));
         return key ? lead[key] : null;
     };
 
-    const status = (lead["Obecny status"] || "nowy").toLowerCase().trim();
+    const status = String(lead["Obecny status"] || "nowy").toLowerCase().trim();
     const lastUpdate = lead["Data ostatniej aktualizacji"];
     const email = getVal("mail") || getVal("email") || "-";
     const info1 = getVal("Pytanie 1") || "-";
@@ -108,7 +103,7 @@ function renderSingle(lead) {
                         <p>📢 <strong>Kampania:</strong> ${lead["Kampania"] || "-"}</p>
                     </div>
                     <div style="text-align:right">
-                        <span class="status-badge ${statusClass(status)}">${status.toUpperCase()}</span>
+                        <span class="status-badge ${statusClass(status)}">${status}</span>
                         <div class="muted" style="margin-top:5px">Aktualizacja:<br>${formatDate(lastUpdate)}</div>
                     </div>
                 </div>
@@ -117,18 +112,140 @@ function renderSingle(lead) {
                 <p><strong>🧾 Pacjent:</strong> ${lead["Imię Nazwisko"] || "-"}</p>
                 <p><strong>📞 Telefon:</strong> ${formatPhone(lead["Nr tel"])}</p>
                 <p><strong>📧 Email:</strong> ${email}</p>
-                <hr style="border:0; border-top:1px solid #e0e0e0; margin:10px 0;">
+                <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
                 <p><strong>🦷 Cel wizyty:</strong> ${info1}</p>
                 <p><strong>📝 Dodatkowe info:</strong> ${info2}</p>
             </div>
             <div class="buttons ${editable ? "" : "disabled"}">
-                <a class="obs" onclick="handleStatusClick('obsluzony','${status}')">✔ Obsłużony</a>
-                <a class="nie" onclick="handleStatusClick('nie_odbiera','${status}')">📞 Nie odbiera</a>
-                <a class="odrz" onclick="handleStatusClick('odrzucony','${status}')">❌ Odrzucony</a>
+                <a class="obs" onclick="handleStatusClick('obsluzony')">✔ Obsłużony</a>
+                <a class="nie" onclick="handleStatusClick('nie_odbiera')">📞 Nie odbiera</a>
+                <a class="odrz" onclick="handleStatusClick('odrzucony')">❌ Odrzucony</a>
             </div>
-            ${!editable ? `<p class="muted" style="text-align:center; color:#f44336;">⛔ Edycja zablokowana (minęło 15 min lub status jest ostateczny)</p>` : ''}
+            ${!editable ? `<p class="muted" style="text-align:center; color:#f44336;">⛔ Edycja zablokowana (czas minął lub status ostateczny)</p>` : ''}
         </div>
     `;
+}
+
+// === LOGIKA DASHBOARDU ===
+let allLeadsMap = new Map();
+let currentTotal = 0;
+let dashboardOffset = 0;
+let dashboardSort = "desc";
+
+function renderListLayout() {
+    document.body.classList.add("dashboard-mode");
+    app.innerHTML = `
+        <div class="header"><h2>📊 Dashboard leadów</h2></div>
+        <div class="content">
+            <div class="dashboard-toolbar">
+                <input type="text" id="searchInput" placeholder="🔍 Szukaj..." oninput="recomputeDashboard()" style="flex: 1;">
+                <select id="statusFilter" onchange="recomputeDashboard()">
+                    <option value="">— Wszystkie statusy —</option>
+                    <option value="nowy">Nowy</option>
+                    <option value="obsluzony">Obsłużony</option>
+                    <option value="nie_odbiera">Nie odbiera</option>
+                    <option value="odrzucony">Odrzucony</option>
+                </select>
+                <input type="date" id="dateFrom" onchange="loadDashboard(true)">
+                <input type="date" id="dateTo" onchange="loadDashboard(true)">
+                <button onclick="toggleSort()" id="sortBtn" class="btn-tool">📅 Najnowsze</button>
+                <button onclick="clearFilters()" class="btn-tool">🧹</button>
+            </div>
+            <div class="table-scroll">
+                <table class="dashboard-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th><th>Data</th><th>Pacjent</th><th>Status</th><th>Zmiana</th><th>Czekał</th><th>Kampania</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+                <button id="loadMoreBtn" onclick="loadDashboard(false)" class="btn-tool" style="margin: 20px auto; display:none;">Załaduj więcej</button>
+            </div>
+        </div>
+    `;
+}
+
+function loadDashboard(reset = true) {
+    if (reset) { dashboardOffset = 0; allLeadsMap.clear(); }
+    showLoader("Pobieranie danych...");
+    
+    const df = document.getElementById("dateFrom").value;
+    const dt = document.getElementById("dateTo").value;
+    const url = `${API_URL}?action=list&token=${token}&limit=50&offset=${dashboardOffset}&sort=${dashboardSort}&dateFrom=${df}&dateTo=${dt}`;
+
+    fetch(url)
+        .then(r => r.json())
+        .then(d => {
+            hideLoader();
+            if (!d.success) return;
+            currentTotal = d.total;
+            d.rows.forEach(r => {
+                r.status = String(r.status || "nowy").toLowerCase().trim();
+                allLeadsMap.set(String(r.id), r);
+            });
+            dashboardOffset += d.rows.length;
+            recomputeDashboard();
+        })
+        .catch(() => hideLoader());
+}
+
+function recomputeDashboard() {
+    const q = document.getElementById("searchInput").value.toLowerCase().trim();
+    const s = document.getElementById("statusFilter").value.toLowerCase();
+    let list = Array.from(allLeadsMap.values());
+
+    if (q) list = list.filter(r => Object.values(r).join(" ").toLowerCase().includes(q));
+    if (s) list = list.filter(r => r.status === s);
+
+    list.sort((a,b) => {
+        const da = new Date(a.created), db = new Date(b.created);
+        return dashboardSort === "desc" ? db - da : da - db;
+    });
+
+    document.getElementById("tableBody").innerHTML = list.map(r => `
+        <tr>
+            <td>${r.id}</td>
+            <td>${formatDate(r.created)}</td>
+            <td><strong>${r.name || "-"}</strong><br><small class="muted">${formatPhone(r.phone)}</small></td>
+            <td><span class="status-badge ${statusClass(r.status)}">${r.status}</span></td>
+            <td>${formatDate(r.updated)}</td>
+            <td>${r.wait_time || "-"}</td>
+            <td>${r.campaign || "-"}</td>
+        </tr>
+    `).join("");
+
+    document.getElementById("loadMoreBtn").style.display = (allLeadsMap.size < currentTotal) ? "block" : "none";
+}
+
+// === POMOCNICZE ===
+function toggleSort() {
+    dashboardSort = (dashboardSort === "desc") ? "asc" : "desc";
+    document.getElementById("sortBtn").innerText = dashboardSort === "desc" ? "📅 Najnowsze" : "📅 Najstarsze";
+    loadDashboard(true);
+}
+
+function clearFilters() {
+    document.getElementById("searchInput").value = "";
+    document.getElementById("statusFilter").value = "";
+    document.getElementById("dateFrom").value = "";
+    document.getElementById("dateTo").value = "";
+    loadDashboard(true);
+}
+
+function handleStatusClick(newS) {
+    if (confirm(`Czy zmienić status na ${newS.toUpperCase()}?`)) updateStatus(newS);
+}
+
+async function updateStatus(s) {
+    showLoader("Zapisywanie...");
+    try {
+        const res = await fetch(`${API_URL}?row=${row}&token=${token}&status=${s}`, { method: "POST" });
+        const d = await res.json();
+        if (d.success) app.innerHTML = `<div class="content" style="text-align:center"><h3>✅ Zapisano</h3><p>Status został zaktualizowany.</p></div>`;
+        else alert("Błąd: " + d.error);
+    } catch (e) { alert("Błąd połączenia"); }
+    finally { hideLoader(); }
 }
 
 function canEdit(lastUpdate, status) {
@@ -137,148 +254,44 @@ function canEdit(lastUpdate, status) {
     return (Date.now() - new Date(lastUpdate)) / 60000 <= 15;
 }
 
-async function updateStatus(s) {
-    showLoader("Zapisywanie statusu...");
-    try {
-        const res = await fetch(`${API_URL}?row=${row}&token=${token}&status=${s}`, { method: "POST" });
-        const data = await res.json();
-        if (data.success) {
-            app.innerHTML = `<div class="content" style="text-align:center"><h3>✅ Zapisano pomyślnie</h3><p>Status leada został zaktualizowany.</p></div>`;
-        } else showError("Błąd: " + data.error);
-    } catch (e) { showError("Błąd połączenia."); }
-    finally { hideLoader(); }
+function formatDate(iso) { 
+    if (!iso) return "-"; 
+    const d = new Date(iso);
+    return isNaN(d) ? iso : d.toLocaleString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }); 
 }
 
-function handleStatusClick(newS, currentS) {
-    if (confirm(`Czy na pewno chcesz zmienić status na ${newS.toUpperCase()}?`)) {
-        updateStatus(newS);
-    }
+function statusClass(s) {
+    const m = { "nowy": "s-nowy", "nie_odbiera": "s-nie_odbiera", "obsluzony": "s-obsluzony", "odrzucony": "s-odrzucony" };
+    return m[s] || "s-nowy";
 }
 
-// Wspólne helpery
-function formatDate(iso) { if (!iso) return "-"; return new Date(iso).toLocaleString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
-function showLoader(t) { const l = document.getElementById("loader"); l.querySelector(".loader-text").textContent = t; l.classList.remove("hidden"); }
+function formatPhone(p) {
+    if (!p) return "-";
+    let d = p.toString().replace(/\D/g, "");
+    if (d.startsWith("48") && d.length === 11) d = d.slice(2);
+    return d.length === 9 ? `+48 ${d.slice(0,3)} ${d.slice(3,6)} ${d.slice(6)}` : p;
+}
+
+function showLoader(t) { 
+    const l = document.getElementById("loader"); 
+    l.querySelector(".loader-text").textContent = t; 
+    l.classList.remove("hidden"); 
+}
 function hideLoader() { document.getElementById("loader").classList.add("hidden"); }
 function showError(m) { app.innerHTML = `<div class="content"><h3>⛔ Błąd</h3><p>${m}</p></div>`; }
-function statusClass(s) { const k = (s || "").toLowerCase(); const m = { "nowy": "s-nowy", "nie_odbiera": "s-nie_odbiera", "obsluzony": "s-obsluzony", "odrzucony": "s-odrzucony" }; return m[k] || "s-nowy"; }
-function formatPhone(p) { if (!p) return "-"; let d = p.toString().replace(/\D/g, ""); if (d.startsWith("48") && d.length === 11) d = d.slice(2); return d.length === 9 ? `+48 ${d.slice(0,3)} ${d.slice(3,6)} ${d.slice(6)}` : p; }
-</script>
-  
-<script id="dashboard-logic">
-let allLeadsMap = new Map();
-let currentTotal = 0;
-let dashboardOffset = 0;
-let dashboardSort = "desc";
-let currentFilterKey = "";
 
-function loadDashboard(reset = true) {
-    const df = document.getElementById("dateFrom").value;
-    const dt = document.getElementById("dateTo").value;
-    const filterKey = `${df}_${dt}_${dashboardSort}`;
-
-    if (reset) {
-        dashboardOffset = 0;
-        // Czyścimy mapę TYLKO gdy zmieniają się daty lub kierunek sortowania serwerowego
-        if (filterKey !== currentFilterKey) {
-            allLeadsMap.clear();
-            currentFilterKey = filterKey;
-        }
-    }
-
-    // Jeśli mamy już dane w cache i nie robimy "load more", po prostu przelicz widok
-    if (reset && allLeadsMap.size > 0 && allLeadsMap.size >= dashboardOffset) {
-        recomputeDashboard();
-        // Sprawdzamy czy mimo wszystko nie trzeba dociągnąć reszty (jeśli total > cache)
-        if (allLeadsMap.size < currentTotal) { /* kontynuuj pobieranie */ } 
-        else { return; }
-    }
-
-    showLoader(reset ? "Ładowanie..." : "Dociąganie danych...");
-    
-    const url = `${API_URL}?action=list&token=${token}&limit=50&offset=${dashboardOffset}&sort=${dashboardSort}&dateFrom=${df}&dateTo=${dt}`;
-
-    fetch(url)
-        .then(r => r.json())
-        .then(d => {
-            hideLoader();
-            if (!d.success) return;
-
-            currentTotal = d.total;
-            d.rows.forEach(r => {
-                // Normalizacja statusu przy zapisie do cache
-                r.status = String(r.status || "nowy").toLowerCase().trim();
-                allLeadsMap.set(String(r.id), r);
-            });
-            
-            dashboardOffset += d.rows.length;
-            recomputeDashboard();
-        })
-        .catch(() => { hideLoader(); alert("Błąd połączenia."); });
-}
-
-function recomputeDashboard() {
-    const q = document.getElementById("searchInput")?.value.toLowerCase().trim() || "";
-    const s = document.getElementById("statusFilter")?.value.toLowerCase().trim() || "";
-    
-    let list = Array.from(allLeadsMap.values());
-
-    // Filtrowanie
-    if (q) {
-        list = list.filter(r => 
-            (r.name && r.name.toLowerCase().includes(q)) || 
-            (r.phone && r.phone.toString().includes(q)) ||
-            (r.email && r.email.toLowerCase().includes(q)) ||
-            (r.id && r.id.toString().includes(q))
-        );
-    }
-    
-    if (s) {
-        // Kluczowe: porównujemy znormalizowane statusy
-        list = list.filter(r => r.status === s);
-    }
-
-    // Sortowanie lokalne (zawsze upewnia się, że kolejność jest poprawna w UI)
-    list.sort((a, b) => {
-        const da = new Date(a.created), db = new Date(b.created);
-        return dashboardSort === "desc" ? db - da : da - db;
-    });
-
-    const tbody = document.getElementById("tableBody");
-    if (!tbody) return;
-
-    if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px;">Brak leadów spełniających kryteria.</td></tr>`;
+// === START SYSTEMU ===
+window.onload = () => {
+    if (action === "list") {
+        renderListLayout();
+        loadDashboard(true);
+    } else if (row && token) {
+        loadSingle();
     } else {
-        tbody.innerHTML = list.map(r => `
-            <tr>
-                <td>${r.id}</td>
-                <td>${formatDate(r.created)}</td>
-                <td>
-                    <strong>${r.name || "-"}</strong><br>
-                    <small class="muted">${formatPhone(r.phone)}</small><br>
-                    <small class="muted" style="font-size:11px">${r.email || ""}</small>
-                </td>
-                <td><span class="status-badge ${statusClass(r.status)}">${r.status.toUpperCase()}</span></td>
-                <td>${formatDate(r.updated)}</td>
-                <td>${r.wait_time || "-"}</td>
-                <td><small>${r.campaign || "-"}</small></td>
-            </tr>
-        `).join("");
+        showError("Brak parametrów (row/token/action).");
     }
-
-    const btn = document.getElementById("loadMoreBtn");
-    if (btn) btn.style.display = (allLeadsMap.size < currentTotal) ? "block" : "none";
-}
-
-function clearFilters() {
-    document.getElementById("searchInput").value = "";
-    document.getElementById("statusFilter").value = "";
-    document.getElementById("dateFrom").value = "";
-    document.getElementById("dateTo").value = "";
-    // Przy czyszczeniu filtrów resetujemy całkowicie cache, by mieć pewność świeżych danych
-    allLeadsMap.clear(); 
-    loadDashboard(true);
-}
+};
 </script>
+
 </body>
 </html>
