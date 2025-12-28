@@ -362,57 +362,44 @@ function loadSingle() {
 function loadList(reset = true) {
     document.body.classList.add("dashboard-mode");
     
-    // Inicjalizacja szkieletu Dashboardu (tylko przy pierwszym wejściu lub resecie)
     if (reset) {
-        offset = 0;
-        visibleLimit = 30;
-        allRows = [];
-        fullyLoaded = false;
-        
-        app.innerHTML = `
-            <div class="header"><h2>📊 Dashboard leadów</h2></div>
-            <div class="content">
-                <div class="dashboard-toolbar">
-                    <input type="text" id="searchInput" placeholder="🔍 Szukaj..." oninput="recomputeView()" style="flex: 1; min-width: 200px;">
-                    <select id="statusFilter" onchange="recomputeView()">
-                        <option value="">— Wszystkie statusy —</option>
-                        <option value="nowy">Nowy</option>
-                        <option value="obsluzony">Obsłużony</option>
-                        <option value="nie_odbiera">Nie odbiera</option>
-                        <option value="odrzucony">Odrzucony</option>
-                    </select>
-                    <select id="campaignFilter" onchange="recomputeView()"><option value="">— Kampanie —</option></select>
-                    <div style="display:flex; gap:5px; align-items:center;">
-                        <input type="date" id="dateFrom" onchange="recomputeView()">
-                        <span>-</span>
-                        <input type="date" id="dateTo" onchange="recomputeView()">
-                    </div>
-                    <button onclick="toggleDateSort()" id="sortBtn" style="padding:8px 12px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer">📅 Najnowsze</button>
-                    <button onclick="clearAllFilters()" style="padding:8px 12px;border-radius:8px;border:1px solid #ccc;cursor:pointer">🧹</button>
-                </div>
-                <div class="table-scroll">
-                    <table class="dashboard-table">
-                        <thead>
-                            <tr>
-                                <th onclick="sortTable('id')">ID</th>
-                                <th onclick="sortTable('created')">Data</th>
-                                <th onclick="sortTable('name')">Pacjent</th>
-                                <th onclick="sortTable('status')">Status</th>
-                                <th onclick="sortTable('updated')">Ost. akt.</th>
-                                <th>Czas oczek.</th>
-                                <th onclick="sortTable('campaign')">Kampania</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableBody"></tbody>
-                    </table>
-                    <div style="text-align:center; margin:20px">
-                        <button id="loadMoreBtn" onclick="loadList(false)" style="padding:12px 20px;border-radius:8px;border:1px solid #ccc;cursor:pointer; display:none;">➕ Załaduj więcej</button>
-                    </div>
-                </div>
-            </div>
-            <div class="footer">System AdFlow · podgląd leadów</div>
-        `;
+        currentOffset = 0;
+        displayedRows = [];
+        // Jeśli to pierwsze ładowanie, wyrenderuj szkielet tabeli (pomiń jeśli już jest)
+        if (!document.getElementById("tableBody")) renderSkeleton();
     }
+
+    const dateFrom = document.getElementById("dateFrom")?.value || "";
+    const dateTo = document.getElementById("dateTo")?.value || "";
+    
+    showLoader("Pobieranie danych...");
+
+    // Budowanie URL z parametrami dla serwera
+    const url = `${API_URL}?action=list&token=${token}` +
+                `&limit=30` +
+                `&offset=${currentOffset}` +
+                `&sort=${currentSort}` +
+                `&dateFrom=${dateFrom}` +
+                `&dateTo=${dateTo}`;
+
+    fetch(url)
+        .then(r => r.json())
+        .then(d => {
+            hideLoader();
+            if (!d.success) return showError("Błąd autoryzacji");
+
+            totalAvailable = d.total;
+            displayedRows = reset ? d.rows : displayedRows.concat(d.rows);
+            currentOffset += d.rows.length;
+
+            renderTableRows(displayedRows);
+            updateUI(d.total);
+        })
+        .catch(err => {
+            hideLoader();
+            showError("Błąd połączenia.");
+        });
+}
 
     if (fullyLoaded && !reset) {
         visibleLimit += 30;
@@ -547,10 +534,12 @@ function renderList(rows) {
 function renderTableRows(rows) {
     const tbody = document.getElementById("tableBody");
     if (!tbody) return;
+    
     if (rows.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px;">Brak leadów</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px;">Brak leadów dla wybranych kryteriów</td></tr>`;
         return;
     }
+
     tbody.innerHTML = rows.map(r => `
         <tr>
             <td>${r.id}</td>
@@ -565,7 +554,6 @@ function renderTableRows(rows) {
 }
 
 // === POMOCNICZE / LOGIKA BIZNESOWA ===
-
 function canEdit(lastUpdate, status) {
     const normalized = (status || "").trim().toLowerCase();
     if (normalized === "" || normalized === "nowy" || normalized === "nie_odbiera") return true;
@@ -601,9 +589,19 @@ async function updateStatus(status) {
 
 // --- Pozostałe funkcje pomocnicze ---
 function sortTable(key) { if (currentSortKey === key) { sortDir *= -1; sortOrder = (sortOrder === "desc" ? "asc" : "desc"); } else { currentSortKey = key; sortDir = 1; sortOrder = "asc"; } recomputeView(); }
-function toggleDateSort() { sortOrder = (sortOrder === "desc" ? "asc" : "desc"); currentSortKey = 'created'; document.getElementById("sortBtn").innerText = sortOrder === "desc" ? "📅 Najnowsze" : "📅 Najstarsze"; recomputeView(); }
+
+// Funkcja obsługująca zmianę sortowania
+function toggleDateSort() {
+    currentSort = (currentSort === "desc") ? "asc" : "desc";
+    const btn = document.getElementById("sortBtn");
+    btn.innerText = currentSort === "desc" ? "📅 Najnowsze" : "📅 Najstarsze";
+    loadList(true); // Resetujemy i pobieramy od nowa z serwera
+}
+  
 function clearAllFilters() { document.getElementById("searchInput").value = ""; document.getElementById("statusFilter").value = ""; document.getElementById("dateFrom").value = ""; document.getElementById("dateTo").value = ""; recomputeView(); }
+
 function hasDateFilter() { return document.getElementById("dateFrom")?.value || document.getElementById("dateTo")?.value; }
+
 function applyFilters(rows) {
     const q = document.getElementById("searchInput")?.value.toLowerCase() || "";
     const s = document.getElementById("statusFilter")?.value || "";
@@ -620,6 +618,7 @@ function applyFilters(rows) {
         return true;
     });
 }
+  
 function populateCampaigns(rows) {
     const select = document.getElementById("campaignFilter");
     if(!select) return;
@@ -759,6 +758,19 @@ function render(lead) {
       </div>
     </div>
   `;
+}
+
+// Funkcja wywoływana przy zmianie daty
+function onDateChange() {
+    loadList(true); // Każda zmiana daty to nowe zapytanie do serwera
+}
+
+function updateUI(total) {
+    const loadMoreBtn = document.getElementById("loadMoreBtn");
+    // Pokazuj przycisk tylko jeśli jest więcej danych na serwerze niż już pobraliśmy
+    if (loadMoreBtn) {
+        loadMoreBtn.style.display = (displayedRows.length < total) ? "inline-block" : "none";
+    }
 }
 </script>
 </body>
