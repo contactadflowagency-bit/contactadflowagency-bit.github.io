@@ -337,11 +337,9 @@
                         </div>
                 
                         <div style="text-align:right">
-                            <span class="status-badge ${statusClass(r.statusKey)}">
-                                ${r.status}
-                            </span>
+                            <td><span class="status-badge ${statusClass(r.status)}">${r.status}</span></td>
                             <div class="muted" style="margin-top:5px">
-                                Aktualizacja:<br>${formatDate(r.lastUpdate)}
+                                Aktualizacja:<br>${formatDate(r.updated)}
                             </div>
                         </div>
                     </div>
@@ -354,10 +352,6 @@
                     <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
                     <p><strong>🦷 Info 1:</strong> ${r.info1 || "-"}</p>
                     <p><strong>📝 Info 2:</strong> ${r.info2 || "-"}</p>
-                </div>
-                <div style="text-align:right">
-                    <span class="status-badge ${statusClass(r.statusKey)}">${r.status}</span>
-                    <div class="muted" style="margin-top:5px">Aktualizacja:<br>${formatDate(r.lastUpdate)}</div>
                 </div>`
             document.getElementById("previewModal").classList.remove("hidden");
         }
