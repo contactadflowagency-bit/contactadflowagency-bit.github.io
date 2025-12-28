@@ -417,12 +417,28 @@
         
         async function updateStatus(s) {
             showLoader("Zapisywanie...");
+            
+            // FIX: Timeout / Network Error Handling
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 sekund timeout
+
             try {
-                // W Apps Script POST parameter passing bywa problematyczny, 
-                // ale nowy backend (handleUpdateStatus) obsłuży parametry z URL poprawnie.
-                const res = await fetch(`${API_URL}?row=${row}&token=${token}&status=${s}`, { 
-                    method: "POST"
+                // FIX: Security & POST Method correct usage
+                // Wysyłamy dane w BODY jako JSON. Token nie jest widoczny w pasku adresu przy tym zapytaniu.
+                const res = await fetch(API_URL, { 
+                    method: "POST",
+                    // Ważne: GAS wymaga text/plain przy CORS simple requests, ale parsujemy to jako JSON w backendzie
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({
+                        action: 'update',
+                        row: row,
+                        token: token,
+                        status: s
+                    }),
+                    signal: controller.signal
                 });
+                
+                clearTimeout(timeoutId);
                 const d = await res.json();
                 
                 if (d.success) {
@@ -434,12 +450,15 @@
                     </div>`;
                 } else { 
                     alert("Błąd zapisu: " + d.error); 
-                    // Opcjonalnie przeładuj, by zaktualizować stan
                     if(d.error.includes("zablokowana")) location.reload();
                 }
             } catch (e) { 
                 console.error(e);
-                alert("Błąd połączenia z serwerem."); 
+                if (e.name === 'AbortError') {
+                    alert("Błąd: Przekroczono czas oczekiwania. Sprawdź internet.");
+                } else {
+                    alert("Błąd połączenia z serwerem."); 
+                }
             } finally { 
                 hideLoader(); 
             }
@@ -461,10 +480,13 @@
             loadDashboard(true);
         }
         
-        function formatDate(iso) { 
-            if (!iso) return "-"; 
-            const d = new Date(iso);
-            return isNaN(d) ? iso : d.toLocaleString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }); 
+        // FIX: Date Formatting (Timezone)
+        // Teraz data przychodzi sformatowana z serwera (np. "2023-10-20 14:00"), 
+        // więc nie używamy "new Date()", żeby przeglądarka nie dodała przesunięcia czasu.
+        function formatDate(dateStr) { 
+            if (!dateStr || dateStr === "-") return "-";
+            // Jeśli jakimś cudem przyjdzie ISO, to obsłużymy, ale Backend wysyła teraz gotowy tekst.
+            return dateStr.replace("T", " ").substring(0, 16); 
         }
         
         function statusClass(s) {
