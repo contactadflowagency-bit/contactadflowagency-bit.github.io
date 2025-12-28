@@ -118,49 +118,51 @@
                 .then(d => {
                     hideLoader();
                     if(d.success) {
-                        currentLeadStatus = String(d.lead["Obecny status"] || "nowy").toLowerCase().trim();
+                        // Pobieramy statusKey (małe litery) do logiki i status (ładny) do wyświetlania
+                        currentLeadStatus = String(d.lead.statusKey || "nowy");
                         renderSingle(d.lead);
                     } else {
-                        showError("Brak dostępu lub nieprawidłowy token.");
+                        showError("Błąd: " + (d.error || "Brak dostępu"));
                     }
                 })
                 .catch(() => showError("Błąd połączenia z serwerem."));
         }
         
         function renderSingle(lead) {
-            const status = currentLeadStatus;
-            const lastUpdate = lead["Data ostatniej aktualizacji"];
-            const email = getVal(lead, "mail") || getVal(lead, "email") || "-";
-            const info1 = getVal(lead, "Pytanie 1") || "-";
-            const info2 = getVal(lead, "Pytanie 2") || "-";
-            const editable = canEdit(lastUpdate, status);
-        
+            // Używamy flagi z serwera. Jeśli undefined (np. stara wersja API), domyślnie false dla bezpieczeństwa.
+            const editable = (lead.canEdit !== undefined) ? lead.canEdit : false; 
+            const statusDisplay = lead.status; // Ładna nazwa z Excela
+            const statusKey = lead.statusKey; // Nazwa techniczna
+            
+            // Stały link do avatara (zmień na własny URL)
+            const avatarUrl = "https://ui-avatars.com/api/?name=Lead&background=0D8ABC&color=fff&size=128";
+
             app.innerHTML = `
                 <div class="header">
-                    <img src="https://scontent-waw2-2.xx.fbcdn.net/v/t39.30808-6/540904522_122143092902741193_6153063326804191448_n.jpg?_nc_cat=102&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=JC77rMjouDAQ7kNvwEt8vB8&_nc_oc=AdnTCBOj0TNVYYZUg4BUVsh6UgUe2DLPoC82tKLDr2CPvDRVG23qtHqs0ZeGFNKzMTA&_nc_zt=23&_nc_ht=scontent-waw2-2.xx&_nc_gid=GMw8v316DO9S0SsJOj-shw&oh=00_AfmJC9N0HeEIKsZbIqP4PsRasw2Ui5qLLpVqM740TenL8Q&oe=695724CD" alt="AdFlow">
+                    <img src="${avatarUrl}" alt="Avatar">
                     <h2>Status kontaktu z pacjentem</h2>
                 </div>
                 <div class="content">
                     <div class="box">
                         <div class="status-row">
                             <div>
-                                <p>🆔 <strong>Lead ID:</strong> ${lead["Id."] || "-"}</p>
-                                <p>📅 <strong>Zgłoszenie:</strong> ${formatDate(lead["Data"])}</p>
-                                <p>📢 <strong>Kampania:</strong> ${lead["Kampania"] || "-"}</p>
+                                <p>🆔 <strong>Lead ID:</strong> ${lead.id || "-"}</p>
+                                <p>📅 <strong>Zgłoszenie:</strong> ${formatDate(lead.date)}</p>
+                                <p>📢 <strong>Kampania:</strong> ${lead.campaign || "-"}</p>
                             </div>
                             <div style="text-align:right">
-                                <span class="status-badge ${statusClass(status)}">${status}</span>
-                                <div class="muted" style="margin-top:5px">Aktualizacja:<br>${formatDate(lastUpdate)}</div>
+                                <span class="status-badge ${statusClass(statusKey)}">${statusDisplay}</span>
+                                <div class="muted" style="margin-top:5px">Aktualizacja:<br>${formatDate(lead.lastUpdate)}</div>
                             </div>
                         </div>
                     </div>
                     <div class="box data">
-                        <p><strong>🧾 Pacjent:</strong> ${lead["Imię Nazwisko"] || "-"}</p>
-                        <p><strong>📞 Telefon:</strong> ${formatPhone(lead["Nr tel"])}</p>
-                        <p><strong>📧 Email:</strong> ${email}</p>
+                        <p><strong>🧾 Pacjent:</strong> ${lead.name || "-"}</p>
+                        <p><strong>📞 Telefon:</strong> ${formatPhone(lead.phone)}</p>
+                        <p><strong>📧 Email:</strong> ${lead.email || "-"}</p>
                         <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
-                        <p><strong>🦷 Cel wizyty:</strong> ${info1}</p>
-                        <p><strong>📝 Dodatkowe info:</strong> ${info2}</p>
+                        <p><strong>🦷 Cel wizyty:</strong> ${lead.info1 || "-"}</p>
+                        <p><strong>📝 Dodatkowe info:</strong> ${lead.info2 || "-"}</p>
                     </div>
                     <div class="buttons ${editable ? "" : "disabled"}">
                         <a class="obs" onclick="handleStatusClick('obsluzony')">✔ Obsłużony</a>
@@ -170,12 +172,6 @@
                     ${!editable ? `<p class="muted" style="text-align:center; color:#f44336; font-weight:bold; margin-top:20px;">⛔ Edycja zablokowana (status ostateczny lub upłynął czas 20 min)</p>` : ''}
                 </div>
             `;
-        }
-        
-        function getVal(obj, partialKey) {
-            if(!obj) return null;
-            const key = Object.keys(obj).find(k => k.toLowerCase().includes(partialKey.toLowerCase()));
-            return key ? obj[key] : null;
         }
         
         function renderListLayout() {
@@ -361,6 +357,7 @@
         function openPreview(id) {
             const r = allLeadsMap.get(String(id));
             if(!r) return;
+            // Zauważ zmianę: r.info1 zamiast r["Pytanie 1"] itp.
             const contentHtml = `
                 <div class="box">
                     <div class="status-row">
@@ -380,8 +377,8 @@
                     <p><strong>📧 Email:</strong> ${r.email || "-"}</p>
                     <p><strong>⏱️ Czas oczekiwania:</strong> ${r.wait_time_combined || "-"}</p>
                     <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
-                    <p><strong>🦷 Pytanie 1:</strong> ${r.info1 || "-"}</p>
-                    <p><strong>📝 Pytanie 2:</strong> ${r.info2 || "-"}</p>
+                    <p><strong>🦷 Info 1:</strong> ${r.info1 || "-"}</p>
+                    <p><strong>📝 Info 2:</strong> ${r.info2 || "-"}</p>
                 </div>
             `;
             document.getElementById("previewContent").innerHTML = contentHtml;
@@ -420,37 +417,31 @@
         async function updateStatus(s) {
             showLoader("Zapisywanie...");
             try {
-                const res = await fetch(`${API_URL}?row=${row}&token=${token}&status=${s}`, { method: "POST" });
+                // W Apps Script POST parameter passing bywa problematyczny, 
+                // ale nowy backend (handleUpdateStatus) obsłuży parametry z URL poprawnie.
+                const res = await fetch(`${API_URL}?row=${row}&token=${token}&status=${s}`, { 
+                    method: "POST"
+                });
                 const d = await res.json();
+                
                 if (d.success) {
                     app.innerHTML = `<div class="content" style="text-align:center; padding:50px;">
                         <div style="font-size:50px; margin-bottom:20px;">✅</div>
                         <h3>Zapisano pomyślnie</h3>
-                        <p>Status został zaktualizowany na: <b>${s.toUpperCase()}</b></p>
+                        <p>Status: <b>${(d.newStatus || s).toUpperCase()}</b></p>
+                        <button class="btn-tool" onclick="location.reload()" style="margin:20px auto;">Wróć do leada</button>
                     </div>`;
-                } else { alert("Błąd: " + d.error); }
-            } catch (e) { alert("Błąd połączenia"); }
-            finally { hideLoader(); }
-        }
-        
-        function canEdit(lastUpdate, status) {
-            const s = String(status).toLowerCase().trim();
-            
-            // 1. Porzucony - zablokowany od razu
-            if (s.includes("porzucony")) return false;
-            
-            // 2. Nowy i Nie odbiera - odblokowana edycja
-            if (s === "nowy" || s.includes("nie_odbiera")) return true;
-            
-            // 3. Obsłużony i Odrzucony - zablokowane po 20 minutach
-            if (s.includes("obs") || s === "odrzucony") {
-                if (!lastUpdate) return true; // Jeśli brak daty, pozwól edytować raz
-                const diffMin = (Date.now() - new Date(lastUpdate)) / 60000;
-                return diffMin <= 20;
+                } else { 
+                    alert("Błąd zapisu: " + d.error); 
+                    // Opcjonalnie przeładuj, by zaktualizować stan
+                    if(d.error.includes("zablokowana")) location.reload();
+                }
+            } catch (e) { 
+                console.error(e);
+                alert("Błąd połączenia z serwerem."); 
+            } finally { 
+                hideLoader(); 
             }
-        
-            // Domyślnie dla innych stanów (jeśli by wystąpiły)
-            return true;
         }
         
         function toggleSort() {
@@ -478,10 +469,10 @@
         function statusClass(s) {
             if (!s) return "s-nowy";
             const status = s.toLowerCase().trim();
-            if (status.includes("obs") && status.includes("ony")) return "s-obsluzony";
-            if (status.includes("nowy")) return "s-nowy";
+            if (status.includes("obs") || status.includes("ony")) return "s-obsluzony"; // Uproszczone
+            if (status === "nowy") return "s-nowy";
             if (status.includes("nie") && status.includes("odbiera")) return "s-nie_odbiera";
-            if (status.includes("odrzucony")) return "s-odrzucony";
+            if (status === "odrzucony") return "s-odrzucony";
             if (status.includes("porzucony")) return "s-porzucony";
             return "s-nowy";
         }
