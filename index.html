@@ -58,7 +58,8 @@
   </div>
 </div>
 
-<script>
+
+<script id="single-lead-logic">
 const API_URL = "https://script.google.com/macros/s/AKfycbzBLTLdMX1DXfLdDjiIit97OWNNaIjdiXqj9_bVtWSdytJAy4x9SvRTZdSP8t3Ysd-7/exec";
 const params = new URLSearchParams(window.location.search);
 const row = params.get("row");
@@ -66,47 +67,27 @@ const token = params.get("token");
 const action = params.get("action");
 const app = document.getElementById("app");
 
-// === STAN APLIKACJI ===
-let offset = 0;
-const LIMIT = 30;
-let allRows = []; 
-let totalLeads = 0;
-let sortOrder = "desc";
-let currentSortKey = 'created';
-let fullyLoaded = false;
-let loadingAll = false;
-let sortDir = 1;
-let pendingStatus = null;
-
-// === INICJALIZACJA ===
-window.onload = () => {
-    if (action === "list") {
-        renderListLayout();
-        loadList(true);
-    } else if (row && token) {
-        loadSingle();
-    } else {
-        showError("Nieprawidłowy link.");
-    }
-};
-
 // === WIDOK POJEDYNCZEGO LEADA ===
 function loadSingle() {
     document.body.classList.remove("dashboard-mode");
+    showLoader("Pobieranie danych leada...");
     fetch(`${API_URL}?row=${row}&token=${token}`)
         .then(r => r.json())
-        .then(d => d.success ? renderSingle(d.lead) : showError("Brak dostępu do leada"))
-        .catch(err => showError("Błąd połączenia."));
+        .then(d => {
+            hideLoader();
+            d.success ? renderSingle(d.lead) : showError("Brak dostępu lub nieprawidłowy token.");
+        })
+        .catch(err => showError("Błąd połączenia z serwerem."));
 }
 
 function renderSingle(lead) {
-    const status = lead["Obecny status"] || "nowy";
+    const status = (lead["Obecny status"] || "nowy").toLowerCase();
     const lastUpdate = lead["Data ostatniej aktualizacji"];
     const editable = canEdit(lastUpdate, status);
 
     app.innerHTML = `
         <div class="header">
-            <img src="https://scontent-waw2-2.xx.fbcdn.net/v/t39.30808-6/540904522_122143092902741193_6153063326804191448_n.jpg?_nc_cat=102&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=EXFBb3EdkUsQ7kNvwGb2Smp&_nc_oc=Adngi_kLnbg9pQiId6dkbJxk2TSxZhFWngOi9hCe_Ny49faPOIFTWxxq8fgzzJADO7I&_nc_zt=23&_nc_ht=scontent-waw2-2.xx&_nc_gid=w7niD_O83PtXyVLS5FjwZg&oh=00_AfkKwh5kzI8KNfgAR8NLvYEUObCW-JZmOSS3fx9QybdVYg&oe=6949BD8D" alt="AdFlow">
+            <img src="https://scontent-waw2-2.xx.fbcdn.net/v/t39.30808-6/540904522_122143092902741193_6153063326804191448_n.jpg?_nc_cat=102&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=EXFBb3EdkUsQ7kNvwGb2Smp&oh=00_AfkKwh5kzI8KNfgAR8NLvYEUObCW-JZmOSS3fx9QybdVYg&oe=6949BD8D" alt="AdFlow">
             <h2>Status kontaktu z pacjentem</h2>
         </div>
         <div class="content">
@@ -115,145 +96,172 @@ function renderSingle(lead) {
                     <div>
                         <p>🆔 <strong>Lead ID:</strong> ${lead["Id."]}</p>
                         <p>📅 <strong>Zgłoszenie:</strong> ${formatDate(lead["Data"])}</p>
+                        <p>📢 <strong>Kampania:</strong> ${lead["Kampania"] || "-"}</p>
                     </div>
-                    <div>
+                    <div style="text-align:right">
                         <span class="status-badge ${statusClass(status)}">${status.toUpperCase()}</span>
-                        <div class="muted">Aktualizacja:<br>${formatDate(lastUpdate)}</div>
+                        <div class="muted" style="margin-top:5px">Ostatnia zmiana:<br>${formatDate(lastUpdate)}</div>
                     </div>
                 </div>
             </div>
             <div class="box data">
                 <p><strong>🧾 Pacjent:</strong> ${lead["Imię Nazwisko"]}</p>
                 <p><strong>📞 Telefon:</strong> ${formatPhone(lead["Nr tel"])}</p>
-                <p><strong>🦷 Cel:</strong> ${lead["Pytanie 1 (cel wizyty)"]}</p>
+                <p><strong>🦷 Cel:</strong> ${lead["Pytanie 1 (cel wizyty)"] || "-"}</p>
+                <p><strong>📝 Dodatkowe info:</strong> ${lead["Pytanie 2"] || "-"}</p>
             </div>
             <div class="buttons ${editable ? "" : "disabled"}">
-                <a class="obs" onclick="${editable ? `handleStatusClick('obsluzony','${status}')` : ''}">✔ Obsłużony</a>
-                <a class="nie" onclick="${editable ? `handleStatusClick('nie_odbiera','${status}')` : ''}">📞 Nie odbiera</a>
-                <a class="odrz" onclick="${editable ? `handleStatusClick('odrzucony','${status}')` : ''}">❌ Odrzucony</a>
+                <a class="obs" onclick="handleStatusClick('obsluzony','${status}')">✔ Obsłużony</a>
+                <a class="nie" onclick="handleStatusClick('nie_odbiera','${status}')">📞 Nie odbiera</a>
+                <a class="odrz" onclick="handleStatusClick('odrzucony','${status}')">❌ Odrzucony</a>
             </div>
-            ${!editable ? `<p class="muted" style="text-align:center">⛔ Status zablokowany (minęło 15 min)</p>` : ''}
-        </div>
-        <div id="confirmModal" class="modal hidden">
-            <div class="modal-box">
-                <h3>Zmienić status?</h3>
-                <p>Czy na pewno chcesz zmienić status tego leada?</p>
-                <div class="modal-actions">
-                    <button class="cancel" onclick="closeModal()">Anuluj</button>
-                    <button class="confirm" id="confirmBtn">Tak, zmień</button>
-                </div>
-            </div>
+            ${!editable ? `<p class="muted" style="text-align:center; color:#f44336;">⛔ Edycja zablokowana (minęło 15 min lub status jest ostateczny)</p>` : ''}
         </div>
     `;
 }
 
-// === WIDOK DASHBOARDU ===
+function canEdit(lastUpdate, status) {
+    if (status === "nowy" || status === "nie_odbiera") return true;
+    if (!lastUpdate) return true;
+    return (Date.now() - new Date(lastUpdate)) / 60000 <= 15;
+}
+
+async function updateStatus(s) {
+    showLoader("Zapisywanie statusu...");
+    try {
+        const res = await fetch(`${API_URL}?row=${row}&token=${token}&status=${s}`, { method: "POST" });
+        const data = await res.json();
+        if (data.success) {
+            app.innerHTML = `<div class="content" style="text-align:center"><h3>✅ Zapisano pomyślnie</h3><p>Status leada został zaktualizowany.</p></div>`;
+        } else showError("Błąd: " + data.error);
+    } catch (e) { showError("Błąd połączenia."); }
+    finally { hideLoader(); }
+}
+
+function handleStatusClick(newS, currentS) {
+    if (confirm(`Czy na pewno chcesz zmienić status na ${newS.toUpperCase()}?`)) {
+        updateStatus(newS);
+    }
+}
+
+// Wspólne helpery
+function formatDate(iso) { if (!iso) return "-"; return new Date(iso).toLocaleString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
+function showLoader(t) { const l = document.getElementById("loader"); l.querySelector(".loader-text").textContent = t; l.classList.remove("hidden"); }
+function hideLoader() { document.getElementById("loader").classList.add("hidden"); }
+function showError(m) { app.innerHTML = `<div class="content"><h3>⛔ Błąd</h3><p>${m}</p></div>`; }
+function statusClass(s) { const k = (s || "").toLowerCase(); const m = { "nowy": "s-nowy", "nie_odbiera": "s-nie_odbiera", "obsluzony": "s-obsluzony", "odrzucony": "s-odrzucony" }; return m[k] || "s-nowy"; }
+function formatPhone(p) { if (!p) return "-"; let d = p.toString().replace(/\D/g, ""); if (d.startsWith("48") && d.length === 11) d = d.slice(2); return d.length === 9 ? `+48 ${d.slice(0,3)} ${d.slice(3,6)} ${d.slice(6)}` : p; }
+</script>
+  
+<script id="dashboard-logic">
+// === STAN DASHBOARDU ===
+let allLeadsMap = new Map(); // Inteligentny cache ID -> Dane
+let currentTotal = 0;
+let dashboardOffset = 0;
+let dashboardSort = "desc";
+let currentFilterKey = ""; // Klucz do sprawdzania czy zmieniono daty
+
 function renderListLayout() {
     document.body.classList.add("dashboard-mode");
     app.innerHTML = `
         <div class="header"><h2>📊 Dashboard leadów</h2></div>
         <div class="content">
             <div class="dashboard-toolbar">
-                <input type="text" id="searchInput" placeholder="🔍 Szukaj..." oninput="recomputeView()" style="flex: 1;">
-                <select id="statusFilter" onchange="recomputeView()">
+                <input type="text" id="searchInput" placeholder="🔍 Szukaj..." oninput="recomputeDashboard()" style="flex: 1; min-width:180px;">
+                <select id="statusFilter" onchange="recomputeDashboard()">
                     <option value="">— Wszystkie statusy —</option>
                     <option value="nowy">Nowy</option>
                     <option value="obsluzony">Obsłużony</option>
                     <option value="nie_odbiera">Nie odbiera</option>
                     <option value="odrzucony">Odrzucony</option>
                 </select>
-                <select id="campaignFilter" onchange="recomputeView()"><option value="">— Kampanie —</option></select>
                 <div style="display:flex; gap:5px; align-items:center;">
-                    <input type="date" id="dateFrom" onchange="loadList(true)">
-                    <span>-</span>
-                    <input type="date" id="dateTo" onchange="loadList(true)">
+                    <input type="date" id="dateFrom" onchange="loadDashboard(true)">
+                    <input type="date" id="dateTo" onchange="loadDashboard(true)">
                 </div>
-                <button onclick="toggleDateSort()" id="sortBtn" style="padding:8px; cursor:pointer">📅 Najnowsze</button>
-                <button onclick="clearAllFilters()" style="padding:8px; cursor:pointer">🧹</button>
+                <button onclick="toggleSort()" id="sortBtn" class="btn-tool">📅 Najnowsze</button>
+                <button onclick="clearFilters()" class="btn-tool">🧹 Wyczyść</button>
             </div>
             <div class="table-scroll">
                 <table class="dashboard-table">
                     <thead>
                         <tr>
-                            <th onclick="sortTable('id')">ID</th>
-                            <th onclick="sortTable('created')">Data</th>
-                            <th onclick="sortTable('name')">Pacjent</th>
-                            <th onclick="sortTable('status')">Status</th>
-                            <th onclick="sortTable('updated')">Ost. akt.</th>
-                            <th>Czas oczek.</th>
-                            <th onclick="sortTable('campaign')">Kampania</th>
+                            <th>ID</th>
+                            <th>Data</th>
+                            <th>Pacjent</th>
+                            <th>Status</th>
+                            <th>Aktualizacja</th>
+                            <th>Oczekiwanie</th>
+                            <th>Kampania</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody"></tbody>
                 </table>
                 <div style="text-align:center; margin:20px">
-                    <button id="loadMoreBtn" onclick="loadList(false)" style="padding:12px 20px; border-radius:8px; cursor:pointer; display:none;">➕ Załaduj więcej</button>
+                    <button id="loadMoreBtn" onclick="loadDashboard(false)" class="btn-tool" style="display:none; margin: 0 auto;">➕ Załaduj więcej</button>
                 </div>
             </div>
         </div>
     `;
 }
 
-function loadList(reset = true) {
+function loadDashboard(reset = true) {
+    const df = document.getElementById("dateFrom").value;
+    const dt = document.getElementById("dateTo").value;
+    const filterKey = `${df}_${dt}`;
+
     if (reset) {
-        offset = 0;
-        allRows = [];
-        fullyLoaded = false;
+        dashboardOffset = 0;
+        if (filterKey !== currentFilterKey) {
+            allLeadsMap.clear(); // Czyścimy cache tylko przy zmianie daty
+            currentFilterKey = filterKey;
+        }
     }
 
-    const dateFrom = document.getElementById("dateFrom")?.value || "";
-    const dateTo = document.getElementById("dateTo")?.value || "";
-    
-    showLoader(reset ? "Pobieranie danych..." : "Doczytywanie...");
+    // Jeśli przy resecie mamy już w cache'u tyle rekordów ile wynosi total, nie pobieramy
+    if (reset && allLeadsMap.size >= currentTotal && currentTotal > 0) {
+        recomputeDashboard();
+        return;
+    }
 
-    const url = `${API_URL}?action=list&token=${token}&limit=${LIMIT}&offset=${offset}&sort=${sortOrder}&dateFrom=${dateFrom}&dateTo=${dateTo}`;
+    showLoader(reset ? "Ładowanie listy..." : "Pobieranie kolejnych...");
+    
+    const url = `${API_URL}?action=list&token=${token}&limit=30&offset=${dashboardOffset}&sort=${dashboardSort}&dateFrom=${df}&dateTo=${dt}`;
 
     fetch(url)
         .then(r => r.json())
         .then(d => {
             hideLoader();
-            if (!d.success) return showError("Błąd autoryzacji.");
+            if (!d.success) return;
 
-            totalLeads = d.total;
-            allRows = reset ? d.rows : allRows.concat(d.rows);
-            offset += d.rows.length;
-
-            if (allRows.length >= totalLeads) fullyLoaded = true;
-
-            populateCampaigns(allRows);
-            recomputeView();
+            currentTotal = d.total;
+            // Dodawanie do Mapy (unikamy duplikatów po ID)
+            d.rows.forEach(r => allLeadsMap.set(r.id, r));
+            
+            dashboardOffset += d.rows.length;
+            recomputeDashboard();
         })
-        .catch(err => { hideLoader(); showError("Błąd połączenia."); });
+        .catch(() => hideLoader());
 }
 
-function recomputeView() {
-    let filtered = applyFilters(allRows);
+function recomputeDashboard() {
+    const q = document.getElementById("searchInput").value.toLowerCase();
+    const s = document.getElementById("statusFilter").value;
+    
+    let list = Array.from(allLeadsMap.values());
+
+    // Filtrowanie lokalne
+    if (q) list = list.filter(r => Object.values(r).join(" ").toLowerCase().includes(q));
+    if (s) list = list.filter(r => (r.status || "nowy") === s);
 
     // Sortowanie lokalne
-    filtered.sort((a, b) => {
-        let valA = a[currentSortKey];
-        let valB = b[currentSortKey];
-        if (currentSortKey === 'created' || currentSortKey === 'updated') {
-            return sortOrder === "asc" ? new Date(valA) - new Date(valB) : new Date(valB) - new Date(valA);
-        }
-        valA = (valA || "").toString().toLowerCase();
-        valB = (valB || "").toString().toLowerCase();
-        return valA < valB ? -1 * sortDir : (valA > valB ? 1 * sortDir : 0);
+    list.sort((a, b) => {
+        const da = new Date(a.created), db = new Date(b.created);
+        return dashboardSort === "desc" ? db - da : da - db;
     });
 
-    renderTableRows(filtered);
-
-    // Przycisk "Załaduj więcej" pokazuje się tylko jeśli serwer ma więcej rekordów niż my w pamięci
-    const loadMoreBtn = document.getElementById("loadMoreBtn");
-    if (loadMoreBtn) {
-        loadMoreBtn.style.display = (allRows.length < totalLeads) ? "inline-block" : "none";
-    }
-}
-
-function renderTableRows(rows) {
     const tbody = document.getElementById("tableBody");
-    if (!tbody) return;
-    tbody.innerHTML = rows.map(r => `
+    tbody.innerHTML = list.map(r => `
         <tr>
             <td>${r.id}</td>
             <td>${formatDate(r.created)}</td>
@@ -264,90 +272,42 @@ function renderTableRows(rows) {
             <td>${r.campaign || "-"}</td>
         </tr>
     `).join("");
+
+    const btn = document.getElementById("loadMoreBtn");
+    btn.style.display = (allLeadsMap.size < currentTotal) ? "block" : "none";
 }
 
-function toggleDateSort() {
-    sortOrder = (sortOrder === "desc") ? "asc" : "desc";
-    currentSortKey = 'created';
-    const btn = document.getElementById("sortBtn");
-    if (btn) btn.innerText = sortOrder === "desc" ? "📅 Najnowsze" : "📅 Najstarsze";
+function toggleSort() {
+    dashboardSort = (dashboardSort === "desc") ? "asc" : "desc";
+    document.getElementById("sortBtn").innerHTML = dashboardSort === "desc" ? "📅 Najnowsze" : "📅 Najstarsze";
     
-    // CACHE LOGIC: Jeśli mamy już wszystkie dane, tylko sortujemy. Jeśli nie - pobieramy od nowa.
-    if (fullyLoaded) {
-        recomputeView();
+    // Jeśli mamy już wszystkie dane pobrane dla tego widoku, sortujemy tylko lokalnie
+    if (allLeadsMap.size >= currentTotal) {
+        recomputeDashboard();
     } else {
-        loadList(true);
+        loadDashboard(true);
     }
 }
 
-// === POMOCNICZE / LOGIKA STATUSÓW ===
-function canEdit(lastUpdate, status) {
-    const s = (status || "").toLowerCase();
-    if (s === "" || s === "nowy" || s === "nie_odbiera") return true;
-    if (!lastUpdate) return true;
-    return (Date.now() - new Date(lastUpdate)) / 60000 <= 15;
-}
-
-function handleStatusClick(newStatus, currentStatus) {
-    const s = (currentStatus || "").toLowerCase();
-    if (s === "" || s === "nowy") { updateStatus(newStatus); return; }
-    pendingStatus = newStatus;
-    document.getElementById("confirmModal").classList.remove("hidden");
-    document.getElementById("confirmBtn").onclick = () => { updateStatus(pendingStatus); closeModal(); };
-}
-
-async function updateStatus(s) {
-    showLoader("Zapisywanie...");
-    try {
-        const res = await fetch(`${API_URL}?row=${row}&token=${token}&status=${s}`, { method: "POST" });
-        const data = await res.json();
-        if (data.success) {
-            app.innerHTML = `<div class="content"><h3>✅ Zapisano</h3><button onclick="location.reload()">Powrót</button></div>`;
-        } else showError("Błąd: " + data.error);
-    } catch (e) { showError("Błąd sieci."); }
-    finally { hideLoader(); }
-}
-
-function applyFilters(rows) {
-    const q = document.getElementById("searchInput")?.value.toLowerCase() || "";
-    const s = document.getElementById("statusFilter")?.value || "";
-    const cf = document.getElementById("campaignFilter")?.value || "";
-    return rows.filter(r => {
-        if (q && !Object.values(r).join(" ").toLowerCase().includes(q)) return false;
-        if (s && (r.status || "nowy") !== s) return false;
-        if (cf && r.campaign !== cf) return false;
-        return true;
-    });
-}
-
-function sortTable(key) {
-    if (currentSortKey === key) { sortDir *= -1; sortOrder = (sortDir === 1 ? "asc" : "desc"); } 
-    else { currentSortKey = key; sortDir = 1; sortOrder = "asc"; }
-    recomputeView();
-}
-
-function populateCampaigns(rows) {
-    const select = document.getElementById("campaignFilter");
-    if(!select) return;
-    const campaigns = [...new Set(rows.map(r => r.campaign).filter(Boolean))].sort();
-    select.innerHTML = '<option value="">— Kampanie —</option>' + campaigns.map(c => `<option value="${c}">${c}</option>`).join("");
-}
-
-function clearAllFilters() {
+function clearFilters() {
     document.getElementById("searchInput").value = "";
     document.getElementById("statusFilter").value = "";
     document.getElementById("dateFrom").value = "";
     document.getElementById("dateTo").value = "";
-    loadList(true);
+    loadDashboard(true);
 }
 
-function formatDate(iso) { if (!iso) return "-"; return new Date(iso).toLocaleString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
-function showLoader(t) { const l = document.getElementById("loader"); if (l) { l.querySelector(".loader-text").textContent = t; l.classList.remove("hidden"); } }
-function hideLoader() { const l = document.getElementById("loader"); if (l) l.classList.add("hidden"); }
-function showError(m) { app.innerHTML = `<div class="content"><h3>⛔ Błąd</h3><p>${m}</p><button onclick="location.reload()">🔄 Ponów</button></div>`; }
-function statusClass(s) { const k = (s || "").toLowerCase(); const m = { "nowy": "s-nowy", "nie_odbiera": "s-nie_odbiera", "obsluzony": "s-obsluzony", "odrzucony": "s-odrzucony" }; return m[k] || "s-nowy"; }
-function formatPhone(p) { if (!p) return "-"; let d = p.toString().replace(/\D/g, ""); if (d.startsWith("48") && d.length === 11) d = d.slice(2); return d.length === 9 ? `+48 ${d.slice(0,3)} ${d.slice(3,6)} ${d.slice(6)}` : p; }
-function closeModal() { document.getElementById("confirmModal").classList.add("hidden"); pendingStatus = null; }
+// Start systemu
+window.onload = () => {
+    if (action === "list") {
+        renderListLayout();
+        loadDashboard(true);
+    } else if (row && token) {
+        loadSingle();
+    } else {
+        showError("Brak wymaganych parametrów (row/token/action).");
+    }
+};
 </script>
 </body>
 </html>
