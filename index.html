@@ -214,7 +214,7 @@
                         <table class="dashboard-table">
                             <thead>
                                 <tr>
-                                    <th>ID</th><th>Data</th><th>Pacjent</th><th>Status</th><th>Zmiana</th><th>Czas kontaktu (realny)</th><th>Kampania</th>
+                                    <th>ID</th><th>Data</th><th>Pacjent</th><th>Status</th><th>Ostatnia aktualizacja</th><th>Czas kontaktu (realny)</th><th>Kampania</th>
                                     <th style="text-align:center;">Akcja</th>
                                 </tr>
                             </thead>
@@ -337,7 +337,7 @@
                     <p><strong>🧾 Pacjent:</strong> ${r.name}</p>
                     <p><strong>📞 Telefon:</strong> ${formatPhone(r.phone)}</p>
                     <p><strong>✉️ ${r.email || "-"}</strong></p>
-                    <p><strong>⏱️ Czas kontaktu (realny):</strong> ${formatDate(r.wait_time_combined)}</p>
+                    <p><strong>⏱️ Czas kontaktu (realny):</strong> ${r.wait_time_combined}</p>
                     <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
                     <p><strong>🦷 Info 1:</strong> ${r.info1 || "-"}</p>
                     <p><strong>📝 Info 2:</strong> ${r.info2 || "-"}</p>
