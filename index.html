@@ -18,15 +18,17 @@
     .buttons a, .btn-modal { display:inline-block; padding:12px 20px; border-radius:6px; color:white; text-decoration:none; font-weight:bold; cursor: pointer; transition: opacity 0.2s; border: none; font-size: 14px; }
     .buttons a:hover { opacity: 0.8; }
     
-    .obs { background:#4caf50; } .nie { background:#ff9800; } .odrz { background:#f44336; }
+    .obs { background:#2E7D32; } 
+    .nie { background:#FF9800; } 
+    .odrz { background:#D32F2F; }
     
     /* STATUS BADGES */
     .status-badge { display:inline-block; padding:6px 12px; border-radius:999px; font-weight:700; font-size:12px; color:#fff; text-transform: uppercase; }
-    .s-nowy { background:#2196F3; } /* Nowy: Blue */
-    .s-nie_odbiera { background:#ff9800; } 
-    .s-obsluzony { background:#4caf50; } 
-    .s-odrzucony { background:#f44336; }
-    .s-porzucony { background:#607d8b; }
+    .s-nowy { background: #2196F3 !important; }
+    .s-obsluzony { background: #2E7D32 !important; }
+    .s-nie_odbiera { background: #FF9800 !important; }
+    .s-odrzucony { background: #D32F2F !important; }
+    .s-porzucony { background: #607D8B !important; }
 
     .status-row { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
     .muted { font-size:13px; color:#777; }
@@ -230,13 +232,10 @@ function loadDashboard(reset = true) {
         });
 }
 
+// W displayTable upewnij się, że przekazujemy status do statusClass
 function displayTable() {
     const list = Array.from(allLeadsMap.values());
-    list.sort((a,b) => {
-        const da = new Date(a.created), db = new Date(b.created);
-        return dashboardSort === "desc" ? db - da : da - db;
-    });
-
+    // ... sortowanie ...
     const html = list.map(r => `
         <tr>
             <td>${r.id}</td>
@@ -248,14 +247,8 @@ function displayTable() {
             <td>${r.campaign || "-"}</td>
         </tr>
     `).join("");
-
-    const tbody = document.getElementById("tableBody");
-    if(tbody) tbody.innerHTML = html;
-    
-    const btn = document.getElementById("loadMoreBtn");
-    if (btn) {
-        btn.style.display = (allLeadsMap.size < currentTotal) ? "inline-flex" : "none";
-    }
+    document.getElementById("tableBody").innerHTML = html;
+    // ... reszta ...
 }
 
 // === SYSTEM POTWIERDZEŃ I ZMIANY STATUSU ===
@@ -302,17 +295,14 @@ async function updateStatus(s) {
     finally { hideLoader(); }
 }
 
-// === LOGIKA BLOKOWANIA (20 MIN) ===
+// === POPRAWIONA LOGIKA BLOKOWANIA ===
 function canEdit(lastUpdate, status) {
     const s = String(status).toLowerCase().trim();
     
-    // Nowy i Nie odbiera - zawsze można edytować
-    if (s === "nowy" || s === "nie_odbiera") return true;
+    if (s.includes("nowy") || s.includes("nie_odbiera")) return true;
+    if (s.includes("porzucony")) return false;
     
-    // Porzucony - blokada natychmiastowa
-    if (s === "porzucony") return false;
-    
-    // Obsłużony i Odrzucony - blokada po 20 minutach
+    // Obsłużony / Odrzucony
     if (!lastUpdate) return true;
     const diffMin = (Date.now() - new Date(lastUpdate)) / 60000;
     return diffMin <= 20;
@@ -338,9 +328,19 @@ function formatDate(iso) {
     return isNaN(d) ? iso : d.toLocaleString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }); 
 }
 
+// === POPRAWIONE MAPOWANIE KLAS CSS ===
 function statusClass(s) {
-    const m = { "nowy": "s-nowy", "nie_odbiera": "s-nie_odbiera", "obsluzony": "s-obsluzony", "odrzucony": "s-odrzucony", "porzucony": "s-porzucony" };
-    return m[s] || "s-nowy";
+    if (!s) return "s-nowy";
+    const status = s.toLowerCase().trim();
+    
+    // Obsługa polskich znaków i różnych formatów zapisu z arkusza
+    if (status.includes("obs") && status.includes("ony")) return "s-obsluzony";
+    if (status.includes("nowy")) return "s-nowy";
+    if (status.includes("nie") && status.includes("odbiera")) return "s-nie_odbiera";
+    if (status.includes("odrzucony")) return "s-odrzucony";
+    if (status.includes("porzucony")) return "s-porzucony";
+    
+    return "s-nowy";
 }
 
 function formatPhone(p) {
