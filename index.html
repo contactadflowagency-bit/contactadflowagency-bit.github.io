@@ -388,7 +388,7 @@ function displayTable() {
             <td>${formatDate(r.created)}</td>
             <td>
                 <strong>${r.name || "-"}</strong><br>
-                <small class="muted" style="font-size:12px;"> ${email}</p></small>
+                <small class="muted" style="font-size:12px;"> ${r.email || "-"}</small><br>
                 <small class="muted" style="font-size:12px;"> ${formatPhone(r.phone)}</small>
             </td>
             <td><span class="status-badge ${statusClass(r.status)}">${r.status}</span></td>
