@@ -329,9 +329,22 @@
             if(!r) return;
             document.getElementById("previewContent").innerHTML = `
                 <div class="box">
-                    <p>🆔 <strong>ID:</strong> ${r.id}</p>
-                    <p>📅 <strong>Zgłoszenie:</strong> ${formatDate(r.created)}</p>
-                    <p>📢 <strong>Kampania:</strong> ${r.campaign || "-"}</p>
+                    <div class="status-row">
+                        <div>
+                            <p>🆔 <strong>ID:</strong> ${r.id}</p>
+                            <p>📅 <strong>Zgłoszenie:</strong> ${formatDate(r.created)}</p>
+                            <p>📢 <strong>Kampania:</strong> ${r.campaign || "-"}</p>
+                        </div>
+                
+                        <div style="text-align:right">
+                            <span class="status-badge ${statusClass(r.statusKey)}">
+                                ${r.status}
+                            </span>
+                            <div class="muted" style="margin-top:5px">
+                                Aktualizacja:<br>${formatDate(r.lastUpdate)}
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="box data">
                     <p><strong>🧾 Pacjent:</strong> ${r.name}</p>
@@ -345,7 +358,7 @@
                 <div style="text-align:right">
                     <span class="status-badge ${statusClass(r.statusKey)}">${r.status}</span>
                     <div class="muted" style="margin-top:5px">Aktualizacja:<br>${formatDate(r.lastUpdate)}</div>
-                </div>`;
+                </div>`
             document.getElementById("previewModal").classList.remove("hidden");
         }
 
