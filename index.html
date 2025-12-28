@@ -297,7 +297,7 @@
                 <tr>
                     <td>${r.id}</td>
                     <td>${formatDate(r.created)}</td>
-                    <td><strong>${r.name || "-"}</strong><br><small class="muted">📞 ${formatPhone(r.phone)}</small></td>
+                    <td><strong>${r.name || "-"}</strong><br><small class="muted">📞 ${formatPhone(r.phone)}</small><br><small class="muted">✉️ ${r.email || "-"}</small></td>
                     <td><span class="status-badge ${statusClass(r.status)}">${r.status}</span></td>
                     <td>${formatDate(r.updated)}</td>
                     <td>${r.wait_time_combined || "-"}</td>
@@ -332,7 +332,7 @@
                 <div class="box data">
                     <p><strong>🧾 Pacjent:</strong> ${r.name}</p>
                     <p><strong>📞 Telefon:</strong> ${formatPhone(r.phone)}</p>
-                    <p style="margin-top:-2px; margin-left:25px;"><small class="muted">✉️ ${r.email || "-"}</small></p>
+                    <p><strong>✉️ ${r.email || "-"}</strong></p>
                     <p><strong>⏱️ Oczekiwanie:</strong> ${r.wait_time_combined}</p>
                     <hr>
                     <p><strong>🦷 Info 1:</strong> ${r.info1 || "-"}</p>
