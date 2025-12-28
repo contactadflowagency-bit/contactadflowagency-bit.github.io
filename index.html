@@ -198,13 +198,14 @@
                                 <div style="padding:10px; color:#888;">Ładowanie...</div>
                             </div>
                         </div>
-                    
+                        <p> Od:</p>
                         <input type="date" id="dateFrom" title="Data od">
+                        <p> Do:</p>
                         <input type="date" id="dateTo" title="Data do">
                         
-                        <button onclick="toggleSort()" id="sortBtn" class="btn-tool">📅 Najnowsze</button>
-                        
                         <button onclick="loadDashboard(true)" class="btn-tool btn-apply">🔍 Zastosuj filtry</button>
+
+                        <button onclick="toggleSort()" id="sortBtn" class="btn-tool">📅 Najnowsze</button>
                         
                         <button onclick="clearFilters()" class="btn-tool">🧹 Wyczyść</button>
                     </div>
