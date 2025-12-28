@@ -81,8 +81,17 @@ function loadSingle() {
 }
 
 function renderSingle(lead) {
-    const status = (lead["Obecny status"] || "nowy").toLowerCase();
+    // Dynamiczne szukanie pól, jeśli nagłówki by się różniły (np. "Pytanie 2 (opcjonalne)")
+    const getVal = (pattern) => {
+        const key = Object.keys(lead).find(k => k.toLowerCase().includes(pattern.toLowerCase()));
+        return key ? lead[key] : null;
+    };
+
+    const status = (lead["Obecny status"] || "nowy").toLowerCase().trim();
     const lastUpdate = lead["Data ostatniej aktualizacji"];
+    const email = getVal("mail") || getVal("email") || "-";
+    const info1 = getVal("Pytanie 1") || "-";
+    const info2 = getVal("Pytanie 2") || "-";
     const editable = canEdit(lastUpdate, status);
 
     app.innerHTML = `
@@ -94,21 +103,23 @@ function renderSingle(lead) {
             <div class="box">
                 <div class="status-row">
                     <div>
-                        <p>🆔 <strong>Lead ID:</strong> ${lead["Id."]}</p>
+                        <p>🆔 <strong>Lead ID:</strong> ${lead["Id."] || "-"}</p>
                         <p>📅 <strong>Zgłoszenie:</strong> ${formatDate(lead["Data"])}</p>
                         <p>📢 <strong>Kampania:</strong> ${lead["Kampania"] || "-"}</p>
                     </div>
                     <div style="text-align:right">
                         <span class="status-badge ${statusClass(status)}">${status.toUpperCase()}</span>
-                        <div class="muted" style="margin-top:5px">Ostatnia zmiana:<br>${formatDate(lastUpdate)}</div>
+                        <div class="muted" style="margin-top:5px">Aktualizacja:<br>${formatDate(lastUpdate)}</div>
                     </div>
                 </div>
             </div>
             <div class="box data">
-                <p><strong>🧾 Pacjent:</strong> ${lead["Imię Nazwisko"]}</p>
+                <p><strong>🧾 Pacjent:</strong> ${lead["Imię Nazwisko"] || "-"}</p>
                 <p><strong>📞 Telefon:</strong> ${formatPhone(lead["Nr tel"])}</p>
-                <p><strong>🦷 Cel:</strong> ${lead["Pytanie 1 (cel wizyty)"] || "-"}</p>
-                <p><strong>📝 Dodatkowe info:</strong> ${lead["Pytanie 2"] || "-"}</p>
+                <p><strong>📧 Email:</strong> ${email}</p>
+                <hr style="border:0; border-top:1px solid #e0e0e0; margin:10px 0;">
+                <p><strong>🦷 Cel wizyty:</strong> ${info1}</p>
+                <p><strong>📝 Dodatkowe info:</strong> ${info2}</p>
             </div>
             <div class="buttons ${editable ? "" : "disabled"}">
                 <a class="obs" onclick="handleStatusClick('obsluzony','${status}')">✔ Obsłużony</a>
@@ -154,79 +165,37 @@ function formatPhone(p) { if (!p) return "-"; let d = p.toString().replace(/\D/g
 </script>
   
 <script id="dashboard-logic">
-// === STAN DASHBOARDU ===
-let allLeadsMap = new Map(); // Inteligentny cache ID -> Dane
+let allLeadsMap = new Map();
 let currentTotal = 0;
 let dashboardOffset = 0;
 let dashboardSort = "desc";
-let currentFilterKey = ""; // Klucz do sprawdzania czy zmieniono daty
-
-function renderListLayout() {
-    document.body.classList.add("dashboard-mode");
-    app.innerHTML = `
-        <div class="header"><h2>📊 Dashboard leadów</h2></div>
-        <div class="content">
-            <div class="dashboard-toolbar">
-                <input type="text" id="searchInput" placeholder="🔍 Szukaj..." oninput="recomputeDashboard()" style="flex: 1; min-width:180px;">
-                <select id="statusFilter" onchange="recomputeDashboard()">
-                    <option value="">— Wszystkie statusy —</option>
-                    <option value="nowy">Nowy</option>
-                    <option value="obsluzony">Obsłużony</option>
-                    <option value="nie_odbiera">Nie odbiera</option>
-                    <option value="odrzucony">Odrzucony</option>
-                </select>
-                <div style="display:flex; gap:5px; align-items:center;">
-                    <input type="date" id="dateFrom" onchange="loadDashboard(true)">
-                    <input type="date" id="dateTo" onchange="loadDashboard(true)">
-                </div>
-                <button onclick="toggleSort()" id="sortBtn" class="btn-tool">📅 Najnowsze</button>
-                <button onclick="clearFilters()" class="btn-tool">🧹 Wyczyść</button>
-            </div>
-            <div class="table-scroll">
-                <table class="dashboard-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Data</th>
-                            <th>Pacjent</th>
-                            <th>Status</th>
-                            <th>Aktualizacja</th>
-                            <th>Oczekiwanie</th>
-                            <th>Kampania</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody"></tbody>
-                </table>
-                <div style="text-align:center; margin:20px">
-                    <button id="loadMoreBtn" onclick="loadDashboard(false)" class="btn-tool" style="display:none; margin: 0 auto;">➕ Załaduj więcej</button>
-                </div>
-            </div>
-        </div>
-    `;
-}
+let currentFilterKey = "";
 
 function loadDashboard(reset = true) {
     const df = document.getElementById("dateFrom").value;
     const dt = document.getElementById("dateTo").value;
-    const filterKey = `${df}_${dt}`;
+    const filterKey = `${df}_${dt}_${dashboardSort}`;
 
     if (reset) {
         dashboardOffset = 0;
+        // Czyścimy mapę TYLKO gdy zmieniają się daty lub kierunek sortowania serwerowego
         if (filterKey !== currentFilterKey) {
-            allLeadsMap.clear(); // Czyścimy cache tylko przy zmianie daty
+            allLeadsMap.clear();
             currentFilterKey = filterKey;
         }
     }
 
-    // Jeśli przy resecie mamy już w cache'u tyle rekordów ile wynosi total, nie pobieramy
-    if (reset && allLeadsMap.size >= currentTotal && currentTotal > 0) {
+    // Jeśli mamy już dane w cache i nie robimy "load more", po prostu przelicz widok
+    if (reset && allLeadsMap.size > 0 && allLeadsMap.size >= dashboardOffset) {
         recomputeDashboard();
-        return;
+        // Sprawdzamy czy mimo wszystko nie trzeba dociągnąć reszty (jeśli total > cache)
+        if (allLeadsMap.size < currentTotal) { /* kontynuuj pobieranie */ } 
+        else { return; }
     }
 
-    showLoader(reset ? "Ładowanie listy..." : "Pobieranie kolejnych...");
+    showLoader(reset ? "Ładowanie..." : "Dociąganie danych...");
     
-    const url = `${API_URL}?action=list&token=${token}&limit=30&offset=${dashboardOffset}&sort=${dashboardSort}&dateFrom=${df}&dateTo=${dt}`;
+    const url = `${API_URL}?action=list&token=${token}&limit=50&offset=${dashboardOffset}&sort=${dashboardSort}&dateFrom=${df}&dateTo=${dt}`;
 
     fetch(url)
         .then(r => r.json())
@@ -235,58 +204,70 @@ function loadDashboard(reset = true) {
             if (!d.success) return;
 
             currentTotal = d.total;
-            // Dodawanie do Mapy (unikamy duplikatów po ID)
-            d.rows.forEach(r => allLeadsMap.set(r.id, r));
+            d.rows.forEach(r => {
+                // Normalizacja statusu przy zapisie do cache
+                r.status = String(r.status || "nowy").toLowerCase().trim();
+                allLeadsMap.set(String(r.id), r);
+            });
             
             dashboardOffset += d.rows.length;
             recomputeDashboard();
         })
-        .catch(() => hideLoader());
+        .catch(() => { hideLoader(); alert("Błąd połączenia."); });
 }
 
 function recomputeDashboard() {
-    const q = document.getElementById("searchInput").value.toLowerCase();
-    const s = document.getElementById("statusFilter").value;
+    const q = document.getElementById("searchInput")?.value.toLowerCase().trim() || "";
+    const s = document.getElementById("statusFilter")?.value.toLowerCase().trim() || "";
     
     let list = Array.from(allLeadsMap.values());
 
-    // Filtrowanie lokalne
-    if (q) list = list.filter(r => Object.values(r).join(" ").toLowerCase().includes(q));
-    if (s) list = list.filter(r => (r.status || "nowy") === s);
+    // Filtrowanie
+    if (q) {
+        list = list.filter(r => 
+            (r.name && r.name.toLowerCase().includes(q)) || 
+            (r.phone && r.phone.toString().includes(q)) ||
+            (r.email && r.email.toLowerCase().includes(q)) ||
+            (r.id && r.id.toString().includes(q))
+        );
+    }
+    
+    if (s) {
+        // Kluczowe: porównujemy znormalizowane statusy
+        list = list.filter(r => r.status === s);
+    }
 
-    // Sortowanie lokalne
+    // Sortowanie lokalne (zawsze upewnia się, że kolejność jest poprawna w UI)
     list.sort((a, b) => {
         const da = new Date(a.created), db = new Date(b.created);
         return dashboardSort === "desc" ? db - da : da - db;
     });
 
     const tbody = document.getElementById("tableBody");
-    tbody.innerHTML = list.map(r => `
-        <tr>
-            <td>${r.id}</td>
-            <td>${formatDate(r.created)}</td>
-            <td><strong>${r.name || "-"}</strong><br><small class="muted">${formatPhone(r.phone)}</small></td>
-            <td><span class="status-badge ${statusClass(r.status)}">${(r.status || "nowy").toUpperCase()}</span></td>
-            <td>${formatDate(r.updated)}</td>
-            <td>${r.wait_time || "-"}</td>
-            <td>${r.campaign || "-"}</td>
-        </tr>
-    `).join("");
+    if (!tbody) return;
+
+    if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px;">Brak leadów spełniających kryteria.</td></tr>`;
+    } else {
+        tbody.innerHTML = list.map(r => `
+            <tr>
+                <td>${r.id}</td>
+                <td>${formatDate(r.created)}</td>
+                <td>
+                    <strong>${r.name || "-"}</strong><br>
+                    <small class="muted">${formatPhone(r.phone)}</small><br>
+                    <small class="muted" style="font-size:11px">${r.email || ""}</small>
+                </td>
+                <td><span class="status-badge ${statusClass(r.status)}">${r.status.toUpperCase()}</span></td>
+                <td>${formatDate(r.updated)}</td>
+                <td>${r.wait_time || "-"}</td>
+                <td><small>${r.campaign || "-"}</small></td>
+            </tr>
+        `).join("");
+    }
 
     const btn = document.getElementById("loadMoreBtn");
-    btn.style.display = (allLeadsMap.size < currentTotal) ? "block" : "none";
-}
-
-function toggleSort() {
-    dashboardSort = (dashboardSort === "desc") ? "asc" : "desc";
-    document.getElementById("sortBtn").innerHTML = dashboardSort === "desc" ? "📅 Najnowsze" : "📅 Najstarsze";
-    
-    // Jeśli mamy już wszystkie dane pobrane dla tego widoku, sortujemy tylko lokalnie
-    if (allLeadsMap.size >= currentTotal) {
-        recomputeDashboard();
-    } else {
-        loadDashboard(true);
-    }
+    if (btn) btn.style.display = (allLeadsMap.size < currentTotal) ? "block" : "none";
 }
 
 function clearFilters() {
@@ -294,20 +275,10 @@ function clearFilters() {
     document.getElementById("statusFilter").value = "";
     document.getElementById("dateFrom").value = "";
     document.getElementById("dateTo").value = "";
+    // Przy czyszczeniu filtrów resetujemy całkowicie cache, by mieć pewność świeżych danych
+    allLeadsMap.clear(); 
     loadDashboard(true);
 }
-
-// Start systemu
-window.onload = () => {
-    if (action === "list") {
-        renderListLayout();
-        loadDashboard(true);
-    } else if (row && token) {
-        loadSingle();
-    } else {
-        showError("Brak wymaganych parametrów (row/token/action).");
-    }
-};
 </script>
 </body>
 </html>
