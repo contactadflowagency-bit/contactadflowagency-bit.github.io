@@ -23,11 +23,11 @@
         .odrz { background:#D32F2F; }
         .close-btn { background:#555; }
         .status-badge { display:inline-block; padding:6px 12px; border-radius:999px; font-weight:700; font-size:12px; color:#fff; text-transform: uppercase; }
-        .s-nowy { background: #2196F3 !important; }
-        .s-obsluzony { background: #2E7D32 !important; }
-        .s-nie_odbiera { background: #FF9800 !important; }
-        .s-odrzucony { background: #D32F2F !important; }
-        .s-porzucony { background: #607D8B !important; }
+        .s-nowy { background: #2196F3; }
+        .s-obsluzony { background: #2E7D32; }
+        .s-nie_odbiera { background: #FF9800; }
+        .s-odrzucony { background: #D32F2F; }
+        .s-porzucony { background: #9E9E9E; }
         .status-row { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
         .muted { font-size:13px; color:#777; }
         .disabled { opacity:.4; pointer-events: none; cursor: default; }
@@ -470,11 +470,14 @@
         function statusClass(s) {
             if (!s) return "s-nowy";
             const status = s.toLowerCase().trim();
-            if (status.includes("obs") || status.includes("ony")) return "s-obsluzony"; // Uproszczone
-            if (status === "nowy") return "s-nowy";
-            if (status.includes("nie") && status.includes("odbiera")) return "s-nie_odbiera";
+            
+            // Ważne: sprawdzamy specyficzne słowa najpierw
             if (status === "odrzucony") return "s-odrzucony";
             if (status.includes("porzucony")) return "s-porzucony";
+            if (status.includes("nie") && status.includes("odbiera")) return "s-nie_odbiera";
+            if (status.includes("obs") || status === "obsłużony") return "s-obsluzony";
+            if (status === "nowy") return "s-nowy";
+            
             return "s-nowy";
         }
         
