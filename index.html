@@ -302,7 +302,7 @@
                     <td>${formatDate(r.updated)}</td>
                     <td>${r.wait_time_combined || "-"}</td>
                     <td>${r.campaign || "-"}</td>
-                    <td style="text-align:center;"><button class="btn-tool" onclick="openPreview('${r.id}')">Szczegóły</button></td>
+                    <td style="text-align:center; vertical-align: middle;"><button class="btn-tool" onclick="openPreview('${r.id}')">Szczegóły</button></td>
                 </tr>
             `).join("");
             document.getElementById("tableBody").innerHTML = html;
