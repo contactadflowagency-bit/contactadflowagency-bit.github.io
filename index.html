@@ -327,32 +327,43 @@
         function openPreview(id) {
             const r = allLeadsMap.get(String(id));
             if(!r) return;
+        
+            // Zabezpieczenie danych przed wyświetlaniem (jeśli brak, pokaż "-")
+            const campaignTxt = r.campaign ? r.campaign : "-";
+            // Sprawdzamy czy data istnieje i nie jest myślnikiem, wtedy formatujemy, inaczej "-"
+            const updatedTxt = (r.updated && r.updated !== "-") ? formatDate(r.updated) : "-";
+        
             document.getElementById("previewContent").innerHTML = `
                 <div class="box">
                     <div class="status-row">
                         <div>
                             <p>🆔 <strong>ID:</strong> ${r.id}</p>
                             <p>📅 <strong>Zgłoszenie:</strong> ${formatDate(r.created)}</p>
-                            <p>📢 <strong>Kampania:</strong> ${r.campaign || "-"}</p>
+                            <p>📢 <strong>Kampania:</strong> ${campaignTxt}</p>
                         </div>
                 
                         <div style="text-align:right">
-                            <td><span class="status-badge ${statusClass(r.status)}">${r.status}</span></td>
-                            <div class="muted" style="margin-top:5px">
-                                Aktualizacja:<br>${formatDate(r.updated)}
+                            <div style="margin-bottom: 5px;">
+                                <span class="status-badge ${statusClass(r.status)}">${r.status}</span>
+                            </div>
+                            
+                            <div class="muted">
+                                Aktualizacja:<br>${updatedTxt}
                             </div>
                         </div>
                     </div>
                 </div>
+        
                 <div class="box data">
-                    <p><strong>🧾 Pacjent:</strong> ${r.name}</p>
+                    <p><strong>🧾 Pacjent:</strong> ${r.name || "-"}</p>
                     <p><strong>📞 Telefon:</strong> ${formatPhone(r.phone)}</p>
-                    <p><strong>✉️ Email: ${r.email || "-"}</strong></p>
-                    <p><strong>⏱️ Czas kontaktu (realny):</strong> ${r.wait_time_combined}</p>
+                    <p><strong>✉️ Email:</strong> ${r.email || "-"}</p>
+                    <p><strong>⏱️ Czas kontaktu (realny):</strong> ${r.wait_time_combined || "-"}</p>
                     <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
                     <p><strong>🦷 Info 1:</strong> ${r.info1 || "-"}</p>
                     <p><strong>📝 Info 2:</strong> ${r.info2 || "-"}</p>
                 </div>`
+            
             document.getElementById("previewModal").classList.remove("hidden");
         }
 
