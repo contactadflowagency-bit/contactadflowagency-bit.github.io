@@ -116,7 +116,7 @@
         function loadSingle() {
             document.body.classList.remove("dashboard-mode");
             showLoader("Pobieranie danych leada...");
-            fetch(`${API_URL}?row=${row}&token=${token}`)
+            fetch(`${API_URL}?row=${row}&token=${token}&firm=${firm}`)
                 .then(r => r.json())
                 .then(d => {
                     hideLoader();
@@ -247,13 +247,12 @@
         }
 
         function fetchCampaigns() {
-            fetch(`${API_URL}?action=campaigns&token=${token}`)
+            // POPRAWKA TUTAJ:
+            fetch(`${API_URL}?action=campaigns&firm=${firm}&token=${token}`)
             .then(r => r.json())
             .then(d => {
                 const container = document.getElementById("campList");
-                fetch(`${API_URL}?action=campaigns&firm=${firm}&token=${token}`)
                 if(d.success) {
-                    // Zmieniono: brak atrybutu onchange w inputach
                     container.innerHTML = d.campaigns.map(c => `<label><input type="checkbox" value="${c}"> ${c}</label>`).join("");
                 }
             });
@@ -267,21 +266,13 @@
             }
             showLoader("Pobieranie...");
         
-            // Pobieranie wartości dat
             const df = document.getElementById("dateFrom").value;
             const dt = document.getElementById("dateTo").value;
-            
-            // Pobieranie zaznaczonych checkboxów dla statusów i kampanii
             const st = Array.from(document.querySelectorAll('#statusList input:checked')).map(cb => cb.value).join(",");
             const cp = Array.from(document.querySelectorAll('#campList input:checked')).map(cb => cb.value).join(",");
-
-            const url = `${API_URL}?action=list&firm=${firm}&token=${token}&limit=50...`;
         
-            // Opcjonalnie: aktualizacja tekstu na przyciskach dropdownów
-            document.getElementById("statusBtnText").innerText = st ? "📌 Wybrano: " + st.split(",").length : "📌 Statusy";
-            document.getElementById("campBtnText").innerText = cp ? "📢 Wybrano: " + cp.split(",").length : "📢 Kampanie";
-        
-            const url = `${API_URL}?action=list&token=${token}&limit=50&offset=${dashboardOffset}&sort=${dashboardSort}&dateFrom=${df}&dateTo=${dt}&status=${encodeURIComponent(st)}&campaigns=${encodeURIComponent(cp)}`;
+            // POPRAWKA TUTAJ: jeden spójny URL z parametrem firm
+            const url = `${API_URL}?action=list&firm=${firm}&token=${token}&limit=50&offset=${dashboardOffset}&sort=${dashboardSort}&dateFrom=${df}&dateTo=${dt}&status=${encodeURIComponent(st)}&campaigns=${encodeURIComponent(cp)}`;
         
             fetch(url)
                 .then(r => r.json())
@@ -413,7 +404,8 @@
                 const res = await fetch(API_URL, { 
                     method: "POST",
                     headers: { "Content-Type": "text/plain;charset=utf-8" },
-                    body: JSON.stringify({ action: 'update', row: row, token: token, status: s }),
+                    // POPRAWKA TUTAJ: dodano firm: firm
+                    body: JSON.stringify({ action: 'update', row: row, token: token, status: s, firm: firm }),
                     signal: controller.signal
                 });
                 const d = await res.json();
