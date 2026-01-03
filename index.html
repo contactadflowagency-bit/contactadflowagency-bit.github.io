@@ -476,37 +476,52 @@
             }
         }
 
-        // --- ULEPSZONA FUNKCJA LICZĄCA CZAS (Dni zamiast setek godzin) ---
         function calculateRealWaitTime(createdStr, updatedStr, status) {
-            if (!createdStr || createdStr === "-") return "-";
+            if (!createdStr || createdStr === "-" || createdStr === "undefined") return "-";
         
-            const parse = (d) => new Date(d.replace(" ", "T"));
-            const created = parse(createdStr);
-            let end = new Date(); // Domyślnie koniec to "TERAZ"
+            // Funkcja bezpiecznie zamieniająca tekst "YYYY-MM-DD HH:mm" na obiekt daty
+            const safeParse = (str) => {
+                if (!str || str === "-" || str === "undefined") return null;
+                try {
+                    // Rozbijamy: 2025-07-02 22:59 -> ["2025-07-02", "22:59"]
+                    const parts = str.split(" ");
+                    const dateParts = parts[0].split("-"); // [2025, 07, 02]
+                    const timeParts = parts[1] ? parts[1].split(":") : [0, 0]; // [22, 59]
+                    
+                    // Miesiące w JS są liczone od 0 (Styczeń = 0, Lipiec = 6)
+                    return new Date(dateParts[0], dateParts[1] - 1, dateParts[2], timeParts[0], timeParts[1]);
+                } catch (e) {
+                    return null;
+                }
+            };
         
+            const created = safeParse(createdStr);
+            if (!created) return "-";
+        
+            let end = new Date(); // Domyślnie "teraz"
             const s = String(status).toLowerCase().trim();
-            // Lista statusów, które "zatrzymują" licznik
             const finishedStatuses = ['obsluzony', 'obsłużony', 'nie_odbiera', 'odrzucony', 'porzucony', 'nie odbiera'];
-            
-            if (finishedStatuses.some(fs => s.includes(fs)) && updatedStr && updatedStr !== "-" && updatedStr !== "undefined") {
-                end = parse(updatedStr);
+        
+            // Jeśli lead zakończony, użyj daty aktualizacji
+            if (finishedStatuses.some(fs => s.includes(fs))) {
+                const updated = safeParse(updatedStr);
+                if (updated) end = updated;
             }
         
             const diffMs = end - created;
-            if (diffMs < 0) return "0 min"; 
+            if (diffMs < 0) return "0 min";
         
             const diffMins = Math.floor(diffMs / 60000);
-            
-            // JEŚLI MINĘŁO WIĘCEJ NIŻ 48 GODZIN -> POKAŻ DNI
-            if (diffMins > 2880) { 
+        
+            // Formatowanie wyniku
+            if (diffMins > 2880) { // Powyżej 2 dni
                 const days = Math.floor(diffMins / 1440);
-                return `<span style="color:red; font-weight:bold;">${days} dni</span>`;
+                return `<span style="color:#d32f2f; font-weight:bold;">${days} dni</span>`;
             }
         
             const hours = Math.floor(diffMins / 60);
             const mins = diffMins % 60;
         
-            // Kolorowanie dla lepszej czytelności (np. powyżej 1h na czerwono)
             if (hours > 0) return `${hours}h ${mins} min`;
             return `${mins} min`;
         }
