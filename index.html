@@ -479,33 +479,30 @@
         function calculateRealWaitTime(createdStr, updatedStr, status) {
             if (!createdStr || createdStr === "-" || createdStr === "undefined") return "-";
         
-            // Funkcja bezpiecznie zamieniająca tekst "YYYY-MM-DD HH:mm" na obiekt daty
             const safeParse = (str) => {
                 if (!str || str === "-" || str === "undefined") return null;
-                try {
-                    // Rozbijamy: 2025-07-02 22:59 -> ["2025-07-02", "22:59"]
-                    const parts = str.split(" ");
-                    const dateParts = parts[0].split("-"); // [2025, 07, 02]
-                    const timeParts = parts[1] ? parts[1].split(":") : [0, 0]; // [22, 59]
-                    
-                    // Miesiące w JS są liczone od 0 (Styczeń = 0, Lipiec = 6)
-                    return new Date(dateParts[0], dateParts[1] - 1, dateParts[2], timeParts[0], timeParts[1]);
-                } catch (e) {
-                    return null;
-                }
+                const parts = str.split(" ");
+                const dateParts = parts[0].split("-");
+                const timeParts = parts[1] ? parts[1].split(":") : [0, 0];
+                return new Date(dateParts[0], dateParts[1] - 1, dateParts[2], timeParts[0], timeParts[1]);
             };
         
             const created = safeParse(createdStr);
-            if (!created) return "-";
-        
-            let end = new Date(); // Domyślnie "teraz"
             const s = String(status).toLowerCase().trim();
+            
+            let end = new Date(); // Domyślnie licznik bije do TERAZ
+        
+            // LISTA STATUSÓW ZAKOŃCZONYCH
             const finishedStatuses = ['obsluzony', 'obsłużony', 'nie_odbiera', 'odrzucony', 'porzucony', 'nie odbiera'];
         
-            // Jeśli lead zakończony, użyj daty aktualizacji
+            // LOGIKA: 
+            // Jeśli status jest na liście "zakończonych" ORAZ mamy datę aktualizacji -> zatrzymaj licznik na tej dacie.
+            // W KAŻDYM INNYM PRZYPADKU (w tym dla "Nowy") -> licz do teraz.
             if (finishedStatuses.some(fs => s.includes(fs))) {
                 const updated = safeParse(updatedStr);
-                if (updated) end = updated;
+                if (updated) {
+                    end = updated;
+                }
             }
         
             const diffMs = end - created;
@@ -513,8 +510,7 @@
         
             const diffMins = Math.floor(diffMs / 60000);
         
-            // Formatowanie wyniku
-            if (diffMins > 2880) { // Powyżej 2 dni
+            if (diffMins > 2880) {
                 const days = Math.floor(diffMins / 1440);
                 return `<span style="color:#d32f2f; font-weight:bold;">${days} dni</span>`;
             }
