@@ -155,7 +155,7 @@
                         <p><strong>🧾 Pacjent:</strong> ${lead.name || "-"}</p>
                         <p><strong>📞 Telefon:</strong> ${formatPhone(lead.phone)}</p>
                         <p><strong>✉️ Email:</strong> ${lead.email || "-"}</p>
-                        <p><strong>⏱️ Czas kontaktu (realny):</strong> ${calculateRealWaitTime(lead.date, lead.lastUpdate, lead.statusKey || lead.status)}</p>
+                        <p><strong>⏱️ Czas kontaktu:</strong> ${calculateWaitTimes(lead.date, lead.lastUpdate, lead.waitUntil, lead.statusKey || lead.status)}</p>
                         <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
                         <p><strong>🦷 Cel:</strong> ${lead.info1 || "-"}</p>
                         <p><strong>📝 Info:</strong> ${lead.info2 || "-"}</p>
@@ -315,7 +315,7 @@
                     </td>
                     <td><span class="status-badge ${statusClass(r.status)}">${r.status}</span></td>
                     <td>${formatDate(r.updated)}</td>
-                    <td>${calculateRealWaitTime(r.created, r.updated, r.status)}</td>
+                    <td>${calculateWaitTimes(r.created, r.updated, r.waitUntil, r.status)}</td>
                     <td>${r.campaign || "-"}</td>
                     <td>
                         <button class="btn-tool" onclick="openPreview('${r.id}')" style="margin: 0 auto;">Szczegóły</button>
@@ -374,7 +374,7 @@
                     <p><strong>🧾 Pacjent:</strong> ${r.name || "-"}</p>
                     <p><strong>📞 Telefon:</strong> ${formatPhone(r.phone)}</p>
                     <p><strong>✉️ Email:</strong> ${r.email || "-"}</p>
-                    <p><strong>⏱️ Czas kontaktu (realny):</strong> ${calculateRealWaitTime(r.created, r.updated, r.status)}</p>
+                    <p><strong>⏱️ Czas kontaktu:</strong> ${calculateWaitTimes(r.created, r.updated, r.waitUntil, r.status)}</p>
                     <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
                     <p><strong>🦷 Info 1:</strong> ${r.info1 || "-"}</p>
                     <p><strong>📝 Info 2:</strong> ${r.info2 || "-"}</p>
