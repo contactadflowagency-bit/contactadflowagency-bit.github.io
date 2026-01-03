@@ -476,37 +476,37 @@
             }
         }
 
-        // --- NOWA FUNKCJA LICZĄCA CZAS ---
+        // --- ULEPSZONA FUNKCJA LICZĄCA CZAS (Dni zamiast setek godzin) ---
         function calculateRealWaitTime(createdStr, updatedStr, status) {
             if (!createdStr || createdStr === "-") return "-";
         
-            // Parsowanie dat (bezpieczne dla formatu "YYYY-MM-DD HH:mm:ss")
-            // Zamieniamy spację na T, żeby new Date() lepiej to czytał w Safari/Mobile
             const parse = (d) => new Date(d.replace(" ", "T"));
-        
             const created = parse(createdStr);
             let end = new Date(); // Domyślnie koniec to "TERAZ"
         
-            // Normalizacja statusu (małe litery, bez spacji)
             const s = String(status).toLowerCase().trim();
-        
-            // Jeśli status jest "końcowy" (nie jest nowy), bierzemy datę aktualizacji
-            // Uwaga: Zakładam, że statusy w bazie to np. "obsluzony", "nie_odbiera" lub "obsłużony"
+            // Lista statusów, które "zatrzymują" licznik
             const finishedStatuses = ['obsluzony', 'obsłużony', 'nie_odbiera', 'odrzucony', 'porzucony', 'nie odbiera'];
             
-            // Sprawdzamy czy lead jest już obsłużony ORAZ czy mamy datę aktualizacji
             if (finishedStatuses.some(fs => s.includes(fs)) && updatedStr && updatedStr !== "-" && updatedStr !== "undefined") {
                 end = parse(updatedStr);
             }
         
-            // Oblicz różnicę w milisekundach
             const diffMs = end - created;
-            if (diffMs < 0) return "0 min"; // Zabezpieczenie przed ujemnym czasem
+            if (diffMs < 0) return "0 min"; 
         
             const diffMins = Math.floor(diffMs / 60000);
+            
+            // JEŚLI MINĘŁO WIĘCEJ NIŻ 48 GODZIN -> POKAŻ DNI
+            if (diffMins > 2880) { 
+                const days = Math.floor(diffMins / 1440);
+                return `<span style="color:red; font-weight:bold;">${days} dni</span>`;
+            }
+        
             const hours = Math.floor(diffMins / 60);
             const mins = diffMins % 60;
         
+            // Kolorowanie dla lepszej czytelności (np. powyżej 1h na czerwono)
             if (hours > 0) return `${hours}h ${mins} min`;
             return `${mins} min`;
         }
