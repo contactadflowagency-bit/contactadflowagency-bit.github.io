@@ -104,6 +104,7 @@
         const token = params.get("token");
         const action = params.get("action");
         const app = document.getElementById("app");
+        const firm = params.get("firm");
         
         let allLeadsMap = new Map();
         let currentTotal = 0;
@@ -250,6 +251,7 @@
             .then(r => r.json())
             .then(d => {
                 const container = document.getElementById("campList");
+                fetch(`${API_URL}?action=campaigns&firm=${firm}&token=${token}`)
                 if(d.success) {
                     // Zmieniono: brak atrybutu onchange w inputach
                     container.innerHTML = d.campaigns.map(c => `<label><input type="checkbox" value="${c}"> ${c}</label>`).join("");
@@ -258,40 +260,42 @@
         }
 
         function loadDashboard(reset = true) {
-    if (reset) {
-        dashboardOffset = 0;
-        allLeadsMap.clear();
-        document.getElementById("tableBody").innerHTML = "";
-    }
-    showLoader("Pobieranie...");
+            if (reset) {
+                dashboardOffset = 0;
+                allLeadsMap.clear();
+                document.getElementById("tableBody").innerHTML = "";
+            }
+            showLoader("Pobieranie...");
+        
+            // Pobieranie wartości dat
+            const df = document.getElementById("dateFrom").value;
+            const dt = document.getElementById("dateTo").value;
+            
+            // Pobieranie zaznaczonych checkboxów dla statusów i kampanii
+            const st = Array.from(document.querySelectorAll('#statusList input:checked')).map(cb => cb.value).join(",");
+            const cp = Array.from(document.querySelectorAll('#campList input:checked')).map(cb => cb.value).join(",");
 
-    // Pobieranie wartości dat
-    const df = document.getElementById("dateFrom").value;
-    const dt = document.getElementById("dateTo").value;
-    
-    // Pobieranie zaznaczonych checkboxów dla statusów i kampanii
-    const st = Array.from(document.querySelectorAll('#statusList input:checked')).map(cb => cb.value).join(",");
-    const cp = Array.from(document.querySelectorAll('#campList input:checked')).map(cb => cb.value).join(",");
-
-    // Opcjonalnie: aktualizacja tekstu na przyciskach dropdownów
-    document.getElementById("statusBtnText").innerText = st ? "📌 Wybrano: " + st.split(",").length : "📌 Statusy";
-    document.getElementById("campBtnText").innerText = cp ? "📢 Wybrano: " + cp.split(",").length : "📢 Kampanie";
-
-    const url = `${API_URL}?action=list&token=${token}&limit=50&offset=${dashboardOffset}&sort=${dashboardSort}&dateFrom=${df}&dateTo=${dt}&status=${encodeURIComponent(st)}&campaigns=${encodeURIComponent(cp)}`;
-
-    fetch(url)
-        .then(r => r.json())
-        .then(d => {
-            hideLoader();
-            if (!d.success) return;
-            currentTotal = d.total; 
-            d.rows.forEach(r => allLeadsMap.set(String(r.id), r));
-            dashboardOffset += d.rows.length;
-            displayTable();
-            document.getElementById("loadMoreBtn").style.display = (allLeadsMap.size < currentTotal) ? "block" : "none";
-        })
-        .catch(() => { hideLoader(); alert("Błąd połączenia."); });
-}
+            const url = `${API_URL}?action=list&firm=${firm}&token=${token}&limit=50...`;
+        
+            // Opcjonalnie: aktualizacja tekstu na przyciskach dropdownów
+            document.getElementById("statusBtnText").innerText = st ? "📌 Wybrano: " + st.split(",").length : "📌 Statusy";
+            document.getElementById("campBtnText").innerText = cp ? "📢 Wybrano: " + cp.split(",").length : "📢 Kampanie";
+        
+            const url = `${API_URL}?action=list&token=${token}&limit=50&offset=${dashboardOffset}&sort=${dashboardSort}&dateFrom=${df}&dateTo=${dt}&status=${encodeURIComponent(st)}&campaigns=${encodeURIComponent(cp)}`;
+        
+            fetch(url)
+                .then(r => r.json())
+                .then(d => {
+                    hideLoader();
+                    if (!d.success) return;
+                    currentTotal = d.total; 
+                    d.rows.forEach(r => allLeadsMap.set(String(r.id), r));
+                    dashboardOffset += d.rows.length;
+                    displayTable();
+                    document.getElementById("loadMoreBtn").style.display = (allLeadsMap.size < currentTotal) ? "block" : "none";
+                })
+                .catch(() => { hideLoader(); alert("Błąd połączenia."); });
+        }
 
         function displayTable() {
             // Pobieramy listę z mapy
