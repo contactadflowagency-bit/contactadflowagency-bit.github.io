@@ -489,20 +489,15 @@
         
             const created = safeParse(createdStr);
             const updated = safeParse(updatedStr);
-            const waitUntil = safeParse(waitUntilStr); // Dane z kolumny K
+            const waitUntil = safeParse(waitUntilStr);
             const now = new Date();
             
-            // Koniec odliczania
             const s = String(status).toLowerCase().trim();
             const isFinished = ['obsluzony', 'obsłużony', 'nie_odbiera', 'odrzucony', 'porzucony', 'nie odbiera'].some(fs => s.includes(fs));
             const end = (isFinished && updated) ? updated : now;
         
-            // 1. CZAS FAKTYCZNY (bezwzględny)
             const rawDiffMins = Math.floor((end - created) / 60000);
             
-            // 2. CZAS PRACY (według kolumny K)
-            // Jeśli teraz jest wcześniej niż "Czekaj do" -> czas pracy jeszcze nie ruszył (0 min)
-            // Jeśli teraz jest później niż "Czekaj do" -> liczymy od momentu "Czekaj do" lub od "Created" (co było później)
             let workStart = created;
             if (waitUntil && waitUntil > created) {
                 workStart = waitUntil;
@@ -511,7 +506,16 @@
             let workDiffMins = Math.floor((end - workStart) / 60000);
             if (workDiffMins < 0) workDiffMins = 0;
         
-            // Funkcja pomocnicza do formatowania
+            // --- LOGIKA KOLORYSTYCZNA ---
+            let color = "#2e7d32"; // Domyślny zielony
+            if (workDiffMins > 1440) {
+                color = "#880e4f"; // Bordowy (powyżej 24h)
+            } else if (workDiffMins > 120) {
+                color = "#d32f2f"; // Czerwony (powyżej 2h)
+            } else if (workDiffMins > 30) {
+                color = "#ef6c00"; // Pomarańczowy (powyżej 30 min)
+            }
+        
             const format = (mins) => {
                 if (mins > 2880) return Math.floor(mins / 1440) + " dni";
                 const h = Math.floor(mins / 60);
@@ -519,10 +523,12 @@
                 return h > 0 ? `${h}h ${m}m` : `${m}m`;
             };
         
-            // Budujemy wynik HTML
+            const workTimeDisplay = format(workDiffMins);
+            const rawTimeDisplay = format(rawDiffMins);
+        
             return `
-                <div style="font-weight: bold; color: #2e7d32;">${format(workDiffMins)}</div>
-                <div style="font-size: 0.85em; color: #666;">(łącznie: ${format(rawDiffMins)})</div>
+                <div style="font-weight: bold; color: ${color};">${workTimeDisplay}</div>
+                <div style="font-size: 0.85em; color: #666;">(łącznie: ${rawTimeDisplay})</div>
             `;
         }
     </script>
