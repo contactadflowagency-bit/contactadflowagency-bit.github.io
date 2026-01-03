@@ -476,7 +476,7 @@
             }
         }
 
-        function calculateRealWaitTime(createdStr, updatedStr, status) {
+        function calculateWaitTimes(createdStr, updatedStr, waitUntilStr, status) {
             if (!createdStr || createdStr === "-" || createdStr === "undefined") return "-";
         
             const safeParse = (str) => {
@@ -488,38 +488,42 @@
             };
         
             const created = safeParse(createdStr);
-            const s = String(status).toLowerCase().trim();
+            const updated = safeParse(updatedStr);
+            const waitUntil = safeParse(waitUntilStr); // Dane z kolumny K
+            const now = new Date();
             
-            let end = new Date(); // Domyślnie licznik bije do TERAZ
+            // Koniec odliczania
+            const s = String(status).toLowerCase().trim();
+            const isFinished = ['obsluzony', 'obsłużony', 'nie_odbiera', 'odrzucony', 'porzucony', 'nie odbiera'].some(fs => s.includes(fs));
+            const end = (isFinished && updated) ? updated : now;
         
-            // LISTA STATUSÓW ZAKOŃCZONYCH
-            const finishedStatuses = ['obsluzony', 'obsłużony', 'nie_odbiera', 'odrzucony', 'porzucony', 'nie odbiera'];
-        
-            // LOGIKA: 
-            // Jeśli status jest na liście "zakończonych" ORAZ mamy datę aktualizacji -> zatrzymaj licznik na tej dacie.
-            // W KAŻDYM INNYM PRZYPADKU (w tym dla "Nowy") -> licz do teraz.
-            if (finishedStatuses.some(fs => s.includes(fs))) {
-                const updated = safeParse(updatedStr);
-                if (updated) {
-                    end = updated;
-                }
+            // 1. CZAS FAKTYCZNY (bezwzględny)
+            const rawDiffMins = Math.floor((end - created) / 60000);
+            
+            // 2. CZAS PRACY (według kolumny K)
+            // Jeśli teraz jest wcześniej niż "Czekaj do" -> czas pracy jeszcze nie ruszył (0 min)
+            // Jeśli teraz jest później niż "Czekaj do" -> liczymy od momentu "Czekaj do" lub od "Created" (co było później)
+            let workStart = created;
+            if (waitUntil && waitUntil > created) {
+                workStart = waitUntil;
             }
+            
+            let workDiffMins = Math.floor((end - workStart) / 60000);
+            if (workDiffMins < 0) workDiffMins = 0;
         
-            const diffMs = end - created;
-            if (diffMs < 0) return "0 min";
+            // Funkcja pomocnicza do formatowania
+            const format = (mins) => {
+                if (mins > 2880) return Math.floor(mins / 1440) + " dni";
+                const h = Math.floor(mins / 60);
+                const m = mins % 60;
+                return h > 0 ? `${h}h ${m}m` : `${m}m`;
+            };
         
-            const diffMins = Math.floor(diffMs / 60000);
-        
-            if (diffMins > 2880) {
-                const days = Math.floor(diffMins / 1440);
-                return `<span style="color:#d32f2f; font-weight:bold;">${days} dni</span>`;
-            }
-        
-            const hours = Math.floor(diffMins / 60);
-            const mins = diffMins % 60;
-        
-            if (hours > 0) return `${hours}h ${mins} min`;
-            return `${mins} min`;
+            // Budujemy wynik HTML
+            return `
+                <div style="font-weight: bold; color: #2e7d32;">${format(workDiffMins)}</div>
+                <div style="font-size: 0.85em; color: #666;">(łącznie: ${format(rawDiffMins)})</div>
+            `;
         }
     </script>
 </body>
