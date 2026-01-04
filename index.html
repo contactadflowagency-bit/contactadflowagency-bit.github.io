@@ -409,7 +409,7 @@
                     method: "POST",
                     headers: { "Content-Type": "text/plain;charset=utf-8" },
                     // POPRAWKA TUTAJ: dodano firm: firm
-                    body: JSON.stringify({ action: 'update', row: row, token: token, status: s, auth: auth })
+                    body: JSON.stringify({ action: 'update', row: row, token: token, status: s, auth: auth }),
                     signal: controller.signal
                 });
                 const d = await res.json();
