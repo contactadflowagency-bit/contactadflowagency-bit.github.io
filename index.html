@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="pl">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,7 +8,6 @@
         body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; background:#f7f8fa; margin:0; min-height:100vh; display:flex; justify-content:center; align-items:center; }
         .wrapper { max-width:600px; width:95%; background:#fff; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.05); overflow:hidden; }
         .header { background: linear-gradient(135deg, #00bcd4, #9c27b0); color:#fff; padding:24px; text-align:center; position: relative; }
-        .header img { width:70px; border-radius:16px; display:block; margin:0 auto 10px; object-fit: cover; height: 70px; }
         .header h2 { margin:0; font-size:22px; }
         .content { padding:26px 30px; }
         .box { background:#f4fbfd; border-left:4px solid #00bcd4; padding:16px 20px; border-radius:6px; margin-bottom:20px; text-align: left; }
@@ -59,9 +57,7 @@
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
-
 <body>
-
     <div class="wrapper" id="app">
         <div class="content" style="text-align:center;">⏳ Łączenie z serwerem...</div>
     </div>
@@ -109,13 +105,22 @@
         let currentTotal = 0;
         let dashboardOffset = 0;
         let dashboardSort = "desc";
+        let currentLeadStatus = "nowy";
+        
+        // Helper do budowania URL z auth
+        function buildURL(baseParams) {
+            const urlParams = new URLSearchParams(baseParams);
+            urlParams.set('auth', auth); // Zawsze dodaj auth
+            return `${API_URL}?${urlParams.toString()}`;
+        }
         
         function loadSingle() {
             document.body.classList.remove("dashboard-mode");
             showLoader("Pobieranie danych leada...");
             
-            // Zmieniamy URL: usuwamy firm, zostawiamy auth
-            fetch(`${API_URL}?row=${row}&token=${token}&auth=${auth}`)
+            const url = buildURL({ row, token });
+            
+            fetch(url)
                 .then(r => r.json())
                 .then(d => {
                     hideLoader();
@@ -126,17 +131,14 @@
                         showError("Błąd: " + (d.error || "Brak dostępu"));
                     }
                 })
-                .catch(() => showError("Błąd połączenia z serwerem."));
+                .catch(err => {
+                    hideLoader();
+                    showError("Błąd połączenia: " + err.message);
+                });
         }
-        
-        let currentLeadStatus = "nowy";
-        
-        // --- ŁADOWANIE POJEDYNCZEGO LEADA ---
-       
         
         function renderSingle(lead) {
             const editable = lead.canEdit; 
-            const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(lead.name)}&background=0D8ABC&color=fff&size=128`;
 
             app.innerHTML = `
                 <div class="header">
@@ -175,7 +177,6 @@
             `;
         }
         
-        // --- DASHBOARD ---
         function renderListLayout() {
             document.body.classList.add("dashboard-mode");
             app.innerHTML = `
@@ -211,9 +212,7 @@
                         <input type="date" id="dateTo" title="Data do">
                         
                         <button onclick="loadDashboard(true)" class="btn-tool btn-apply">🔍 Zastosuj filtry</button>
-
                         <button onclick="toggleSort()" id="sortBtn" class="btn-tool">📅 Najnowsze</button>
-                        
                         <button onclick="clearFilters()" class="btn-tool">🧹 Wyczyść</button>
                     </div>
 
@@ -234,7 +233,6 @@
                 </div>
             `;
             
-            // Kliknięcie poza dropdowny zamyka je
             window.onclick = (e) => {
                 if (!e.target.closest('.multiselect')) {
                     document.querySelectorAll('.multiselect-content').forEach(el => el.classList.remove('show'));
@@ -251,15 +249,24 @@
         }
 
         function fetchCampaigns() {
-            // POPRAWKA TUTAJ:
-            fetch(`${API_URL}?action=campaigns&auth=${auth}&token=${token || ''}`)
-            .then(r => r.json())
-            .then(d => {
-                const container = document.getElementById("campList");
-                if(d.success) {
-                    container.innerHTML = d.campaigns.map(c => `<label><input type="checkbox" value="${c}"> ${c}</label>`).join("");
-                }
-            });
+            const url = buildURL({ action: 'campaigns' });
+            
+            fetch(url)
+                .then(r => r.json())
+                .then(d => {
+                    const container = document.getElementById("campList");
+                    if(d.success && d.campaigns) {
+                        container.innerHTML = d.campaigns.map(c => 
+                            `<label><input type="checkbox" value="${c}"> ${c}</label>`
+                        ).join("");
+                    } else {
+                        container.innerHTML = '<div style="padding:10px; color:#888;">Brak kampanii</div>';
+                    }
+                })
+                .catch(err => {
+                    console.error("Błąd pobierania kampanii:", err);
+                    document.getElementById("campList").innerHTML = '<div style="padding:10px; color:#f44;">Błąd</div>';
+                });
         }
 
         function loadDashboard(reset = true) {
@@ -275,28 +282,40 @@
             const st = Array.from(document.querySelectorAll('#statusList input:checked')).map(cb => cb.value).join(",");
             const cp = Array.from(document.querySelectorAll('#campList input:checked')).map(cb => cb.value).join(",");
         
-            // POPRAWKA TUTAJ: jeden spójny URL z parametrem firm
-            const url = `${API_URL}?action=list&auth=${auth}&limit=50&offset=${dashboardOffset}&sort=${dashboardSort}&dateFrom=${df}&dateTo=${dt}&status=${encodeURIComponent(st)}&campaigns=${encodeURIComponent(cp)}`;
+            const url = buildURL({
+                action: 'list',
+                limit: 50,
+                offset: dashboardOffset,
+                sort: dashboardSort,
+                dateFrom: df,
+                dateTo: dt,
+                status: st,
+                campaigns: cp
+            });
         
             fetch(url)
                 .then(r => r.json())
                 .then(d => {
                     hideLoader();
-                    if (!d.success) return;
+                    if (!d.success) {
+                        alert("Błąd: " + (d.error || "Nieznany błąd"));
+                        return;
+                    }
                     currentTotal = d.total; 
                     d.rows.forEach(r => allLeadsMap.set(String(r.id), r));
                     dashboardOffset += d.rows.length;
                     displayTable();
                     document.getElementById("loadMoreBtn").style.display = (allLeadsMap.size < currentTotal) ? "block" : "none";
                 })
-                .catch(() => { hideLoader(); alert("Błąd połączenia."); });
+                .catch(err => { 
+                    hideLoader(); 
+                    alert("Błąd połączenia: " + err.message); 
+                });
         }
 
         function displayTable() {
-            // Pobieramy listę z mapy
             let list = Array.from(allLeadsMap.values());
         
-            // SORTOWANIE: Zawsze pokazuj najwyższe ID na górze (jeśli dashboardSort jest 'desc')
             list.sort((a, b) => {
                 const idA = parseInt(a.id);
                 const idB = parseInt(b.id);
@@ -345,7 +364,6 @@
             const r = allLeadsMap.get(String(id));
             if(!r) return;
         
-            // Naprawa wyświetlania kampanii i daty aktualizacji
             const campaignTxt = r.campaign ? r.campaign : "-";
             const updatedTxt = (r.updated && r.updated !== "-" && r.updated !== "undefined") ? formatDate(r.updated) : "-";
         
@@ -357,7 +375,6 @@
                             <p>📅 <strong>Zgłoszenie:</strong> ${formatDate(r.created)}</p>
                             <p>📢 <strong>Kampania:</strong> ${campaignTxt}</p>
                         </div>
-                
                         <div style="text-align:right">
                             <div style="margin-bottom: 5px;">
                                 <span class="status-badge ${statusClass(r.status)}">${r.status}</span>
@@ -368,7 +385,6 @@
                         </div>
                     </div>
                 </div>
-        
                 <div class="box data">
                     <p><strong>🧾 Pacjent:</strong> ${r.name || "-"}</p>
                     <p><strong>📞 Telefon:</strong> ${formatPhone(r.phone)}</p>
@@ -382,7 +398,9 @@
             document.getElementById("previewModal").classList.remove("hidden");
         }
 
-        function closePreview() { document.getElementById("previewModal").classList.add("hidden"); }
+        function closePreview() { 
+            document.getElementById("previewModal").classList.add("hidden"); 
+        }
 
         function handleStatusClick(newS) {
             if (currentLeadStatus === "nowy") {
@@ -395,7 +413,9 @@
                     document.getElementById("confirmModal").classList.add("hidden");
                     updateStatus(newS);
                 };
-                document.getElementById("confirmNo").onclick = () => document.getElementById("confirmModal").classList.add("hidden");
+                document.getElementById("confirmNo").onclick = () => {
+                    document.getElementById("confirmModal").classList.add("hidden");
+                };
             }
         }
 
@@ -407,9 +427,14 @@
             try {
                 const res = await fetch(API_URL, { 
                     method: "POST",
-                    headers: { "Content-Type": "text/plain;charset=utf-8" },
-                    // POPRAWKA TUTAJ: dodano firm: firm
-                    body: JSON.stringify({ action: 'update', row: row, token: token, status: s, auth: auth }),
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ 
+                        action: 'update', 
+                        row: row, 
+                        token: token, 
+                        status: s, 
+                        auth: auth 
+                    }),
                     signal: controller.signal
                 });
                 const d = await res.json();
@@ -419,8 +444,13 @@
                     alert("Błąd: " + d.error);
                     location.reload();
                 }
-            } catch (e) { alert("Błąd połączenia."); } 
-            finally { hideLoader(); clearTimeout(tid); }
+            } catch (e) { 
+                alert("Błąd połączenia: " + e.message); 
+            } 
+            finally { 
+                hideLoader(); 
+                clearTimeout(tid); 
+            }
         }
 
         function statusClass(s) {
@@ -443,22 +473,24 @@
             document.getElementById("loader").querySelector(".loader-text").textContent = t; 
             document.getElementById("loader").classList.remove("hidden"); 
         }
-        function hideLoader() { document.getElementById("loader").classList.add("hidden"); }
-        function showError(m) { app.innerHTML = `<div class="content"><h3>⛔ Błąd</h3><p>${m}</p></div>`; }
+        
+        function hideLoader() { 
+            document.getElementById("loader").classList.add("hidden"); 
+        }
+        
+        function showError(m) { 
+            app.innerHTML = `<div class="content"><h3>⛔ Błąd</h3><p>${m}</p></div>`; 
+        }
 
         window.onload = () => {
-            // 1. Sprawdzamy klucz autoryzacji
             if (!auth) {
                 showError("Brak klucza dostępu (auth) w linku.");
                 return;
             }
         
-            // 2. Jeśli jest wiersz i token -> pokaż pojedynczy lead
             if (row && token) {
                 loadSingle();
-            } 
-            // 3. W przeciwnym razie -> pokaż dashboard
-            else {
+            } else {
                 renderListLayout();
                 loadDashboard(true);
             }
@@ -467,15 +499,13 @@
         function formatDate(dateStr) { 
             if (!dateStr || dateStr === "-") return "-";
             
-            // Zakładamy, że dateStr to "RRRR-MM-DD HH:mm:ss" lub ISO
-            // Zamieniamy na format: DD.MM.RRRR HH:mm
             try {
                 const parts = dateStr.split(' ');
-                const datePart = parts[0]; // RRRR-MM-DD
-                const timePart = parts[1] ? parts[1].substring(0, 5) : ""; // HH:mm
+                const datePart = parts[0];
+                const timePart = parts[1] ? parts[1].substring(0, 5) : "";
                 
                 const d = datePart.split('-');
-                if (d.length !== 3) return dateStr; // Zwróć oryginał jeśli format jest inny
+                if (d.length !== 3) return dateStr;
                 
                 return `${d[2]}.${d[1]}.${d[0]} ${timePart}`;
             } catch (e) {
