@@ -104,7 +104,7 @@
         const token = params.get("token");
         const action = params.get("action");
         const app = document.getElementById("app");
-        const firm = params.get("firm");
+        const auth = params.get("auth");
         
         let allLeadsMap = new Map();
         let currentTotal = 0;
@@ -411,7 +411,7 @@
                     method: "POST",
                     headers: { "Content-Type": "text/plain;charset=utf-8" },
                     // POPRAWKA TUTAJ: dodano firm: firm
-                    body: JSON.stringify({ action: 'update', row: row, token: token, status: s, firm: firm }),
+                    body: JSON.stringify({ action: 'update', row: row, token: token, status: s, auth: auth })
                     signal: controller.signal
                 });
                 const d = await res.json();
