@@ -114,13 +114,15 @@
         function loadSingle() {
             document.body.classList.remove("dashboard-mode");
             showLoader("Pobieranie danych leada...");
-            // DODANO &firm=${firm}
+            
+            // Dodajemy &firm=${firm}, aby skrypt wiedział, który arkusz otworzyć
             fetch(`${API_URL}?row=${row}&token=${token}&firm=${firm}`)
                 .then(r => r.json())
                 .then(d => {
                     hideLoader();
                     if(d.success) {
-                        currentLeadStatus = String(d.lead.sconst url = `${API_URL}?action=list&firm=${firm}&token=${token || ''}&limit=50&offset=${dashboardOffset}&sort=${dashboardSort}&dateFrom=${df}&dateTo=${dt}&status=${encodeURIComponent(st)}&campaigns=${encodeURIComponent(cp)}`;tatusKey || "nowy");
+                        // Naprawiona linia poniżej:
+                        currentLeadStatus = String(d.lead.statusKey || "nowy");
                         renderSingle(d.lead);
                     } else {
                         showError("Błąd: " + (d.error || "Brak dostępu"));
@@ -447,16 +449,18 @@
         function showError(m) { app.innerHTML = `<div class="content"><h3>⛔ Błąd</h3><p>${m}</p></div>`; }
 
         window.onload = () => {
+            // 1. Sprawdzamy czy w ogóle jest podana firma
             if (!firm) {
                 showError("Brak parametru 'firm' w linku.");
                 return;
             }
         
+            // 2. Jeśli jest wiersz i token -> pokaż pojedynczy lead
             if (row && token) {
-                // Mamy row i token -> widok pojedynczego leada
                 loadSingle();
-            } else {
-                // Mamy tylko firm (lub firm + action=list) -> widok dashboardu
+            } 
+            // 3. W przeciwnym razie -> pokaż dashboard firmy
+            else {
                 renderListLayout();
                 loadDashboard(true);
             }
