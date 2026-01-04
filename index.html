@@ -110,18 +110,17 @@
         let currentTotal = 0;
         let dashboardOffset = 0;
         let dashboardSort = "desc";
-        let currentLeadStatus = "nowy";
         
-        // --- ŁADOWANIE POJEDYNCZEGO LEADA ---
         function loadSingle() {
             document.body.classList.remove("dashboard-mode");
             showLoader("Pobieranie danych leada...");
+            // DODANO &firm=${firm}
             fetch(`${API_URL}?row=${row}&token=${token}&firm=${firm}`)
                 .then(r => r.json())
                 .then(d => {
                     hideLoader();
                     if(d.success) {
-                        currentLeadStatus = String(d.lead.statusKey || "nowy");
+                        currentLeadStatus = String(d.lead.sconst url = `${API_URL}?action=list&firm=${firm}&token=${token || ''}&limit=50&offset=${dashboardOffset}&sort=${dashboardSort}&dateFrom=${df}&dateTo=${dt}&status=${encodeURIComponent(st)}&campaigns=${encodeURIComponent(cp)}`;tatusKey || "nowy");
                         renderSingle(d.lead);
                     } else {
                         showError("Błąd: " + (d.error || "Brak dostępu"));
@@ -129,6 +128,11 @@
                 })
                 .catch(() => showError("Błąd połączenia z serwerem."));
         }
+        
+        let currentLeadStatus = "nowy";
+        
+        // --- ŁADOWANIE POJEDYNCZEGO LEADA ---
+       
         
         function renderSingle(lead) {
             const editable = lead.canEdit; 
@@ -272,7 +276,7 @@
             const cp = Array.from(document.querySelectorAll('#campList input:checked')).map(cb => cb.value).join(",");
         
             // POPRAWKA TUTAJ: jeden spójny URL z parametrem firm
-            const url = `${API_URL}?action=list&firm=${firm}&token=${token}&limit=50&offset=${dashboardOffset}&sort=${dashboardSort}&dateFrom=${df}&dateTo=${dt}&status=${encodeURIComponent(st)}&campaigns=${encodeURIComponent(cp)}`;
+            const url = `${API_URL}?action=list&firm=${firm}&token=${token || ''}&limit=50&offset=${dashboardOffset}&sort=${dashboardSort}&dateFrom=${df}&dateTo=${dt}&status=${encodeURIComponent(st)}&campaigns=${encodeURIComponent(cp)}`;
         
             fetch(url)
                 .then(r => r.json())
@@ -443,13 +447,18 @@
         function showError(m) { app.innerHTML = `<div class="content"><h3>⛔ Błąd</h3><p>${m}</p></div>`; }
 
         window.onload = () => {
-            if (action === "list") {
-                renderListLayout();
-                loadDashboard(true);
-            } else if (row && token) {
+            if (!firm) {
+                showError("Brak parametru 'firm' w linku.");
+                return;
+            }
+        
+            if (row && token) {
+                // Mamy row i token -> widok pojedynczego leada
                 loadSingle();
             } else {
-                showError("Brak wymaganych parametrów linku.");
+                // Mamy tylko firm (lub firm + action=list) -> widok dashboardu
+                renderListLayout();
+                loadDashboard(true);
             }
         };
 
