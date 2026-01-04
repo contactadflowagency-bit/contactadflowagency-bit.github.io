@@ -94,11 +94,12 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbzBLTLdMX1DXfLdDjiIit97OWNNaIjdiXqj9_bVtWSdytJAy4x9SvRTZdSP8t3Ysd-7/exec";
+        // ZMIEŃ TO NA SWÓJ URL WDROŻENIA:
+        const API_URL = "https://script.google.com/macros/s/AKfycbyPar4hdsfZq5UAPk5Qzty64U8lx1cxL8UKcN5g7Te6ulp7FG1ldNoIFJFomwZr70qp/exec";
+        
         const params = new URLSearchParams(window.location.search);
         const row = params.get("row");
         const token = params.get("token");
-        const action = params.get("action");
         const auth = params.get("auth");
         
         let allLeadsMap = new Map();
@@ -107,34 +108,33 @@
         let dashboardSort = "desc";
         let currentLeadStatus = "nowy";
         
-        // Helper do budowania URL z auth
-        function buildURL(baseParams) {
-            const urlParams = new URLSearchParams(baseParams);
-            urlParams.set('auth', auth); // Zawsze dodaj auth
-            return `${API_URL}?${urlParams.toString()}`;
+        // Helper do wysyłania POST requests
+        async function apiCall(body) {
+            const response = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ auth, ...body })
+            });
+            return await response.json();
         }
         
-        function loadSingle() {
+        async function loadSingle() {
             document.body.classList.remove("dashboard-mode");
             showLoader("Pobieranie danych leada...");
             
-            const url = buildURL({ row, token });
-            
-            fetch(url)
-                .then(r => r.json())
-                .then(d => {
-                    hideLoader();
-                    if(d.success) {
-                        currentLeadStatus = String(d.lead.statusKey || "nowy");
-                        renderSingle(d.lead);
-                    } else {
-                        showError("Błąd: " + (d.error || "Brak dostępu"));
-                    }
-                })
-                .catch(err => {
-                    hideLoader();
-                    showError("Błąd połączenia: " + err.message);
-                });
+            try {
+                const d = await apiCall({ action: 'single', row, token });
+                hideLoader();
+                if(d.success) {
+                    currentLeadStatus = String(d.lead.statusKey || "nowy");
+                    renderSingle(d.lead);
+                } else {
+                    showError("Błąd: " + (d.error || "Brak dostępu"));
+                }
+            } catch(err) {
+                hideLoader();
+                showError("Błąd połączenia: " + err.message);
+            }
         }
         
         function renderSingle(lead) {
@@ -248,28 +248,24 @@
             if(!isShow) el.classList.add("show");
         }
 
-        function fetchCampaigns() {
-            const url = buildURL({ action: 'campaigns' });
-            
-            fetch(url)
-                .then(r => r.json())
-                .then(d => {
-                    const container = document.getElementById("campList");
-                    if(d.success && d.campaigns) {
-                        container.innerHTML = d.campaigns.map(c => 
-                            `<label><input type="checkbox" value="${c}"> ${c}</label>`
-                        ).join("");
-                    } else {
-                        container.innerHTML = '<div style="padding:10px; color:#888;">Brak kampanii</div>';
-                    }
-                })
-                .catch(err => {
-                    console.error("Błąd pobierania kampanii:", err);
-                    document.getElementById("campList").innerHTML = '<div style="padding:10px; color:#f44;">Błąd</div>';
-                });
+        async function fetchCampaigns() {
+            try {
+                const d = await apiCall({ action: 'campaigns' });
+                const container = document.getElementById("campList");
+                if(d.success && d.campaigns) {
+                    container.innerHTML = d.campaigns.map(c => 
+                        `<label><input type="checkbox" value="${c}"> ${c}</label>`
+                    ).join("");
+                } else {
+                    container.innerHTML = '<div style="padding:10px; color:#888;">Brak kampanii</div>';
+                }
+            } catch(err) {
+                console.error("Błąd pobierania kampanii:", err);
+                document.getElementById("campList").innerHTML = '<div style="padding:10px; color:#f44;">Błąd</div>';
+            }
         }
 
-        function loadDashboard(reset = true) {
+        async function loadDashboard(reset = true) {
             if (reset) {
                 dashboardOffset = 0;
                 allLeadsMap.clear();
@@ -282,35 +278,32 @@
             const st = Array.from(document.querySelectorAll('#statusList input:checked')).map(cb => cb.value).join(",");
             const cp = Array.from(document.querySelectorAll('#campList input:checked')).map(cb => cb.value).join(",");
         
-            const url = buildURL({
-                action: 'list',
-                limit: 50,
-                offset: dashboardOffset,
-                sort: dashboardSort,
-                dateFrom: df,
-                dateTo: dt,
-                status: st,
-                campaigns: cp
-            });
-        
-            fetch(url)
-                .then(r => r.json())
-                .then(d => {
-                    hideLoader();
-                    if (!d.success) {
-                        alert("Błąd: " + (d.error || "Nieznany błąd"));
-                        return;
-                    }
-                    currentTotal = d.total; 
-                    d.rows.forEach(r => allLeadsMap.set(String(r.id), r));
-                    dashboardOffset += d.rows.length;
-                    displayTable();
-                    document.getElementById("loadMoreBtn").style.display = (allLeadsMap.size < currentTotal) ? "block" : "none";
-                })
-                .catch(err => { 
-                    hideLoader(); 
-                    alert("Błąd połączenia: " + err.message); 
+            try {
+                const d = await apiCall({
+                    action: 'list',
+                    limit: 50,
+                    offset: dashboardOffset,
+                    sort: dashboardSort,
+                    dateFrom: df,
+                    dateTo: dt,
+                    status: st,
+                    campaigns: cp
                 });
+                
+                hideLoader();
+                if (!d.success) {
+                    alert("Błąd: " + (d.error || "Nieznany błąd"));
+                    return;
+                }
+                currentTotal = d.total; 
+                d.rows.forEach(r => allLeadsMap.set(String(r.id), r));
+                dashboardOffset += d.rows.length;
+                displayTable();
+                document.getElementById("loadMoreBtn").style.display = (allLeadsMap.size < currentTotal) ? "block" : "none";
+            } catch(err) {
+                hideLoader();
+                alert("Błąd połączenia: " + err.message);
+            }
         }
 
         function displayTable() {
@@ -425,19 +418,13 @@
             const tid = setTimeout(() => controller.abort(), 10000);
 
             try {
-                const res = await fetch(API_URL, { 
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ 
-                        action: 'update', 
-                        row: row, 
-                        token: token, 
-                        status: s, 
-                        auth: auth 
-                    }),
-                    signal: controller.signal
+                const d = await apiCall({ 
+                    action: 'update', 
+                    row: row, 
+                    token: token, 
+                    status: s 
                 });
-                const d = await res.json();
+                
                 if (d.success) {
                     app.innerHTML = `<div class="content" style="text-align:center; padding:50px;"><h2>✅ Zapisano</h2><button class="btn-tool" onclick="location.reload()" style="margin:20px auto;">Wróć</button></div>`;
                 } else {
@@ -543,14 +530,13 @@
             let workDiffMins = Math.floor((end - workStart) / 60000);
             if (workDiffMins < 0) workDiffMins = 0;
         
-            // --- LOGIKA KOLORYSTYCZNA ---
-            let color = "#2e7d32"; // Domyślny zielony
+            let color = "#2e7d32";
             if (workDiffMins > 1440) {
-                color = "#880e4f"; // Bordowy (powyżej 24h)
+                color = "#880e4f";
             } else if (workDiffMins > 120) {
-                color = "#d32f2f"; // Czerwony (powyżej 2h)
+                color = "#d32f2f";
             } else if (workDiffMins > 30) {
-                color = "#ef6c00"; // Pomarańczowy (powyżej 30 min)
+                color = "#ef6c00";
             }
         
             const format = (mins) => {
