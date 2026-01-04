@@ -103,7 +103,6 @@
         const row = params.get("row");
         const token = params.get("token");
         const action = params.get("action");
-        const app = document.getElementById("app");
         const auth = params.get("auth");
         
         let allLeadsMap = new Map();
@@ -115,13 +114,12 @@
             document.body.classList.remove("dashboard-mode");
             showLoader("Pobieranie danych leada...");
             
-            // Dodajemy &firm=${firm}, aby skrypt wiedział, który arkusz otworzyć
-            fetch(`${API_URL}?row=${row}&token=${token}&firm=${firm}`)
+            // Zmieniamy URL: usuwamy firm, zostawiamy auth
+            fetch(`${API_URL}?row=${row}&token=${token}&auth=${auth}`)
                 .then(r => r.json())
                 .then(d => {
                     hideLoader();
                     if(d.success) {
-                        // Naprawiona linia poniżej:
                         currentLeadStatus = String(d.lead.statusKey || "nowy");
                         renderSingle(d.lead);
                     } else {
@@ -254,7 +252,7 @@
 
         function fetchCampaigns() {
             // POPRAWKA TUTAJ:
-            fetch(`${API_URL}?action=campaigns&firm=${firm}&token=${token}`)
+            fetch(`${API_URL}?action=campaigns&auth=${auth}&token=${token || ''}`)
             .then(r => r.json())
             .then(d => {
                 const container = document.getElementById("campList");
@@ -278,7 +276,7 @@
             const cp = Array.from(document.querySelectorAll('#campList input:checked')).map(cb => cb.value).join(",");
         
             // POPRAWKA TUTAJ: jeden spójny URL z parametrem firm
-            const url = `${API_URL}?action=list&firm=${firm}&token=${token || ''}&limit=50&offset=${dashboardOffset}&sort=${dashboardSort}&dateFrom=${df}&dateTo=${dt}&status=${encodeURIComponent(st)}&campaigns=${encodeURIComponent(cp)}`;
+            const url = `${API_URL}?action=list&auth=${auth}&limit=50&offset=${dashboardOffset}&sort=${dashboardSort}&dateFrom=${df}&dateTo=${dt}&status=${encodeURIComponent(st)}&campaigns=${encodeURIComponent(cp)}`;
         
             fetch(url)
                 .then(r => r.json())
@@ -449,9 +447,9 @@
         function showError(m) { app.innerHTML = `<div class="content"><h3>⛔ Błąd</h3><p>${m}</p></div>`; }
 
         window.onload = () => {
-            // 1. Sprawdzamy czy w ogóle jest podana firma
-            if (!firm) {
-                showError("Brak parametru 'firm' w linku.");
+            // 1. Sprawdzamy klucz autoryzacji
+            if (!auth) {
+                showError("Brak klucza dostępu (auth) w linku.");
                 return;
             }
         
@@ -459,7 +457,7 @@
             if (row && token) {
                 loadSingle();
             } 
-            // 3. W przeciwnym razie -> pokaż dashboard firmy
+            // 3. W przeciwnym razie -> pokaż dashboard
             else {
                 renderListLayout();
                 loadDashboard(true);
