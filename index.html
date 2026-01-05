@@ -242,11 +242,12 @@
                 </div>
             `;
             
-            window.onclick = (e) => {
+            document.addEventListener("click", (e) => {
                 if (!e.target.closest('.multiselect')) {
-                    document.querySelectorAll('.multiselect-content').forEach(el => el.classList.remove('show'));
+                    document.querySelectorAll('.multiselect-content')
+                    .forEach(el => el.classList.remove('show'));
                 }
-            };
+            });
             fetchCampaigns();
         }
 
@@ -423,8 +424,6 @@
 
         async function updateStatus(s) {
             showLoader("Zapisywanie...");
-            const controller = new AbortController();
-            const tid = setTimeout(() => controller.abort(), 10000);
 
             try {
                 const d = await apiCall({ 
@@ -445,7 +444,6 @@
             } 
             finally { 
                 hideLoader(); 
-                clearTimeout(tid); 
             }
         }
 
