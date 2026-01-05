@@ -55,6 +55,29 @@
         .modal-close-x { position: absolute; top: 15px; right: 15px; color: white; font-size: 24px; cursor: pointer; z-index: 10; font-weight: bold;}
         .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top-color: #333; border-radius: 50%; animation: spin 0.9s linear infinite; margin: 0 auto 15px; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        .btn-back {
+    position: absolute;
+    left: 16px;
+    top: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.18);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.35);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    transition: all 0.2s ease;
+}
+
+.btn-back:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateX(-2px);
+}
     </style>
 </head>
 <body>
@@ -148,9 +171,9 @@
             app.innerHTML = `
                 <div class="header">
                     <h2>Status kontaktu</h2>
-                    <div style="position:absolute; left:20px; top:20px;">
-                        <button class="btn-tool" onclick="goToDashboard()">⬅ Dashboard</button>
-                    </div>
+                    <button class="btn-back" onclick="goToDashboard()">
+                        ← Dashboard
+                    </button>
                 </div>
                 <div class="content">
                     <div class="box">
@@ -240,13 +263,6 @@
                     </div>
                 </div>
             `;
-            
-            document.addEventListener("click", (e) => {
-              if (!e.target.closest('.multiselect')) {
-                document.querySelectorAll('.multiselect-content')
-                  .forEach(el => el.classList.remove('show'));
-              }
-            });
             fetchCampaigns();
         }
 
@@ -447,11 +463,11 @@
         }
 
         function statusClass(s) {
-            const status = String(s || "").toLowerCase();
-            if (status === "odrzucony") return "s-odrzucony";
-            if (status.includes("porzucony")) return "s-porzucony";
-            if (status.includes("nie") && status.includes("odbiera")) return "s-nie_odbiera";
-            if (status.includes("obs") || status === "obsłużony") return "s-obsluzony";
+            s = String(s || "").toLowerCase();
+            if (s.includes("porzu")) return "s-porzucony";
+            if (s.includes("odrz")) return "s-odrzucony";
+            if (s.includes("nie") && s.includes("odb")) return "s-nie_odbiera";
+            if (s.includes("obs")) return "s-obsluzony";
             return "s-nowy";
         }
 
@@ -562,6 +578,13 @@
             url.searchParams.delete("token");
             window.location.href = url.toString();
         }
+
+        document.addEventListener("click", (e) => {
+            if (!e.target.closest('.multiselect')) {
+                document.querySelectorAll('.multiselect-content')
+                .forEach(el => el.classList.remove('show'));
+            }
+        });
     </script>
 </body>
 </html>
