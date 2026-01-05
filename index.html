@@ -149,6 +149,9 @@
             app.innerHTML = `
                 <div class="header">
                     <h2>Status kontaktu</h2>
+                    <div style="position:absolute; left:20px; top:20px;">
+                        <button class="btn-tool" onclick="goToDashboard()">⬅ Dashboard</button>
+                    </div>
                 </div>
                 <div class="content">
                     <div class="box">
@@ -559,6 +562,13 @@
                 <div style="font-weight: bold; color: ${color};">${workTimeDisplay}</div>
                 <div style="font-size: 0.85em; color: #666;">(łącznie: ${rawTimeDisplay})</div>
             `;
+        }
+
+        function goToDashboard() {
+            const url = new URL(window.location.href);
+            url.searchParams.delete("row");
+            url.searchParams.delete("token");
+            window.location.href = url.toString();
         }
     </script>
 </body>
