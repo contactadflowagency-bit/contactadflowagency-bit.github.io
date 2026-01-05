@@ -100,7 +100,7 @@
         const params = new URLSearchParams(window.location.search);
         const row = params.get("row");
         const token = params.get("token");
-        const auth = params.get("auth");
+        const key = params.get("key");
         
         let allLeadsMap = new Map();
         let currentTotal = 0;
@@ -113,7 +113,7 @@
             const response = await fetch(API_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ auth, ...body })
+                body: JSON.stringify({ key, ...body })
             });
             return await response.json();
         }
@@ -470,8 +470,8 @@
         }
 
         window.onload = () => {
-            if (!auth) {
-                showError("Brak klucza dostępu (auth) w linku.");
+            if (!key) {
+                showError("Brak klucza dostępu (key) w linku.");
                 return;
             }
         
