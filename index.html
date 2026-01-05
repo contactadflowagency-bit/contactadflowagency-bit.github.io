@@ -1,1054 +1,834 @@
 <!DOCTYPE html>
 <html lang="pl">
-   <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>AdFlow - System Obsługi Leadów</title>
-      <style>
-         * { box-sizing: border-box; }
-         body { 
-            font-family: 'Segoe UI', Roboto, Arial, sans-serif; 
-            background:#f7f8fa; 
-            margin:0; 
-            min-height:100vh; 
-            display:flex; 
-            justify-content:center; 
-            align-items:center;
-            padding: 10px;
-         }
-         .wrapper { 
-            max-width:600px; 
-            width:100%; 
-            background:#fff; 
-            border-radius:12px; 
-            box-shadow:0 4px 10px rgba(0,0,0,0.05); 
-            overflow:hidden; 
-         }
-         .header { 
-            background: linear-gradient(135deg, #00bcd4, #9c27b0); 
-            color:#fff; 
-            padding:24px 20px; 
-            text-align:center; 
-            position: relative; 
-         }
-         .header h2 { 
-            margin:0; 
-            font-size:20px;
-            padding: 0 40px;
-         }
-         .content { padding:20px; }
-         .box { 
-            background:#f4fbfd; 
-            border-left:4px solid #00bcd4; 
-            padding:16px; 
-            border-radius:6px; 
-            margin-bottom:20px; 
-            text-align: left; 
-         }
-         .box.data { background:#f0faff; }
-         p { margin:6px 0; font-size:15px; word-wrap: break-word; }
-         .buttons { 
-            text-align:center; 
-            margin:30px 0; 
-            display: flex; 
-            justify-content: center; 
-            gap: 10px; 
-            flex-wrap: wrap; 
-         }
-         .buttons a, .btn-modal { 
-            display:inline-block; 
-            padding:14px 20px; 
-            border-radius:6px; 
-            color:white; 
-            text-decoration:none; 
-            font-weight:bold; 
-            cursor: pointer; 
-            transition: opacity 0.2s; 
-            border: none; 
-            font-size: 15px;
-            min-height: 44px;
-            min-width: 120px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-         }
-         .buttons a:hover { opacity: 0.8; }
-         .obs { background:#2E7D32; } 
-         .nie { background:#FF9800; } 
-         .odrz { background:#D32F2F; }
-         .close-btn { background:#555; }
-         .status-badge { 
-            display:inline-block; 
-            padding:6px 12px; 
-            border-radius:999px; 
-            font-weight:700; 
-            font-size:12px; 
-            color:#fff; 
-            text-transform: uppercase;
-            white-space: nowrap;
-         }
-         .s-nowy { background: #2196F3; }
-         .s-obsluzony { background: #2E7D32; }
-         .s-nie_odbiera { background: #FF9800; }
-         .s-odrzucony { background: #D32F2F; }
-         .s-porzucony { background: #9E9E9E; }
-         .status-row { 
-            display:flex; 
-            justify-content:space-between; 
-            align-items:center; 
-            flex-wrap:wrap; 
-            gap:10px; 
-         }
-         .muted { font-size:13px; color:#777; }
-         .disabled { opacity:.4; pointer-events: none; cursor: default; }
-         
-         /* Dashboard styles */
-         body.dashboard-mode { align-items: flex-start; }
-         body.dashboard-mode .wrapper { 
-            max-width: 1400px; 
-            margin: 20px auto; 
-         }
-         .dashboard-toolbar { 
-            display: flex; 
-            flex-wrap: wrap; 
-            gap: 10px; 
-            margin-bottom: 20px; 
-            align-items: center; 
-            background: #fff; 
-            padding: 15px; 
-            border-radius: 8px; 
-            border: 1px solid #eee; 
-         }
-         .dashboard-toolbar input, .dashboard-toolbar select { 
-            padding: 12px; 
-            border-radius: 8px; 
-            border: 1px solid #ddd; 
-            font-size: 14px; 
-            outline: none;
-            min-height: 44px;
-            flex: 1;
-            min-width: 120px;
-         }
-         .date-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex: 1;
-            min-width: 150px;
-         }
-         .date-group label {
-            font-weight: 600;
-            font-size: 14px;
-            white-space: nowrap;
-            margin: 0;
-         }
-         .date-group input {
-            flex: 1;
-            min-width: 0;
-         }
-         .btn-tool { 
-            padding: 12px 16px; 
-            border-radius: 8px; 
-            border: 1px solid #ddd; 
-            background: #fff; 
-            cursor: pointer; 
-            font-weight: 600; 
-            display: flex; 
-            align-items: center; 
-            gap: 5px;
-            min-height: 44px;
-            font-size: 14px;
-            white-space: nowrap;
-         }
-         .btn-apply { 
-            background: #2563eb !important; 
-            color: white !important; 
-            border: none; 
-         }
-         .multiselect { 
-            position: relative; 
-            display: inline-block;
-            flex: 1;
-            min-width: 150px;
-         }
-         .multiselect-btn { 
-            padding: 12px; 
-            border: 1px solid #ddd; 
-            border-radius: 8px; 
-            background: #fff; 
-            cursor: pointer; 
-            font-size: 14px; 
-            width: 100%;
-            text-align: left; 
-            display:flex; 
-            justify-content: space-between; 
-            align-items: center;
-            min-height: 44px;
-         }
-         .multiselect-content { 
-            display: none; 
-            position: absolute; 
-            background-color: #fff; 
-            min-width: 250px; 
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); 
-            z-index: 100; 
-            border: 1px solid #eee; 
-            border-radius: 8px; 
-            max-height: 300px; 
-            overflow-y: auto; 
-            top: 110%; 
-            left: 0; 
-         }
-         .multiselect-content.show { display: block; }
-         .multiselect-content label { 
-            color: black; 
-            padding: 12px; 
-            text-decoration: none; 
-            display: block; 
-            cursor: pointer; 
-            border-bottom: 1px solid #f9f9f9; 
-            font-size: 14px; 
-            text-align: left;
-            min-height: 44px;
-            display: flex;
-            align-items: center;
-         }
-         .multiselect-content label:hover { background-color: #f1f1f1; }
-         .multiselect-content input { margin-right: 10px; }
-         
-         /* Table styles */
-         .table-scroll { 
-            width: 100%; 
-            overflow-x: auto; 
-            border: 1px solid #eee; 
-            border-radius: 8px; 
-         }
-         .dashboard-table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            font-size: 14px; 
-            min-width: 1000px; 
-         }
-         .dashboard-table thead th { 
-            background: #f4f7fb; 
-            padding: 12px 10px; 
-            text-align: left; 
-            border-bottom: 2px solid #e3e7ee; 
-         }
-         .dashboard-table tbody td { 
-            padding: 12px 10px; 
-            border-bottom: 1px solid #eee; 
-         }
-         .dashboard-table th:last-child, 
-         .dashboard-table td:last-child { 
-            text-align: center !important; 
-            width: 100px; 
-         }
-         
-         /* Card view for mobile */
-         .card-view { display: none; }
-         .lead-card {
-            background: #fff;
-            border: 1px solid #eee;
-            border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-         }
-         .lead-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 12px;
-            gap: 10px;
-         }
-         .lead-card-info p {
-            margin: 4px 0;
-            font-size: 14px;
-         }
-         .lead-card-actions {
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid #eee;
-            text-align: center;
-         }
-         
-         /* Loader & Modals */
-         .loader { 
-            position: fixed; 
-            inset: 0; 
-            background: rgba(0,0,0,0.6); 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            z-index: 9999;
-            padding: 20px;
-         }
-         .loader.hidden { display: none !important; }
-         .loader-box { 
-            background: #fff; 
-            padding: 30px; 
-            border-radius: 12px; 
-            text-align: center; 
-            max-width: 400px; 
-            width: 100%; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
-            position: relative; 
-         }
-         .modal-preview-box { 
-            max-width: 600px; 
-            width: 95%; 
-            padding: 0; 
-            overflow: hidden;
-            max-height: 90vh;
-            overflow-y: auto;
-         }
-         .modal-close-x { 
-            position: absolute; 
-            top: 15px; 
-            right: 15px; 
-            color: white; 
-            font-size: 28px; 
-            cursor: pointer; 
-            z-index: 10; 
-            font-weight: bold;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            background: rgba(0,0,0,0.2);
-         }
-         .spinner { 
-            width: 40px; 
-            height: 40px; 
-            border: 4px solid #ddd; 
-            border-top-color: #333; 
-            border-radius: 50%; 
-            animation: spin 0.9s linear infinite; 
-            margin: 0 auto 15px; 
-         }
-         @keyframes spin { to { transform: rotate(360deg); } }
-         
-         .btn-back {
-             position: absolute;
-             left: 10px;
-             top: 50%;
-             transform: translateY(-50%);
-             display: inline-flex;
-             align-items: center;
-             gap: 6px;
-             padding: 8px 14px;
-             border-radius: 999px;
-             background: rgba(255, 255, 255, 0.22);
-             color: #fff;
-             border: 1px solid rgba(255, 255, 255, 0.35);
-             font-size: 13px;
-             font-weight: 600;
-             cursor: pointer;
-             backdrop-filter: blur(8px);
-             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
-             transition: all 0.2s ease;
-             min-height: 36px;
-         }
-         
-         .btn-back::before {
-             content: "←";
-             font-size: 16px;
-         }
-         
-         .btn-back:hover {
-             background: rgba(255, 255, 255, 0.32);
-             transform: translateY(-50%) translateX(-3px);
-         }
-         
-         .btn-back:active {
-             transform: translateY(-50%) translateX(-1px) scale(0.98);
-         }
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>AdFlow - System Obsługi Leadów</title>
+   <style>
+      * { box-sizing: border-box; }
+      body { 
+         font-family: 'Segoe UI', Roboto, Arial, sans-serif; 
+         background:#f7f8fa; 
+         margin:0; 
+         min-height:100vh; 
+         display:flex; 
+         justify-content:center; 
+         align-items:center;
+         padding: 10px;
+      }
+      .wrapper { 
+         max-width:600px; 
+         width:100%; 
+         background:#fff; 
+         border-radius:12px; 
+         box-shadow:0 4px 10px rgba(0,0,0,0.05); 
+         overflow:hidden; 
+      }
+      .header { 
+         background: linear-gradient(135deg, #00bcd4, #9c27b0); 
+         color:#fff; 
+         padding:24px 20px; 
+         text-align:center; 
+         position: relative; 
+      }
+      .header h2 { 
+         margin:0; 
+         font-size:20px;
+         padding: 0 40px;
+      }
+      .content { padding:20px; }
+      .box { 
+         background:#f4fbfd; 
+         border-left:4px solid #00bcd4; 
+         padding:16px; 
+         border-radius:6px; 
+         margin-bottom:20px; 
+      }
+      .box.data { background:#f0faff; }
+      p { margin:6px 0; font-size:15px; word-wrap: break-word; }
+      .buttons { 
+         text-align:center; 
+         margin:30px 0; 
+         display: flex; 
+         justify-content: center; 
+         gap: 10px; 
+         flex-wrap: wrap; 
+      }
+      .buttons a, .btn-modal { 
+         padding:14px 20px; 
+         border-radius:6px; 
+         color:white; 
+         text-decoration:none; 
+         font-weight:bold; 
+         cursor: pointer; 
+         transition: opacity 0.2s; 
+         border: none; 
+         font-size: 15px;
+         min-height: 44px;
+         min-width: 120px;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+      }
+      .buttons a:hover, .btn-tool:hover { opacity: 0.8; }
+      .obs { background:#2E7D32; } 
+      .nie { background:#FF9800; } 
+      .odrz { background:#D32F2F; }
+      .close-btn { background:#555; }
+      .status-badge { 
+         display:inline-block; 
+         padding:6px 12px; 
+         border-radius:999px; 
+         font-weight:700; 
+         font-size:12px; 
+         color:#fff; 
+         text-transform: uppercase;
+         white-space: nowrap;
+      }
+      .s-nowy { background: #2196F3; }
+      .s-obsluzony { background: #2E7D32; }
+      .s-nie_odbiera { background: #FF9800; }
+      .s-odrzucony { background: #D32F2F; }
+      .s-porzucony { background: #9E9E9E; }
+      .status-row { 
+         display:flex; 
+         justify-content:space-between; 
+         align-items:center; 
+         flex-wrap:wrap; 
+         gap:10px; 
+      }
+      .muted { font-size:13px; color:#777; }
+      .disabled { opacity:.4; pointer-events: none; }
+      
+      /* Dashboard */
+      body.dashboard-mode { align-items: flex-start; }
+      body.dashboard-mode .wrapper { max-width: 1400px; margin: 20px auto; }
+      .dashboard-toolbar { 
+         display: flex; 
+         flex-wrap: wrap; 
+         gap: 10px; 
+         margin-bottom: 20px; 
+         align-items: center; 
+         background: #fff; 
+         padding: 15px; 
+         border-radius: 8px; 
+         border: 1px solid #eee; 
+      }
+      .dashboard-toolbar input { 
+         padding: 12px; 
+         border-radius: 8px; 
+         border: 1px solid #ddd; 
+         font-size: 14px; 
+         outline: none;
+         min-height: 44px;
+         flex: 1;
+         min-width: 120px;
+      }
+      .date-group {
+         display: flex;
+         align-items: center;
+         gap: 8px;
+         flex: 1;
+         min-width: 150px;
+      }
+      .date-group label {
+         font-weight: 600;
+         font-size: 14px;
+         white-space: nowrap;
+         margin: 0;
+      }
+      .date-group input { flex: 1; min-width: 0; }
+      .btn-tool { 
+         padding: 12px 16px; 
+         border-radius: 8px; 
+         border: 1px solid #ddd; 
+         background: #fff; 
+         cursor: pointer; 
+         font-weight: 600; 
+         display: flex; 
+         align-items: center; 
+         gap: 5px;
+         min-height: 44px;
+         font-size: 14px;
+         white-space: nowrap;
+      }
+      .btn-apply { background: #2563eb !important; color: white !important; border: none; }
+      .multiselect { position: relative; flex: 1; min-width: 150px; }
+      .multiselect-btn { 
+         padding: 12px; 
+         border: 1px solid #ddd; 
+         border-radius: 8px; 
+         background: #fff; 
+         cursor: pointer; 
+         font-size: 14px; 
+         width: 100%;
+         display:flex; 
+         justify-content: space-between; 
+         align-items: center;
+         min-height: 44px;
+      }
+      .multiselect-content { 
+         display: none; 
+         position: absolute; 
+         background: #fff; 
+         min-width: 250px; 
+         box-shadow: 0 8px 16px rgba(0,0,0,0.2); 
+         z-index: 100; 
+         border: 1px solid #eee; 
+         border-radius: 8px; 
+         max-height: 300px; 
+         overflow-y: auto; 
+         top: 110%; 
+         left: 0; 
+      }
+      .multiselect-content.show { display: block; }
+      .multiselect-content label { 
+         padding: 12px; 
+         display: flex;
+         align-items: center;
+         cursor: pointer; 
+         border-bottom: 1px solid #f9f9f9; 
+         font-size: 14px; 
+         min-height: 44px;
+      }
+      .multiselect-content label:hover { background: #f1f1f1; }
+      .multiselect-content input { margin-right: 10px; }
+      
+      /* Table */
+      .table-scroll { 
+         width: 100%; 
+         overflow-x: auto; 
+         border: 1px solid #eee; 
+         border-radius: 8px; 
+      }
+      .dashboard-table { 
+         width: 100%; 
+         border-collapse: collapse; 
+         font-size: 14px; 
+         min-width: 1000px; 
+      }
+      .dashboard-table thead th { 
+         background: #f4f7fb; 
+         padding: 12px 10px; 
+         text-align: left; 
+         border-bottom: 2px solid #e3e7ee; 
+      }
+      .dashboard-table tbody td { 
+         padding: 12px 10px; 
+         border-bottom: 1px solid #eee; 
+      }
+      .dashboard-table th:last-child, 
+      .dashboard-table td:last-child { text-align: center !important; width: 100px; }
+      
+      /* Card view */
+      .card-view { display: none; }
+      .lead-card {
+         background: #fff;
+         border: 1px solid #eee;
+         border-radius: 8px;
+         padding: 16px;
+         margin-bottom: 12px;
+         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      }
+      .lead-card-header {
+         display: flex;
+         justify-content: space-between;
+         align-items: flex-start;
+         margin-bottom: 12px;
+         gap: 10px;
+      }
+      .lead-card-info p { margin: 4px 0; font-size: 14px; }
+      .lead-card-actions {
+         margin-top: 12px;
+         padding-top: 12px;
+         border-top: 1px solid #eee;
+      }
+      
+      /* Modals */
+      .loader { 
+         position: fixed; 
+         inset: 0; 
+         background: rgba(0,0,0,0.6); 
+         display: flex; 
+         align-items: center; 
+         justify-content: center; 
+         z-index: 9999;
+         padding: 20px;
+      }
+      .loader.hidden { display: none !important; }
+      .loader-box { 
+         background: #fff; 
+         padding: 30px; 
+         border-radius: 12px; 
+         text-align: center; 
+         max-width: 400px; 
+         width: 100%; 
+         box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+         position: relative; 
+      }
+      .modal-preview-box { 
+         max-width: 600px; 
+         width: 95%; 
+         padding: 0; 
+         max-height: 90vh;
+         overflow-y: auto;
+      }
+      .modal-close-x { 
+         position: absolute; 
+         top: 15px; 
+         right: 15px; 
+         color: white; 
+         font-size: 28px; 
+         cursor: pointer; 
+         z-index: 10; 
+         font-weight: bold;
+         width: 40px;
+         height: 40px;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         border-radius: 50%;
+         background: rgba(0,0,0,0.2);
+      }
+      .spinner { 
+         width: 40px; 
+         height: 40px; 
+         border: 4px solid #ddd; 
+         border-top-color: #333; 
+         border-radius: 50%; 
+         animation: spin 0.9s linear infinite; 
+         margin: 0 auto 15px; 
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      
+      .btn-back {
+          position: absolute;
+          left: 10px;
+          top: 50%;
+          transform: translateY(-50%);
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 14px;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.22);
+          color: #fff;
+          border: 1px solid rgba(255, 255, 255, 0.35);
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          backdrop-filter: blur(8px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+          transition: all 0.2s ease;
+          min-height: 36px;
+      }
+      .btn-back::before { content: "←"; font-size: 16px; }
+      .btn-back:hover {
+          background: rgba(255, 255, 255, 0.32);
+          transform: translateY(-50%) translateX(-3px);
+      }
 
-         /* Mobile responsiveness */
-         @media (max-width: 768px) {
-            body { padding: 5px; }
-            body.dashboard-mode { padding: 10px; }
-            
-            .wrapper { 
-               border-radius: 8px;
-               margin: 10px 0;
-            }
-            
-            .header { 
-               padding: 20px 15px;
-            }
-            .header h2 { 
-               font-size: 18px;
-               padding: 0 35px;
-            }
-            
-            .content { padding: 15px; }
-            
-            .box { 
-               padding: 12px; 
-               font-size: 14px;
-            }
-            
-            p { font-size: 14px; }
-            
-            .buttons { 
-               flex-direction: column;
-               gap: 8px;
-            }
-            .buttons a, .btn-modal { 
-               width: 100%;
-               padding: 14px;
-               font-size: 14px;
-            }
-            
-            .status-row {
-               flex-direction: column;
-               align-items: flex-start;
-            }
-            .status-row > div:last-child {
-               width: 100%;
-               text-align: left !important;
-            }
-            
-            /* Dashboard mobile */
-            .dashboard-toolbar {
-               padding: 12px;
-               gap: 8px;
-            }
-            
-            .date-group {
-               width: 100%;
-            }
-            
-            .date-group label {
-               min-width: 35px;
-            }
-            
-            .dashboard-toolbar input {
-               width: 100%;
-               font-size: 14px;
-            }
-            
-            .multiselect {
-               width: 100%;
-            }
-            
-            .multiselect-content {
-               width: calc(100vw - 60px);
-               left: 50%;
-               transform: translateX(-50%);
-            }
-            
-            .btn-tool {
-               width: 100%;
-               justify-content: center;
-               padding: 12px;
-            }
-            
-            /* Hide table, show cards on mobile */
-            .table-scroll { display: none; }
-            .card-view { display: block; }
-            
-            .btn-back {
-               padding: 6px 10px;
-               font-size: 12px;
-               left: 8px;
-            }
-            .btn-back span { display: none; }
-            
-            .modal-preview-box {
-               width: 98%;
-               max-height: 95vh;
-            }
-            
-            .modal-close-x {
-               width: 36px;
-               height: 36px;
-               font-size: 24px;
-               top: 12px;
-               right: 12px;
-            }
-         }
-         
-         @media (max-width: 480px) {
-            .header h2 { 
-               font-size: 16px;
-            }
-            
-            .status-badge {
-               font-size: 11px;
-               padding: 5px 10px;
-            }
-            
-            p { font-size: 13px; }
-            
-            .lead-card {
-               padding: 12px;
-            }
-         }
-         
-         /* Landscape mobile */
-         @media (max-width: 768px) and (orientation: landscape) {
-            body.dashboard-mode .wrapper {
-               margin: 10px;
-            }
-         }
-      </style>
-   </head>
-   <body>
-      <div class="wrapper" id="app">
-         <div class="content" style="text-align:center;">⏳ Łączenie z serwerem...</div>
-      </div>
+      /* Mobile */
+      @media (max-width: 768px) {
+         body { padding: 5px; }
+         body.dashboard-mode { padding: 10px; }
+         .wrapper { border-radius: 8px; margin: 10px 0; }
+         .header { padding: 20px 15px; }
+         .header h2 { font-size: 18px; padding: 0 35px; }
+         .content { padding: 15px; }
+         .box { padding: 12px; font-size: 14px; }
+         p { font-size: 14px; }
+         .buttons { flex-direction: column; gap: 8px; }
+         .buttons a, .btn-modal { width: 100%; padding: 14px; }
+         .status-row { flex-direction: column; align-items: flex-start; }
+         .status-row > div:last-child { width: 100%; text-align: left !important; }
+         .dashboard-toolbar { padding: 12px; gap: 8px; }
+         .date-group { width: 100%; }
+         .date-group label { min-width: 35px; }
+         .multiselect { width: 100%; }
+         .multiselect-content { width: calc(100vw - 60px); left: 50%; transform: translateX(-50%); }
+         .btn-tool { width: 100%; justify-content: center; }
+         .table-scroll { display: none; }
+         .card-view { display: block; }
+         .btn-back { padding: 6px 10px; font-size: 12px; left: 8px; }
+         .btn-back span { display: none; }
+         .modal-preview-box { width: 98%; max-height: 95vh; }
+         .modal-close-x { width: 36px; height: 36px; font-size: 24px; }
+      }
       
-      <div id="loader" class="loader hidden">
-         <div class="loader-box">
-            <div class="spinner"></div>
-            <div class="loader-text">Ładowanie...</div>
+      @media (max-width: 480px) {
+         .header h2 { font-size: 16px; }
+         .status-badge { font-size: 11px; padding: 5px 10px; }
+         p { font-size: 13px; }
+         .lead-card { padding: 12px; }
+      }
+   </style>
+</head>
+<body>
+   <div class="wrapper" id="app">
+      <div class="content" style="text-align:center;">⏳ Łączenie z serwerem...</div>
+   </div>
+   
+   <div id="loader" class="loader hidden">
+      <div class="loader-box">
+         <div class="spinner"></div>
+         <div class="loader-text">Ładowanie...</div>
+      </div>
+   </div>
+   
+   <div id="confirmModal" class="loader hidden">
+      <div class="loader-box">
+         <div style="font-weight:bold; font-size:18px; margin-bottom:10px;">Potwierdź zmianę</div>
+         <div id="confirmMsg" style="margin-bottom:20px;"></div>
+         <div class="buttons">
+            <button class="btn-modal obs" id="confirmYes">Tak, zmień</button>
+            <button class="btn-modal odrz" id="confirmNo">Anuluj</button>
          </div>
       </div>
-      
-      <div id="confirmModal" class="loader hidden">
-         <div class="loader-box">
-            <div style="font-weight:bold; font-size:18px; margin-bottom:10px;">Potwierdź zmianę</div>
-            <div id="confirmMsg" style="margin-bottom:20px;"></div>
-            <div class="buttons">
-               <button class="btn-modal obs" id="confirmYes">Tak, zmień</button>
-               <button class="btn-modal odrz" id="confirmNo">Anuluj</button>
-            </div>
+   </div>
+   
+   <div id="previewModal" class="loader hidden" onclick="closePreview(event)">
+      <div class="loader-box modal-preview-box" onclick="event.stopPropagation()">
+         <div class="header">
+            <div class="modal-close-x" onclick="closePreview()">×</div>
+            <h2>Szczegóły leada</h2>
+         </div>
+         <div class="content" id="previewContent"></div>
+         <div style="background: #f9f9f9; padding: 15px; text-align: center;">
+            <button class="btn-modal close-btn" onclick="closePreview()">Zamknij</button>
          </div>
       </div>
+   </div>
+   
+   <script>
+      const API_URL = "https://script.google.com/macros/s/AKfycbzKRhMb-C2ZXgMuDdn9tPNpKez9WpxtzPYsi1r_hU_uF8ZZuJBNJkcEJm5Epg43elll/exec";
       
-      <div id="previewModal" class="loader hidden" onclick="closePreview(event)">
-         <div class="loader-box modal-preview-box" onclick="event.stopPropagation()">
-            <div class="header">
-               <div class="modal-close-x" onclick="closePreview()">×</div>
-               <h2>Szczegóły leada</h2>
-            </div>
-            <div class="content" id="previewContent"></div>
-            <div style="background: #f9f9f9; padding: 15px; text-align: center;">
-               <button class="btn-modal close-btn" onclick="closePreview()">Zamknij podgląd</button>
-            </div>
-         </div>
-      </div>
+      const params = new URLSearchParams(window.location.search);
+      const row = params.get("row");
+      const token = params.get("token");
+      const key = params.get("key");
       
-      <script>
-         // ZMIEŃ TO NA SWÓJ URL WDROŻENIA:
-         const API_URL = "https://script.google.com/macros/s/AKfycbzKRhMb-C2ZXgMuDdn9tPNpKez9WpxtzPYsi1r_hU_uF8ZZuJBNJkcEJm5Epg43elll/exec";
-         
-         const params = new URLSearchParams(window.location.search);
-         const row = params.get("row");
-         const token = params.get("token");
-         const key = params.get("key");
-         
-         let allLeadsMap = new Map();
-         let currentTotal = 0;
-         let dashboardOffset = 0;
-         let dashboardSort = "desc";
-         let currentLeadStatus = "nowy";
-         
-         async function apiCall(body) {
-           if (!key) {
-             throw new Error("Brak klucza dostępu");
-           }
-         
-           const response = await fetch(API_URL, {
-             method: "POST",
-             headers: { "Content-Type": "text/plain" },
-             body: JSON.stringify({ key, ...body })
-           });
-         
-           return await response.json();
-         }
-         
-         async function loadSingle() {
-             document.body.classList.remove("dashboard-mode");
-             showLoader("Pobieranie danych leada...");
-             
-             try {
-                 const d = await apiCall({ action: 'single', row, token });
-                 hideLoader();
-                 if(d.success) {
-                     currentLeadStatus = String(d.lead.statusKey || "nowy");
-                     renderSingle(d.lead);
-                 } else {
-                     showError("Błąd: " + (d.error || "Brak dostępu"));
-                 }
-             } catch(err) {
-                 hideLoader();
-                 showError("Błąd połączenia: " + err.message);
-             }
-         }
-         
-         function renderSingle(lead) {
-             const editable = lead.canEdit; 
-         
-             app.innerHTML = `
-                 <div class="header">
-                     <button class="btn-back" onclick="goToDashboard()">
-                         <span>Dashboard</span>
-                     </button>
-                     <h2>Status kontaktu</h2>
-                 </div>
-                 <div class="content">
-                     <div class="box">
-                         <div class="status-row">
-                             <div>
-                                 <p>🆔 <strong>ID:</strong> ${lead.id || "-"}</p>
-                                 <p>📅 <strong>Zgłoszenie:</strong> ${formatDate(lead.date)}</p>
-                                 <p>📢 <strong>Kampania:</strong> ${lead.campaign || "-"}</p>
-                             </div>
-                             <div style="text-align:right">
-                                 <span class="status-badge ${statusClass(lead.statusKey)}">${lead.status}</span>
-                                 <div class="muted" style="margin-top:5px">Aktualizacja:<br>${formatDate(lead.lastUpdate)}</div>
-                             </div>
-                         </div>
-                     </div>
-                     <div class="box data">
-                         <p><strong>🧾 Pacjent:</strong> ${lead.name || "-"}</p>
-                         <p><strong>📞 Telefon:</strong> ${formatPhone(lead.phone)}</p>
-                         <p><strong>✉️ Email:</strong> ${lead.email || "-"}</p>
-                         <p><strong>⏱️ Czas kontaktu:</strong> ${calculateWaitTimes(lead.date, lead.lastUpdate, lead.waitUntil, lead.statusKey || lead.status)}</p>
-                         <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
-                         <p><strong>🦷 Cel:</strong> ${lead.info1 || "-"}</p>
-                         <p><strong>📝 Info:</strong> ${lead.info2 || "-"}</p>
-                     </div>
-                     <div class="buttons ${editable ? "" : "disabled"}">
-                         <a class="obs" onclick="handleStatusClick('obsluzony')">✔ Obsłużony</a>
-                         <a class="nie" onclick="handleStatusClick('nie_odbiera')">📞 Nie odbiera</a>
-                         <a class="odrz" onclick="handleStatusClick('odrzucony')">❌ Odrzucony</a>
-                     </div>
-                     ${!editable ? `<p class="muted" style="text-align:center; color:#f44336; font-weight:bold; margin-top:20px;">⛔ Edycja zablokowana (porzucony lub > 20 min)</p>` : ''}
-                 </div>
-             `;
-         }
-         
-         function renderListLayout() {
-             document.body.classList.add("dashboard-mode");
-             app.innerHTML = `
-                 <div class="header">
-                     <h2>📊 Dashboard leadów</h2>
-                 </div>
-                 <div class="content">
-                     <div class="dashboard-toolbar">
-                         <div class="multiselect">
-                             <div class="multiselect-btn" onclick="toggleDropdown('statusList')">
-                                 <span id="statusBtnText">📌 Statusy</span><span>▼</span>
-                             </div>
-                             <div class="multiselect-content" id="statusList">
-                                 <label><input type="checkbox" value="nowy"> Nowy</label>
-                                 <label><input type="checkbox" value="obsluzony"> Obsłużony</label>
-                                 <label><input type="checkbox" value="nie_odbiera"> Nie odbiera</label>
-                                 <label><input type="checkbox" value="odrzucony"> Odrzucony</label>
-                                 <label><input type="checkbox" value="porzucony"> Porzucony</label>
-                             </div>
-                         </div>
-                     
-                         <div class="multiselect">
-                             <div class="multiselect-btn" onclick="toggleDropdown('campList')">
-                                 <span id="campBtnText">📢 Kampanie</span><span>▼</span>
-                             </div>
-                             <div class="multiselect-content" id="campList">
-                                 <div style="padding:10px; color:#888;">Ładowanie...</div>
-                             </div>
-                         </div>
-                         
-                         <div class="date-group">
-                             <label for="dateFrom">Od:</label>
-                             <input type="date" id="dateFrom" title="Data od">
-                         </div>
-                         <div class="date-group">
-                             <label for="dateTo">Do:</label>
-                             <input type="date" id="dateTo" title="Data do">
-                         </div>
-                         
-                         <button onclick="loadDashboard(true)" class="btn-tool btn-apply">🔍 Zastosuj filtry</button>
-                         <button onclick="toggleSort()" id="sortBtn" class="btn-tool">📅 Najnowsze</button>
-                         <button onclick="clearFilters()" class="btn-tool">🧹 Wyczyść</button>
-                     </div>
-         
-                     <div class="table-scroll">
-                         <table class="dashboard-table">
-                             <thead>
-                                 <tr>
-                                     <th>ID</th><th>Data</th><th>Pacjent</th><th>Status</th><th>Ostatnia aktualizacja</th><th>Czas kontaktu</th><th>Kampania</th>
-                                     <th style="text-align:center;">Akcja</th>
-                                 </tr>
-                             </thead>
-                             <tbody id="tableBody"></tbody>
-                         </table>
-                     </div>
-                     
-                     <div class="card-view" id="cardView"></div>
-                     
-                     <div style="text-align:center; padding:20px;">
-                         <button id="loadMoreBtn" onclick="loadDashboard(false)" class="btn-tool" style="display:none; margin: 0 auto;">Załaduj więcej</button>
-                     </div>
-                 </div>
-             `;
-             fetchCampaigns();
-         }
-         
-         function toggleDropdown(id) {
-             const el = document.getElementById(id);
-             const isShow = el.classList.contains("show");
-             document.querySelectorAll('.multiselect-content').forEach(c => c.classList.remove('show'));
-             if(!isShow) el.classList.add("show");
-         }
-         
-         async function fetchCampaigns() {
-             try {
-                 const d = await apiCall({ action: 'campaigns' });
-                 const container = document.getElementById("campList");
-                 if(d.success && d.campaigns) {
-                     container.innerHTML = d.campaigns.map(c => 
-                         `<label><input type="checkbox" value="${c}"> ${c}</label>`
-                     ).join("");
-                 } else {
-                     container.innerHTML = '<div style="padding:10px; color:#888;">Brak kampanii</div>';
-                 }
-             } catch(err) {
-                 console.error("Błąd pobierania kampanii:", err);
-                 document.getElementById("campList").innerHTML = '<div style="padding:10px; color:#f44;">Błąd</div>';
-             }
-         }
-         
-         async function loadDashboard(reset = true) {
-             if (reset) {
-                 dashboardOffset = 0;
-                 allLeadsMap.clear();
-                 document.getElementById("tableBody").innerHTML = "";
-                 document.getElementById("cardView").innerHTML = "";
-             }
-             showLoader("Pobieranie...");
-         
-             const df = document.getElementById("dateFrom").value;
-             const dt = document.getElementById("dateTo").value;
-             const st = Array.from(document.querySelectorAll('#statusList input:checked')).map(cb => cb.value).join(",");
-             const cp = Array.from(document.querySelectorAll('#campList input:checked')).map(cb => cb.value).join(",");
-         
-             try {
-                 const d = await apiCall({
-                     action: 'list',
-                     limit: 50,
-                     offset: dashboardOffset,
-                     sort: dashboardSort,
-                     dateFrom: df,
-                     dateTo: dt,
-                     status: st,
-                     campaigns: cp
-                 });
-                 
-                 hideLoader();
-                 if (!d.success) {
-                     alert("Błąd: " + (d.error || "Nieznany błąd"));
-                     return;
-                 }
-                 currentTotal = d.total; 
-                 d.rows.forEach(r => allLeadsMap.set(String(r.id), r));
-                 dashboardOffset += d.rows.length;
-                 displayTable();
-                 displayCards();
-                 document.getElementById("loadMoreBtn").style.display = (allLeadsMap.size < currentTotal) ? "block" : "none";
-             } catch(err) {
-                 hideLoader();
-                 alert("Błąd połączenia: " + err.message);
-             }
-         }
-         
-         function displayTable() {
-             let list = Array.from(allLeadsMap.values());
-         
-             list.sort((a, b) => {
-                 const idA = parseInt(a.id);
-                 const idB = parseInt(b.id);
-                 return dashboardSort === "desc" ? idB - idA : idA - idB;
-             });
-         
-             const html = list.map(r => `
-                 <tr>
-                     <td>${r.id}</td>
-                     <td>${formatDate(r.created)}</td>
-                     <td>
-                         <strong>${r.name || "-"}</strong><br>
-                         <small class="muted">📞 ${formatPhone(r.phone)}</small><br>
-                         <small class="muted">✉️ ${r.email || "-"}</small>
-                     </td>
-                     <td><span class="status-badge ${statusClass(r.status)}">${r.status}</span></td>
-                     <td>${formatDate(r.updated)}</td>
-                     <td>${calculateWaitTimes(r.created, r.updated, r.waitUntil, r.status)}</td>
-                     <td>${r.campaign || "-"}</td>
-                     <td>
-                         <button class="btn-tool" onclick="openPreview('${r.id}')" style="margin: 0 auto;">Szczegóły</button>
-                     </td>
-                 </tr>
-             `).join("");
-             
-             document.getElementById("tableBody").innerHTML = html;
-         }
-         
-         function displayCards() {
-             let list = Array.from(allLeadsMap.values());
-         
-             list.sort((a, b) => {
-                 const idA = parseInt(a.id);
-                 const idB = parseInt(b.id);
-                 return dashboardSort === "desc" ? idB - idA : idA - idB;
-             });
-         
-             const html = list.map(r => `
-                 <div class="lead-card">
-                     <div class="lead-card-header">
-                         <div style="flex: 1;">
-                             <div style="font-weight: bold; font-size: 16px; margin-bottom: 4px;">
-                                 🆔 ID: ${r.id}
-                             </div>
-                             <div class="muted">📅 ${formatDate(r.created)}</div>
-                         </div>
-                         <span class="status-badge ${statusClass(r.status)}">${r.status}</span>
-                     </div>
-                     <div class="lead-card-info">
-                         <p><strong>🧾 ${r.name || "-"}</strong></p>
-                         <p>📞 ${formatPhone(r.phone)}</p>
-                         <p>✉️ ${r.email || "-"}</p>
-                         <p>📢 ${r.campaign || "-"}</p>
-                         <p>⏱️ ${calculateWaitTimes(r.created, r.updated, r.waitUntil, r.status)}</p>
-                     </div>
-                     <div class="lead-card-actions">
-                         <button class="btn-tool" onclick="openPreview('${r.id}')" style="width: 100%;">Szczegóły</button>
-                     </div>
-                 </div>
-             `).join("");
-             
-             document.getElementById("cardView").innerHTML = html;
-         }
-         
-         function toggleSort() {
-             dashboardSort = (dashboardSort === "desc") ? "asc" : "desc";
-             const btn = document.getElementById("sortBtn");
-             if (btn) {
-                 btn.innerText = (dashboardSort === "desc") ? "📅 Najnowsze" : "📅 Najstarsze";
-             }
-             loadDashboard(true);
-         }
-         
-         function clearFilters() {
-             document.getElementById("dateFrom").value = "";
-             document.getElementById("dateTo").value = "";
-             document.querySelectorAll('.multiselect-content input').forEach(cb => cb.checked = false);
-             loadDashboard(true);
-         }
-         
-         function openPreview(id) {
-             const r = allLeadsMap.get(String(id));
-             if(!r) return;
-         
-             const campaignTxt = r.campaign ? r.campaign : "-";
-             const updatedTxt = (r.updated && r.updated !== "-" && r.updated !== "undefined") ? formatDate(r.updated) : "-";
-         
-             document.getElementById("previewContent").innerHTML = `
-                 <div class="box">
-                     <div class="status-row">
-                         <div>
-                             <p>🆔 <strong>ID:</strong> ${r.id}</p>
-                             <p>📅 <strong>Zgłoszenie:</strong> ${formatDate(r.created)}</p>
-                             <p>📢 <strong>Kampania:</strong> ${campaignTxt}</p>
-                         </div>
-                         <div style="text-align:right">
-                             <div style="margin-bottom: 5px;">
-                                 <span class="status-badge ${statusClass(r.status)}">${r.status}</span>
-                             </div>
-                             <div class="muted">
-                                 Aktualizacja:<br>${updatedTxt}
-                             </div>
-                         </div>
-                     </div>
-                 </div>
-                 <div class="box data">
-                     <p><strong>🧾 Pacjent:</strong> ${r.name || "-"}</p>
-                     <p><strong>📞 Telefon:</strong> ${formatPhone(r.phone)}</p>
-                     <p><strong>✉️ Email:</strong> ${r.email || "-"}</p>
-                     <p><strong>⏱️ Czas kontaktu:</strong> ${calculateWaitTimes(r.created, r.updated, r.waitUntil, r.status)}</p>
-                     <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
-                     <p><strong>🦷 Info 1:</strong> ${r.info1 || "-"}</p>
-                     <p><strong>📝 Info 2:</strong> ${r.info2 || "-"}</p>
-                 </div>`;
-             
-             document.getElementById("previewModal").classList.remove("hidden");
-         }
-         
-         function closePreview(e) { 
-             if (e && e.target !== e.currentTarget) return;
-             document.getElementById("previewModal").classList.add("hidden"); 
-         }
-         
-         function handleStatusClick(newS) {
-             if (currentLeadStatus === "nowy") {
-                 updateStatus(newS);
-             } else {
-                 const msg = `Zmienić status z <b>${currentLeadStatus.toUpperCase()}</b> na <b>${newS.toUpperCase()}</b>?`;
-                 document.getElementById("confirmMsg").innerHTML = msg;
-                 document.getElementById("confirmModal").classList.remove("hidden");
-                 document.getElementById("confirmYes").onclick = () => {
-                     document.getElementById("confirmModal").classList.add("hidden");
-                     updateStatus(newS);
-                 };
-                 document.getElementById("confirmNo").onclick = () => {
-                     document.getElementById("confirmModal").classList.add("hidden");
-                 };
-             }
-         }
-         
-         async function updateStatus(s) {
-             showLoader("Zapisywanie...");
-         
-             try {
-                 const d = await apiCall({ 
-                     action: 'update', 
-                     row: row, 
-                     token: token, 
-                     status: s 
-                 });
-                 
-                 if (d.success) {
-                     app.innerHTML = `<div class="content" style="text-align:center; padding:50px;"><h2>✅ Zapisano</h2><button class="btn-tool" onclick="location.reload()" style="margin:20px auto;">Wróć</button></div>`;
-                 } else {
-                     alert("Błąd: " + d.error);
-                     location.reload();
-                 }
-             } catch (e) { 
-                 alert("Błąd połączenia: " + e.message); 
-             } 
-             finally { 
-                 hideLoader(); 
-             }
-         }
-         
-         function statusClass(s) {
-             s = String(s || "").toLowerCase();
-             if (s.includes("porzu")) return "s-porzucony";
-             if (s.includes("odrz")) return "s-odrzucony";
-             if (s.includes("nie") && s.includes("odb")) return "s-nie_odbiera";
-             if (s.includes("obs")) return "s-obsluzony";
-             return "s-nowy";
-         }
-         
-         function formatPhone(p) {
-             if (!p) return "-";
-             let d = p.toString().replace(/\D/g, "");
-             if (d.startsWith("48") && d.length === 11) d = d.slice(2);
-             return d.length === 9 ? `+48 ${d.slice(0,3)} ${d.slice(3,6)} ${d.slice(6)}` : p;
-         }
-         
-         function showLoader(t) { 
-             document.getElementById("loader").querySelector(".loader-text").textContent = t; 
-             document.getElementById("loader").classList.remove("hidden"); 
-         }
-         
-         function hideLoader() { 
-             document.getElementById("loader").classList.add("hidden"); 
-         }
-         
-         function showError(m) { 
-             app.innerHTML = `<div class="content"><h3>⛔ Błąd</h3><p>${m}</p></div>`; 
-         }
-         
-         window.onload = () => {
-             if (row && token) {
-                 loadSingle();
-             } else {
-                 renderListLayout();
-                 loadDashboard(true);
-             }
-         };
-         
-         function formatDate(dateStr) { 
-             if (!dateStr || dateStr === "-") return "-";
-             
-             try {
-                 const parts = dateStr.split(' ');
-                 const datePart = parts[0];
-                 const timePart = parts[1] ? parts[1].substring(0, 5) : "";
-                 
-                 const d = datePart.split('-');
-                 if (d.length !== 3) return dateStr;
-                 
-                 return `${d[2]}.${d[1]}.${d[0]} ${timePart}`;
-             } catch (e) {
-                 return dateStr;
-             }
-         }
-         
-         function calculateWaitTimes(createdStr, updatedStr, waitUntilStr, status) {
-             if (!createdStr || createdStr === "-" || createdStr === "undefined") return "-";
-         
-             const safeParse = (str) => {
-                 if (!str || str === "-" || str === "undefined") return null;
-                 const parts = str.split(" ");
-                 const dateParts = parts[0].split("-");
-                 const timeParts = parts[1] ? parts[1].split(":") : [0, 0];
-                 return new Date(dateParts[0], dateParts[1] - 1, dateParts[2], timeParts[0], timeParts[1]);
-             };
-         
-             const created = safeParse(createdStr);
-             const updated = safeParse(updatedStr);
-             const waitUntil = safeParse(waitUntilStr);
-             const now = new Date();
-             
-             const s = String(status).toLowerCase().trim();
-             const isFinished = ['obsluzony', 'obsłużony', 'nie_odbiera', 'odrzucony', 'porzucony', 'nie odbiera'].some(fs => s.includes(fs));
-             const end = (isFinished && updated) ? updated : now;
-         
-             const rawDiffMins = Math.floor((end - created) / 60000);
-             
-             let workStart = created;
-             if (waitUntil && waitUntil > created) {
-                 workStart = waitUntil;
-             }
-             
-             let workDiffMins = Math.floor((end - workStart) / 60000);
-             if (workDiffMins < 0) workDiffMins = 0;
-         
-             let color = "#2e7d32";
-             if (workDiffMins > 1440) {
-                 color = "#880e4f";
-             } else if (workDiffMins > 120) {
-                 color = "#d32f2f";
-             } else if (workDiffMins > 30) {
-                 color = "#ef6c00";
-             }
-         
-             const format = (mins) => {
-                 if (mins > 2880) return Math.floor(mins / 1440) + " dni";
-                 const h = Math.floor(mins / 60);
-                 const m = mins % 60;
-                 return h > 0 ? `${h}h ${m}m` : `${m}m`;
-             };
-         
-             const workTimeDisplay = format(workDiffMins);
-             const rawTimeDisplay = format(rawDiffMins);
-         
-             return `
-                 <div style="font-weight: bold; color: ${color};">${workTimeDisplay}</div>
-                 <div style="font-size: 0.85em; color: #666;">(łącznie: ${rawTimeDisplay})</div>
-             `;
-         }
-         
-         function goToDashboard() {
-             const url = new URL(window.location.href);
-             url.searchParams.delete("row");
-             url.searchParams.delete("token");
-             window.location.href = url.toString();
-         }
-         
-         document.addEventListener("click", (e) => {
-             if (!e.target.closest('.multiselect')) {
-                 document.querySelectorAll('.multiselect-content')
-                 .forEach(el => el.classList.remove('show'));
-             }
-         });
-      </script>
-   </body>
+      let allLeadsMap = new Map();
+      let currentTotal = 0;
+      let dashboardOffset = 0;
+      let dashboardSort = "desc";
+      let currentLeadStatus = "nowy";
+      
+      // ====== API ======
+      async function apiCall(body) {
+        if (!key) throw new Error("Brak klucza dostępu");
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify({ key, ...body })
+        });
+        return await res.json();
+      }
+      
+      // ====== SINGLE LEAD ======
+      async function loadSingle() {
+          document.body.classList.remove("dashboard-mode");
+          showLoader("Pobieranie...");
+          
+          try {
+              const d = await apiCall({ action: 'single', row, token });
+              hideLoader();
+              if(d.success) {
+                  currentLeadStatus = String(d.lead.statusKey || "nowy");
+                  renderSingle(d.lead);
+              } else {
+                  showError("Błąd: " + (d.error || "Brak dostępu"));
+              }
+          } catch(err) {
+              hideLoader();
+              showError("Błąd połączenia: " + err.message);
+          }
+      }
+      
+      function renderSingle(lead) {
+          app.innerHTML = `
+              <div class="header">
+                  <button class="btn-back" onclick="goToDashboard()"><span>Dashboard</span></button>
+                  <h2>Status kontaktu</h2>
+              </div>
+              <div class="content">
+                  <div class="box">
+                      <div class="status-row">
+                          <div>
+                              <p>🆔 <strong>ID:</strong> ${lead.id || "-"}</p>
+                              <p>📅 <strong>Zgłoszenie:</strong> ${formatDate(lead.date)}</p>
+                              <p>📢 <strong>Kampania:</strong> ${lead.campaign || "-"}</p>
+                          </div>
+                          <div style="text-align:right">
+                              <span class="status-badge ${statusClass(lead.statusKey)}">${lead.status}</span>
+                              <div class="muted" style="margin-top:5px">Aktualizacja:<br>${formatDate(lead.lastUpdate)}</div>
+                          </div>
+                      </div>
+                  </div>
+                  <div class="box data">
+                      <p><strong>🧾 Pacjent:</strong> ${lead.name || "-"}</p>
+                      <p><strong>📞 Telefon:</strong> ${formatPhone(lead.phone)}</p>
+                      <p><strong>✉️ Email:</strong> ${lead.email || "-"}</p>
+                      <p><strong>⏱️ Czas kontaktu:</strong> ${calculateWaitTimes(lead.date, lead.lastUpdate, lead.waitUntil, lead.statusKey)}</p>
+                      <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
+                      <p><strong>🦷 Cel:</strong> ${lead.info1 || "-"}</p>
+                      <p><strong>📝 Info:</strong> ${lead.info2 || "-"}</p>
+                  </div>
+                  <div class="buttons ${lead.canEdit ? "" : "disabled"}">
+                      <a class="obs" onclick="handleStatusClick('obsluzony')">✔ Obsłużony</a>
+                      <a class="nie" onclick="handleStatusClick('nie_odbiera')">📞 Nie odbiera</a>
+                      <a class="odrz" onclick="handleStatusClick('odrzucony')">❌ Odrzucony</a>
+                  </div>
+                  ${!lead.canEdit ? '<p class="muted" style="text-align:center; color:#f44336; font-weight:bold; margin-top:20px;">⛔ Edycja zablokowana</p>' : ''}
+              </div>
+          `;
+      }
+      
+      // ====== DASHBOARD ======
+      function renderListLayout() {
+          document.body.classList.add("dashboard-mode");
+          app.innerHTML = `
+              <div class="header">
+                  <h2>📊 Dashboard leadów</h2>
+              </div>
+              <div class="content">
+                  <div class="dashboard-toolbar">
+                      <div class="multiselect">
+                          <div class="multiselect-btn" onclick="toggleDropdown('statusList')">
+                              <span>📌 Statusy</span><span>▼</span>
+                          </div>
+                          <div class="multiselect-content" id="statusList">
+                              <label><input type="checkbox" value="nowy"> Nowy</label>
+                              <label><input type="checkbox" value="obsluzony"> Obsłużony</label>
+                              <label><input type="checkbox" value="nie_odbiera"> Nie odbiera</label>
+                              <label><input type="checkbox" value="odrzucony"> Odrzucony</label>
+                              <label><input type="checkbox" value="porzucony"> Porzucony</label>
+                          </div>
+                      </div>
+                  
+                      <div class="multiselect">
+                          <div class="multiselect-btn" onclick="toggleDropdown('campList')">
+                              <span>📢 Kampanie</span><span>▼</span>
+                          </div>
+                          <div class="multiselect-content" id="campList">
+                              <div style="padding:10px; color:#888;">Ładowanie...</div>
+                          </div>
+                      </div>
+                      
+                      <div class="date-group">
+                          <label for="dateFrom">Od:</label>
+                          <input type="date" id="dateFrom">
+                      </div>
+                      <div class="date-group">
+                          <label for="dateTo">Do:</label>
+                          <input type="date" id="dateTo">
+                      </div>
+                      
+                      <button onclick="loadDashboard(true)" class="btn-tool btn-apply">🔍 Zastosuj</button>
+                      <button onclick="toggleSort()" id="sortBtn" class="btn-tool">📅 Najnowsze</button>
+                      <button onclick="clearFilters()" class="btn-tool">🧹 Wyczyść</button>
+                  </div>
+      
+                  <div class="table-scroll">
+                      <table class="dashboard-table">
+                          <thead>
+                              <tr>
+                                  <th>ID</th><th>Data</th><th>Pacjent</th><th>Status</th><th>Aktualizacja</th><th>Czas</th><th>Kampania</th><th>Akcja</th>
+                              </tr>
+                          </thead>
+                          <tbody id="tableBody"></tbody>
+                      </table>
+                  </div>
+                  
+                  <div class="card-view" id="cardView"></div>
+                  
+                  <div style="text-align:center; padding:20px;">
+                      <button id="loadMoreBtn" onclick="loadDashboard(false)" class="btn-tool" style="display:none;">Załaduj więcej</button>
+                  </div>
+              </div>
+          `;
+          fetchCampaigns();
+      }
+      
+      function toggleDropdown(id) {
+          const el = document.getElementById(id);
+          const isShow = el.classList.contains("show");
+          document.querySelectorAll('.multiselect-content').forEach(c => c.classList.remove('show'));
+          if(!isShow) el.classList.add("show");
+      }
+      
+      async function fetchCampaigns() {
+          try {
+              const d = await apiCall({ action: 'campaigns' });
+              const c = document.getElementById("campList");
+              c.innerHTML = (d.success && d.campaigns) 
+                  ? d.campaigns.map(name => `<label><input type="checkbox" value="${name}"> ${name}</label>`).join("")
+                  : '<div style="padding:10px; color:#888;">Brak kampanii</div>';
+          } catch(err) {
+              document.getElementById("campList").innerHTML = '<div style="padding:10px; color:#f44;">Błąd</div>';
+          }
+      }
+      
+      async function loadDashboard(reset = true) {
+          if (reset) {
+              dashboardOffset = 0;
+              allLeadsMap.clear();
+              document.getElementById("tableBody").innerHTML = "";
+              document.getElementById("cardView").innerHTML = "";
+          }
+          showLoader("Pobieranie...");
+      
+          try {
+              const d = await apiCall({
+                  action: 'list',
+                  limit: 50,
+                  offset: dashboardOffset,
+                  sort: dashboardSort,
+                  dateFrom: document.getElementById("dateFrom").value,
+                  dateTo: document.getElementById("dateTo").value,
+                  status: Array.from(document.querySelectorAll('#statusList input:checked')).map(cb => cb.value).join(","),
+                  campaigns: Array.from(document.querySelectorAll('#campList input:checked')).map(cb => cb.value).join(",")
+              });
+              
+              hideLoader();
+              if (!d.success) return alert("Błąd: " + (d.error || "Nieznany"));
+              
+              currentTotal = d.total; 
+              d.rows.forEach(r => allLeadsMap.set(String(r.id), r));
+              dashboardOffset += d.rows.length;
+              displayData();
+              document.getElementById("loadMoreBtn").style.display = (allLeadsMap.size < currentTotal) ? "block" : "none";
+          } catch(err) {
+              hideLoader();
+              alert("Błąd: " + err.message);
+          }
+      }
+      
+      function displayData() {
+          let list = Array.from(allLeadsMap.values()).sort((a, b) => {
+              const diff = parseInt(b.id) - parseInt(a.id);
+              return dashboardSort === "desc" ? diff : -diff;
+          });
+      
+          // Table
+          document.getElementById("tableBody").innerHTML = list.map(r => `
+              <tr>
+                  <td>${r.id}</td>
+                  <td>${formatDate(r.created)}</td>
+                  <td>
+                      <strong>${r.name || "-"}</strong><br>
+                      <small class="muted">📞 ${formatPhone(r.phone)}</small><br>
+                      <small class="muted">✉️ ${r.email || "-"}</small>
+                  </td>
+                  <td><span class="status-badge ${statusClass(r.status)}">${r.status}</span></td>
+                  <td>${formatDate(r.updated)}</td>
+                  <td>${calculateWaitTimes(r.created, r.updated, r.waitUntil, r.status)}</td>
+                  <td>${r.campaign || "-"}</td>
+                  <td><button class="btn-tool" onclick="openPreview('${r.id}')">Szczegóły</button></td>
+              </tr>
+          `).join("");
+          
+          // Cards
+          document.getElementById("cardView").innerHTML = list.map(r => `
+              <div class="lead-card">
+                  <div class="lead-card-header">
+                      <div style="flex: 1;">
+                          <div style="font-weight: bold; font-size: 16px; margin-bottom: 4px;">🆔 ID: ${r.id}</div>
+                          <div class="muted">📅 ${formatDate(r.created)}</div>
+                      </div>
+                      <span class="status-badge ${statusClass(r.status)}">${r.status}</span>
+                  </div>
+                  <div class="lead-card-info">
+                      <p><strong>🧾 ${r.name || "-"}</strong></p>
+                      <p>📞 ${formatPhone(r.phone)}</p>
+                      <p>✉️ ${r.email || "-"}</p>
+                      <p>📢 ${r.campaign || "-"}</p>
+                      <p>⏱️ ${calculateWaitTimes(r.created, r.updated, r.waitUntil, r.status)}</p>
+                  </div>
+                  <div class="lead-card-actions">
+                      <button class="btn-tool" onclick="openPreview('${r.id}')" style="width: 100%;">Szczegóły</button>
+                  </div>
+              </div>
+          `).join("");
+      }
+      
+      function toggleSort() {
+          dashboardSort = dashboardSort === "desc" ? "asc" : "desc";
+          document.getElementById("sortBtn").innerText = dashboardSort === "desc" ? "📅 Najnowsze" : "📅 Najstarsze";
+          loadDashboard(true);
+      }
+      
+      function clearFilters() {
+          document.getElementById("dateFrom").value = "";
+          document.getElementById("dateTo").value = "";
+          document.querySelectorAll('.multiselect-content input').forEach(cb => cb.checked = false);
+          loadDashboard(true);
+      }
+      
+      function openPreview(id) {
+          const r = allLeadsMap.get(String(id));
+          if(!r) return;
+      
+          document.getElementById("previewContent").innerHTML = `
+              <div class="box">
+                  <div class="status-row">
+                      <div>
+                          <p>🆔 <strong>ID:</strong> ${r.id}</p>
+                          <p>📅 <strong>Zgłoszenie:</strong> ${formatDate(r.created)}</p>
+                          <p>📢 <strong>Kampania:</strong> ${r.campaign || "-"}</p>
+                      </div>
+                      <div style="text-align:right">
+                          <span class="status-badge ${statusClass(r.status)}">${r.status}</span>
+                          <div class="muted" style="margin-top:5px">Aktualizacja:<br>${formatDate(r.updated)}</div>
+                      </div>
+                  </div>
+              </div>
+              <div class="box data">
+                  <p><strong>🧾 Pacjent:</strong> ${r.name || "-"}</p>
+                  <p><strong>📞 Telefon:</strong> ${formatPhone(r.phone)}</p>
+                  <p><strong>✉️ Email:</strong> ${r.email || "-"}</p>
+                  <p><strong>⏱️ Czas:</strong> ${calculateWaitTimes(r.created, r.updated, r.waitUntil, r.status)}</p>
+                  <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
+                  <p><strong>🦷 Info 1:</strong> ${r.info1 || "-"}</p>
+                  <p><strong>📝 Info 2:</strong> ${r.info2 || "-"}</p>
+              </div>`;
+          
+          document.getElementById("previewModal").classList.remove("hidden");
+      }
+      
+      function closePreview(e) { 
+          if (e && e.target !== e.currentTarget) return;
+          document.getElementById("previewModal").classList.add("hidden"); 
+      }
+      
+      // ====== STATUS UPDATE ======
+      function handleStatusClick(newS) {
+          if (currentLeadStatus === "nowy") {
+              updateStatus(newS);
+          } else {
+              document.getElementById("confirmMsg").innerHTML = `Zmienić status z <b>${currentLeadStatus.toUpperCase()}</b> na <b>${newS.toUpperCase()}</b>?`;
+              document.getElementById("confirmModal").classList.remove("hidden");
+              document.getElementById("confirmYes").onclick = () => {
+                  document.getElementById("confirmModal").classList.add("hidden");
+                  updateStatus(newS);
+              };
+              document.getElementById("confirmNo").onclick = () => {
+                  document.getElementById("confirmModal").classList.add("hidden");
+              };
+          }
+      }
+      
+      async function updateStatus(s) {
+          showLoader("Zapisywanie...");
+          try {
+              const d = await apiCall({ action: 'update', row, token, status: s });
+              if (d.success) {
+                  app.innerHTML = '<div class="content" style="text-align:center; padding:50px;"><h2>✅ Zapisano</h2><button class="btn-tool" onclick="location.reload()" style="margin:20px auto;">Wróć</button></div>';
+              } else {
+                  alert("Błąd: " + d.error);
+                  location.reload();
+              }
+          } catch (e) { 
+              alert("Błąd: " + e.message); 
+          } finally { 
+              hideLoader(); 
+          }
+      }
+      
+      // ====== HELPERS ======
+      function statusClass(s) {
+          s = String(s || "").toLowerCase();
+          if (s.includes("porzu")) return "s-porzucony";
+          if (s.includes("odrz")) return "s-odrzucony";
+          if (s.includes("nie") && s.includes("odb")) return "s-nie_odbiera";
+          if (s.includes("obs")) return "s-obsluzony";
+          return "s-nowy";
+      }
+      
+      function formatPhone(p) {
+          if (!p) return "-";
+          let d = p.toString().replace(/\D/g, "");
+          if (d.startsWith("48") && d.length === 11) d = d.slice(2);
+          return d.length === 9 ? `+48 ${d.slice(0,3)} ${d.slice(3,6)} ${d.slice(6)}` : p;
+      }
+      
+      function formatDate(dateStr) { 
+          if (!dateStr || dateStr === "-") return "-";
+          try {
+              const [datePart, timePart] = dateStr.split(' ');
+              const [y, m, d] = datePart.split('-');
+              return `${d}.${m}.${y} ${timePart ? timePart.substring(0, 5) : ''}`;
+          } catch { return dateStr; }
+      }
+      
+      function calculateWaitTimes(createdStr, updatedStr, waitUntilStr, status) {
+          if (!createdStr || createdStr === "-") return "-";
+      
+          const parse = (str) => {
+              if (!str || str === "-") return null;
+              const [date, time] = str.split(" ");
+              const [y, mo, d] = date.split("-");
+              const [h, mi] = time ? time.split(":") : [0, 0];
+              return new Date(y, mo - 1, d, h, mi);
+          };
+      
+          const created = parse(createdStr);
+          const updated = parse(updatedStr);
+          const waitUntil = parse(waitUntilStr);
+          const now = new Date();
+          
+          const s = String(status).toLowerCase();
+          const isFinished = ['obs', 'nie_odb', 'odrz', 'porzu'].some(x => s.includes(x));
+          const end = (isFinished && updated) ? updated : now;
+      
+          const rawMins = Math.floor((end - created) / 60000);
+          let workMins = Math.floor((end - (waitUntil > created ? waitUntil : created)) / 60000);
+          if (workMins < 0) workMins = 0;
+      
+          let color = "#2e7d32";
+          if (workMins > 1440) color = "#880e4f";
+          else if (workMins > 120) color = "#d32f2f";
+          else if (workMins > 30) color = "#ef6c00";
+      
+          const fmt = (m) => {
+              if (m > 2880) return Math.floor(m / 1440) + " dni";
+              const h = Math.floor(m / 60);
+              return h > 0 ? `${h}h ${m % 60}m` : `${m}m`;
+          };
+      
+          return `<div style="font-weight: bold; color: ${color};">${fmt(workMins)}</div><div style="font-size: 0.85em; color: #666;">(łącznie: ${fmt(rawMins)})</div>`;
+      }
+      
+      function goToDashboard() {
+          const url = new URL(window.location.href);
+          url.searchParams.delete("row");
+          url.searchParams.delete("token");
+          window.location.href = url.toString();
+      }
+      
+      function showLoader(t) { 
+          document.querySelector("#loader .loader-text").textContent = t; 
+          document.getElementById("loader").classList.remove("hidden"); 
+      }
+      
+      function hideLoader() { 
+          document.getElementById("loader").classList.add("hidden"); 
+      }
+      
+      function showError(m) { 
+          app.innerHTML = `<div class="content"><h3>⛔ Błąd</h3><p>${m}</p></div>`; 
+      }
+      
+      // ====== INIT ======
+      window.onload = () => {
+          (row && token) ? loadSingle() : (renderListLayout(), loadDashboard(true));
+      };
+      
+      document.addEventListener("click", (e) => {
+          if (!e.target.closest('.multiselect')) {
+              document.querySelectorAll('.multiselect-content').forEach(el => el.classList.remove('show'));
+          }
+      });
+   </script>
+</body>
 </html>
