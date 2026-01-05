@@ -110,12 +110,18 @@
         
         // Helper do wysyłania POST requests
         async function apiCall(body) {
-            const response = await fetch(API_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ key, ...body })
-            });
-            return await response.json();
+          const response = await fetch(API_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "text/plain"
+            },
+            body: JSON.stringify({
+              key: key,
+              ...body
+            })
+          });
+        
+          return await response.json();
         }
         
         async function loadSingle() {
