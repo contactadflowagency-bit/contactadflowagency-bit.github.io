@@ -400,13 +400,13 @@
       </div>
    </div>
    
-   <script>
+         <script>
       const API_URL = "https://script.google.com/macros/s/AKfycbzKRhMb-C2ZXgMuDdn9tPNpKez9WpxtzPYsi1r_hU_uF8ZZuJBNJkcEJm5Epg43elll/exec";
       
       const params = new URLSearchParams(window.location.search);
       const row = params.get("row");
       const token = params.get("token");
-      const key = params.get("key");
+      const key = params.get("key"); // Teraz wymaga 32-znakowego klucza!
       
       let allLeadsMap = new Map();
       let currentTotal = 0;
@@ -417,12 +417,25 @@
       // ====== API ======
       async function apiCall(body) {
         if (!key) throw new Error("Brak klucza dostępu");
-        const res = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify({ key, ...body })
-        });
-        return await res.json();
+        
+        try {
+          const res = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify({ key, ...body })
+          });
+          const data = await res.json();
+          
+          // Obsługa rate limiting
+          if (!data.success && data.error && data.error.includes('Za dużo zapytań')) {
+            showError('⏱️ Za dużo zapytań. Odczekaj chwilę i spróbuj ponownie.');
+            return null;
+          }
+          
+          return data;
+        } catch (err) {
+          throw new Error("Błąd połączenia: " + err.message);
+        }
       }
       
       // ====== SINGLE LEAD ======
@@ -433,6 +446,7 @@
           try {
               const d = await apiCall({ action: 'single', row, token });
               hideLoader();
+              if (!d) return; // Rate limited
               if(d.success) {
                   currentLeadStatus = String(d.lead.statusKey || "nowy");
                   renderSingle(d.lead);
@@ -560,6 +574,7 @@
       async function fetchCampaigns() {
           try {
               const d = await apiCall({ action: 'campaigns' });
+              if (!d) return; // Rate limited
               const c = document.getElementById("campList");
               c.innerHTML = (d.success && d.campaigns) 
                   ? d.campaigns.map(name => `<label><input type="checkbox" value="${name}"> ${name}</label>`).join("")
@@ -591,6 +606,7 @@
               });
               
               hideLoader();
+              if (!d) return; // Rate limited
               if (!d.success) return alert("Błąd: " + (d.error || "Nieznany"));
               
               currentTotal = d.total; 
@@ -722,6 +738,8 @@
           showLoader("Zapisywanie...");
           try {
               const d = await apiCall({ action: 'update', row, token, status: s });
+              hideLoader();
+              if (!d) return; // Rate limited
               if (d.success) {
                   app.innerHTML = '<div class="content" style="text-align:center; padding:50px;"><h2>✅ Zapisano</h2><button class="btn-tool" onclick="location.reload()" style="margin:20px auto;">Wróć</button></div>';
               } else {
@@ -729,9 +747,8 @@
                   location.reload();
               }
           } catch (e) { 
+              hideLoader();
               alert("Błąd: " + e.message); 
-          } finally { 
-              hideLoader(); 
           }
       }
       
