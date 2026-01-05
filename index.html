@@ -110,15 +110,14 @@
         
         // Helper do wysyłania POST requests
         async function apiCall(body) {
+          if (!key) {
+            throw new Error("Brak klucza dostępu");
+          }
+        
           const response = await fetch(API_URL, {
             method: "POST",
-            headers: {
-              "Content-Type": "text/plain"
-            },
-            body: JSON.stringify({
-              key: key,
-              ...body
-            })
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify({ key, ...body })
           });
         
           return await response.json();
@@ -243,10 +242,10 @@
             `;
             
             document.addEventListener("click", (e) => {
-                if (!e.target.closest('.multiselect')) {
-                    document.querySelectorAll('.multiselect-content')
-                    .forEach(el => el.classList.remove('show'));
-                }
+              if (!e.target.closest('.multiselect')) {
+                document.querySelectorAll('.multiselect-content')
+                  .forEach(el => el.classList.remove('show'));
+              }
             });
             fetchCampaigns();
         }
@@ -477,11 +476,6 @@
         }
 
         window.onload = () => {
-            if (!key) {
-                showError("Brak klucza dostępu (key) w linku.");
-                return;
-            }
-        
             if (row && token) {
                 loadSingle();
             } else {
