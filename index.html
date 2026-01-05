@@ -129,6 +129,23 @@
             flex: 1;
             min-width: 120px;
          }
+         .date-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 150px;
+         }
+         .date-group label {
+            font-weight: 600;
+            font-size: 14px;
+            white-space: nowrap;
+            margin: 0;
+         }
+         .date-group input {
+            flex: 1;
+            min-width: 0;
+         }
          .btn-tool { 
             padding: 12px 16px; 
             border-radius: 8px; 
@@ -402,11 +419,12 @@
                gap: 8px;
             }
             
-            .dashboard-toolbar p {
+            .date-group {
                width: 100%;
-               margin: 0;
-               font-weight: 600;
-               font-size: 13px;
+            }
+            
+            .date-group label {
+               min-width: 35px;
             }
             
             .dashboard-toolbar input {
@@ -637,10 +655,14 @@
                              </div>
                          </div>
                          
-                         <p>Od:</p>
-                         <input type="date" id="dateFrom" title="Data od">
-                         <p>Do:</p>
-                         <input type="date" id="dateTo" title="Data do">
+                         <div class="date-group">
+                             <label for="dateFrom">Od:</label>
+                             <input type="date" id="dateFrom" title="Data od">
+                         </div>
+                         <div class="date-group">
+                             <label for="dateTo">Do:</label>
+                             <input type="date" id="dateTo" title="Data do">
+                         </div>
                          
                          <button onclick="loadDashboard(true)" class="btn-tool btn-apply">🔍 Zastosuj filtry</button>
                          <button onclick="toggleSort()" id="sortBtn" class="btn-tool">📅 Najnowsze</button>
