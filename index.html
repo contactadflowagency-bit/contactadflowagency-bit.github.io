@@ -841,7 +841,7 @@
           } catch { return dateStr; }
       }
       
-      function calculateWaitTimes(createdStr, updatedStr, waitUntilStr, status) {
+     function calculateWaitTimes(createdStr, updatedStr, waitUntilStr, status) {
           if (!createdStr || createdStr === "-") return "-";
       
           const parse = (str) => {
@@ -856,7 +856,7 @@
           const updated = parse(updatedStr);
           const waitUntil = parse(waitUntilStr);
           const now = new Date();
-          
+      
           const s = String(status).toLowerCase();
           const isFinished = ['obs', 'nie_odb', 'odrz', 'porzu'].some(x => s.includes(x));
           const end = (isFinished && updated) ? updated : now;
@@ -876,7 +876,14 @@
               return h > 0 ? `${h}h ${m % 60}m` : `${m}m`;
           };
       
-          return `<div style="font-weight: bold; color: ${color};">${fmt(workMins)}</div><div style="font-size: 0.85em; color: #666;">(łącznie: ${fmt(rawMins)})</div>`;
+          return `
+              <span style="font-weight:700; color:${color}">
+                  ${fmt(workMins)}
+              </span>
+              <span style="font-size:0.85em; color:#666; margin-left:4px;">
+                  (łącznie: ${fmt(rawMins)})
+              </span>
+          `;
       }
       
       function goToDashboard() {
