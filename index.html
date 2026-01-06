@@ -20,205 +20,98 @@
          max-width:600px; 
          width:100%; 
          background:#fff; 
-         border-radius:16px; 
-         box-shadow:0 8px 24px rgba(0,0,0,0.12); 
+         border-radius:12px; 
+         box-shadow:0 4px 10px rgba(0,0,0,0.05); 
          overflow:hidden; 
       }
       .header { 
-         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+         background: linear-gradient(135deg, #00bcd4, #9c27b0); 
          color:#fff; 
-         padding:28px 20px; 
+         padding:24px 20px; 
          text-align:center; 
          position: relative; 
       }
       .header h2 { 
          margin:0; 
-         font-size:22px;
-         font-weight:600;
+         font-size:20px;
          padding: 0 40px;
       }
-      .content { padding:24px; }
-      
-      /* Nowy styl karty leada */
-      .lead-info-card {
-         background: #fff;
-         border-radius: 12px;
-         padding: 0;
-         margin-bottom: 16px;
-         border: 1px solid #e8eaed;
+      .content { padding:20px; }
+      .box { 
+         background:#f4fbfd; 
+         border-left:4px solid #00bcd4; 
+         padding:16px; 
+         border-radius:6px; 
+         margin-bottom:20px; 
       }
-      
-      .lead-info-section {
-         padding: 20px;
-         border-bottom: 1px solid #f1f3f4;
-      }
-      
-      .lead-info-section:last-child {
-         border-bottom: none;
-      }
-      
-      .lead-info-header {
-         display: flex;
-         justify-content: space-between;
-         align-items: flex-start;
-         margin-bottom: 20px;
-         gap: 12px;
-      }
-      
-      .lead-meta {
-         flex: 1;
-      }
-      
-      .lead-id {
-         font-size: 13px;
-         color: #5f6368;
-         font-weight: 500;
-         margin-bottom: 4px;
-      }
-      
-      .lead-date {
-         font-size: 14px;
-         color: #202124;
-         font-weight: 500;
-      }
-      
-      .lead-campaign {
-         font-size: 13px;
-         color: #5f6368;
-         margin-top: 4px;
-      }
-      
-      .info-row {
-         display: flex;
-         align-items: flex-start;
-         padding: 12px 0;
-         border-bottom: 1px solid #f8f9fa;
-      }
-      
-      .info-row:last-child {
-         border-bottom: none;
-         padding-bottom: 0;
-      }
-      
-      .info-row:first-child {
-         padding-top: 0;
-      }
-      
-      .info-icon {
-         font-size: 18px;
-         margin-right: 12px;
-         min-width: 20px;
-      }
-      
-      .info-content {
-         flex: 1;
-      }
-      
-      .info-label {
-         font-size: 12px;
-         color: #5f6368;
-         margin-bottom: 2px;
-         font-weight: 500;
-         text-transform: uppercase;
-         letter-spacing: 0.5px;
-      }
-      
-      .info-value {
-         font-size: 15px;
-         color: #202124;
-         font-weight: 400;
-         word-break: break-word;
-      }
-      
-      .info-value.large {
-         font-size: 16px;
-         font-weight: 500;
-      }
-      
+      .box.data { background:#f0faff; }
+      p { margin:6px 0; font-size:15px; word-wrap: break-word; }
       .buttons { 
-         padding: 20px;
-         background: #f8f9fa;
-         display: flex;
-         flex-direction: column;
-         gap: 12px;
+         text-align:center; 
+         margin:30px 0; 
+         display: flex; 
+         justify-content: center; 
+         gap: 10px; 
+         flex-wrap: wrap; 
       }
-      
-      .buttons a, .btn-modal, .btn-action { 
-         padding: 16px 24px;
-         border-radius: 10px;
-         color: white;
-         text-decoration: none;
-         font-weight: 600;
-         cursor: pointer;
-         transition: all 0.3s ease;
-         border: none;
+      .buttons a, .btn-modal { 
+         padding:14px 20px; 
+         border-radius:6px; 
+         color:white; 
+         text-decoration:none; 
+         font-weight:bold; 
+         cursor: pointer; 
+         transition: opacity 0.2s; 
+         border: none; 
          font-size: 15px;
+         min-height: 44px;
+         min-width: 120px;
          display: flex;
          align-items: center;
          justify-content: center;
-         gap: 8px;
-         box-shadow: 0 2px 8px rgba(0,0,0,0.15);
       }
+      .buttons a:hover, .btn-tool:hover { opacity: 0.8; }
       
-      .buttons a:hover, .btn-action:hover { 
-         transform: translateY(-2px);
+      /* Nowa funkcjonalność: Podświetlenie aktywnego statusu */
+      .buttons.status-buttons a {
+         opacity: 0.6;
+         filter: grayscale(20%);
+      }
+      .buttons.status-buttons a.active {
+         opacity: 1;
+         filter: none;
          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+         transform: scale(1.02);
       }
       
-      .obs { background: linear-gradient(135deg, #34d399 0%, #10b981 100%); }
-      .nie { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); }
-      .odrz { background: linear-gradient(135deg, #f87171 0%, #ef4444 100%); }
-      .close-btn { background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); }
-      
+      .obs { background:#2E7D32; } 
+      .nie { background:#FF9800; } 
+      .odrz { background:#D32F2F; }
+      .close-btn { background:#555; }
       .status-badge { 
-         display: inline-flex;
-         align-items: center;
-         padding: 8px 16px;
-         border-radius: 20px;
-         font-weight: 700;
-         font-size: 12px;
-         color: #fff;
+         display:inline-block; 
+         padding:6px 12px; 
+         border-radius:999px; 
+         font-weight:700; 
+         font-size:12px; 
+         color:#fff; 
          text-transform: uppercase;
-         letter-spacing: 0.5px;
          white-space: nowrap;
-         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       }
-      
-      .s-nowy { background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%); }
-      .s-obsluzony { background: linear-gradient(135deg, #34d399 0%, #10b981 100%); }
-      .s-nie_odbiera { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); }
-      .s-odrzucony { background: linear-gradient(135deg, #f87171 0%, #ef4444 100%); }
-      .s-porzucony { background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%); }
-      
-      .status-update {
-         display: flex;
-         flex-direction: column;
-         gap: 6px;
-         align-items: flex-end;
+      .s-nowy { background: #2196F3; }
+      .s-obsluzony { background: #2E7D32; }
+      .s-nie_odbiera { background: #FF9800; }
+      .s-odrzucony { background: #D32F2F; }
+      .s-porzucony { background: #9E9E9E; }
+      .status-row { 
+         display:flex; 
+         justify-content:space-between; 
+         align-items:center; 
+         flex-wrap:wrap; 
+         gap:10px; 
       }
-      
-      .update-time {
-         font-size: 11px;
-         color: #6b7280;
-         font-weight: 500;
-      }
-      
-      .disabled { 
-         opacity: 0.5;
-         pointer-events: none;
-      }
-      
-      .lock-message {
-         text-align: center;
-         padding: 16px;
-         background: #fef2f2;
-         border: 2px solid #fecaca;
-         border-radius: 10px;
-         color: #991b1b;
-         font-weight: 600;
-         font-size: 14px;
-         margin-top: 16px;
-      }
+      .muted { font-size:13px; color:#777; }
+      .disabled { opacity:.4; pointer-events: none; }
       
       /* Dashboard */
       body.dashboard-mode { align-items: flex-start; }
@@ -231,9 +124,8 @@
          align-items: center; 
          background: #fff; 
          padding: 15px; 
-         border-radius: 12px; 
-         border: 1px solid #e8eaed;
-         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+         border-radius: 8px; 
+         border: 1px solid #eee; 
       }
       .dashboard-toolbar input { 
          padding: 12px; 
@@ -272,17 +164,8 @@
          min-height: 44px;
          font-size: 14px;
          white-space: nowrap;
-         transition: all 0.2s;
       }
-      .btn-tool:hover {
-         background: #f8f9fa;
-         border-color: #667eea;
-      }
-      .btn-apply { 
-         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-         color: white !important;
-         border: none;
-      }
+      .btn-apply { background: #2563eb !important; color: white !important; border: none; }
       .multiselect { position: relative; flex: 1; min-width: 150px; }
       .multiselect-btn { 
          padding: 12px; 
@@ -302,10 +185,10 @@
          position: absolute; 
          background: #fff; 
          min-width: 250px; 
-         box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+         box-shadow: 0 8px 16px rgba(0,0,0,0.2); 
          z-index: 100; 
-         border: 1px solid #e8eaed;
-         border-radius: 12px;
+         border: 1px solid #eee; 
+         border-radius: 8px; 
          max-height: 300px; 
          overflow-y: auto; 
          top: 110%; 
@@ -317,21 +200,19 @@
          display: flex;
          align-items: center;
          cursor: pointer; 
-         border-bottom: 1px solid #f1f3f4;
+         border-bottom: 1px solid #f9f9f9; 
          font-size: 14px; 
          min-height: 44px;
-         transition: background 0.2s;
       }
-      .multiselect-content label:hover { background: #f8f9fa; }
+      .multiselect-content label:hover { background: #f1f1f1; }
       .multiselect-content input { margin-right: 10px; }
       
       /* Table */
       .table-scroll { 
          width: 100%; 
          overflow-x: auto; 
-         border: 1px solid #e8eaed;
-         border-radius: 12px;
-         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+         border: 1px solid #eee; 
+         border-radius: 8px; 
       }
       .dashboard-table { 
          width: 100%; 
@@ -340,19 +221,14 @@
          min-width: 1000px; 
       }
       .dashboard-table thead th { 
-         background: #f8f9fa;
-         padding: 14px 12px;
+         background: #f4f7fb; 
+         padding: 12px 10px; 
          text-align: left; 
-         border-bottom: 2px solid #e8eaed;
-         font-weight: 600;
-         color: #202124;
+         border-bottom: 2px solid #e3e7ee; 
       }
       .dashboard-table tbody td { 
-         padding: 14px 12px;
-         border-bottom: 1px solid #f1f3f4;
-      }
-      .dashboard-table tbody tr:hover {
-         background: #f8f9fa;
+         padding: 12px 10px; 
+         border-bottom: 1px solid #eee; 
       }
       .dashboard-table th:last-child, 
       .dashboard-table td:last-child { text-align: center !important; width: 100px; }
@@ -361,15 +237,11 @@
       .card-view { display: none; }
       .lead-card {
          background: #fff;
-         border: 1px solid #e8eaed;
-         border-radius: 12px;
+         border: 1px solid #eee;
+         border-radius: 8px;
          padding: 16px;
          margin-bottom: 12px;
-         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-         transition: all 0.2s;
-      }
-      .lead-card:hover {
-         box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
       }
       .lead-card-header {
          display: flex;
@@ -378,44 +250,37 @@
          margin-bottom: 12px;
          gap: 10px;
       }
-      .lead-card-info p { 
-         margin: 6px 0;
-         font-size: 14px;
-         display: flex;
-         align-items: center;
-         gap: 8px;
-      }
+      .lead-card-info p { margin: 4px 0; font-size: 14px; }
       .lead-card-actions {
          margin-top: 12px;
          padding-top: 12px;
-         border-top: 1px solid #f1f3f4;
+         border-top: 1px solid #eee;
       }
       
       /* Modals */
       .loader { 
          position: fixed; 
          inset: 0; 
-         background: rgba(0,0,0,0.65);
+         background: rgba(0,0,0,0.6); 
          display: flex; 
          align-items: center; 
          justify-content: center; 
          z-index: 9999;
          padding: 20px;
-         backdrop-filter: blur(4px);
       }
       .loader.hidden { display: none !important; }
       .loader-box { 
          background: #fff; 
-         padding: 32px; 
-         border-radius: 16px;
+         padding: 30px; 
+         border-radius: 12px; 
          text-align: center; 
          max-width: 400px; 
          width: 100%; 
-         box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+         box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
          position: relative; 
       }
       .modal-preview-box { 
-         max-width: 500px;
+         max-width: 600px; 
          width: 95%; 
          padding: 0; 
          max-height: 90vh;
@@ -423,8 +288,8 @@
       }
       .modal-close-x { 
          position: absolute; 
-         top: 16px;
-         right: 16px;
+         top: 15px; 
+         right: 15px; 
          color: white; 
          font-size: 28px; 
          cursor: pointer; 
@@ -436,94 +301,87 @@
          align-items: center;
          justify-content: center;
          border-radius: 50%;
-         background: rgba(0,0,0,0.3);
-         transition: all 0.2s;
-      }
-      .modal-close-x:hover {
-         background: rgba(0,0,0,0.5);
-         transform: scale(1.1);
+         background: rgba(0,0,0,0.2);
       }
       .spinner { 
-         width: 48px;
-         height: 48px;
-         border: 4px solid #e8eaed;
-         border-top-color: #667eea;
+         width: 40px; 
+         height: 40px; 
+         border: 4px solid #ddd; 
+         border-top-color: #333; 
          border-radius: 50%; 
-         animation: spin 0.8s linear infinite; 
-         margin: 0 auto 16px;
+         animation: spin 0.9s linear infinite; 
+         margin: 0 auto 15px; 
       }
       @keyframes spin { to { transform: rotate(360deg); } }
       
+      /* Nowy styl modalu potwierdzenia */
       .confirm-modal-content {
          padding: 24px;
       }
-      
       .confirm-icon {
          font-size: 48px;
          margin-bottom: 16px;
       }
-      
       .confirm-title {
-         font-size: 20px;
+         font-size: 18px;
          font-weight: 600;
-         color: #202124;
          margin-bottom: 12px;
       }
-      
       .confirm-message {
          font-size: 15px;
-         color: #5f6368;
+         color: #666;
          margin-bottom: 24px;
          line-height: 1.5;
       }
-      
       .confirm-buttons {
          display: flex;
          gap: 12px;
       }
-      
       .confirm-buttons button {
          flex: 1;
       }
       
       .btn-back {
           position: absolute;
-          left: 12px;
+          left: 10px;
           top: 50%;
           transform: translateY(-50%);
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          padding: 8px 16px;
-          border-radius: 20px;
-          background: rgba(255, 255, 255, 0.2);
+          padding: 8px 14px;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.22);
           color: #fff;
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          font-size: 14px;
+          border: 1px solid rgba(255, 255, 255, 0.35);
+          font-size: 13px;
           font-weight: 600;
           cursor: pointer;
           backdrop-filter: blur(8px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
           transition: all 0.2s ease;
           min-height: 36px;
       }
       .btn-back::before { content: "←"; font-size: 16px; }
       .btn-back:hover {
-          background: rgba(255, 255, 255, 0.3);
-          transform: translateY(-50%) translateX(-2px);
+          background: rgba(255, 255, 255, 0.32);
+          transform: translateY(-50%) translateX(-3px);
       }
 
       /* Mobile */
       @media (max-width: 768px) {
          body { padding: 5px; }
          body.dashboard-mode { padding: 10px; }
-         .wrapper { border-radius: 12px; margin: 10px 0; }
-         .header { padding: 24px 16px; }
+         .wrapper { border-radius: 8px; margin: 10px 0; }
+         .header { padding: 20px 15px; }
          .header h2 { font-size: 18px; padding: 0 35px; }
-         .content { padding: 16px; }
-         .lead-info-section { padding: 16px; }
-         .buttons { padding: 16px; }
-         .buttons { flex-direction: column; gap: 10px; }
+         .content { padding: 15px; }
+         .box { padding: 12px; font-size: 14px; }
+         p { font-size: 14px; }
+         .buttons { flex-direction: column; gap: 8px; }
+         .buttons a, .btn-modal { width: 100%; padding: 14px; }
+         .status-row { flex-direction: column; align-items: flex-start; }
+         .status-row > div:last-child { width: 100%; text-align: left !important; }
          .dashboard-toolbar { padding: 12px; gap: 8px; }
          .date-group { width: 100%; }
          .date-group label { min-width: 35px; }
@@ -532,7 +390,7 @@
          .btn-tool { width: 100%; justify-content: center; }
          .table-scroll { display: none; }
          .card-view { display: block; }
-         .btn-back { padding: 6px 12px; font-size: 13px; left: 10px; }
+         .btn-back { padding: 6px 10px; font-size: 12px; left: 8px; }
          .btn-back span { display: none; }
          .modal-preview-box { width: 98%; max-height: 95vh; }
          .modal-close-x { width: 36px; height: 36px; font-size: 24px; }
@@ -540,30 +398,9 @@
       
       @media (max-width: 480px) {
          .header h2 { font-size: 16px; }
-         .status-badge { font-size: 11px; padding: 6px 12px; }
+         .status-badge { font-size: 11px; padding: 5px 10px; }
+         p { font-size: 13px; }
          .lead-card { padding: 12px; }
-      }
-
-      .status-buttons .btn-action {
-          opacity: 0.6;
-          filter: grayscale(20%);
-      }
-      
-      .status-buttons .btn-action.active {
-          opacity: 1;
-          filter: none;
-          box-shadow: 0 6px 16px rgba(0,0,0,0.25);
-          transform: scale(1.02);
-      }
-
-      #previewModal .lead-info-card,
-      #previewModal .lead-info-section,
-      #previewModal .info-row {
-          text-align: left;
-      }
-      
-      #previewModal .lead-info-header {
-          align-items: flex-start;
       }
    </style>
 </head>
@@ -596,9 +433,13 @@
    <div id="previewModal" class="loader hidden" onclick="closePreview(event)">
       <div class="loader-box modal-preview-box" onclick="event.stopPropagation()">
          <div class="header">
+            <div class="modal-close-x" onclick="closePreview()">×</div>
             <h2>Szczegóły leada</h2>
          </div>
-         <div id="previewContent"></div>
+         <div class="content" id="previewContent"></div>
+         <div style="background: #f9f9f9; padding: 15px; text-align: center;">
+            <button class="btn-modal close-btn" onclick="closePreview()">Zamknij</button>
+         </div>
       </div>
    </div>
    
@@ -675,89 +516,34 @@
                   <h2>Status kontaktu</h2>
               </div>
               <div class="content">
-                  <div class="lead-info-card">
-                      <div class="lead-info-section">
-                          <div class="lead-info-header">
-                              <div class="lead-meta">
-                                  <div class="lead-id">🆔 ID: ${escapeHtml(lead.id)}</div>
-                                  <div class="lead-date">📅 ${formatDate(lead.date)}</div>
-                                  <div class="lead-campaign">📢 ${escapeHtml(lead.campaign)}</div>
-                              </div>
-                              <div class="status-update">
-                                  <span class="status-badge ${statusClass(lead.statusKey)}">${escapeHtml(lead.status)}</span>
-                                  <div class="update-time">${formatDate(lead.lastUpdate)}</div>
-                              </div>
+                  <div class="box">
+                      <div class="status-row">
+                          <div>
+                              <p>🆔 <strong>ID:</strong> ${escapeHtml(lead.id)}</p>
+                              <p>📅 <strong>Zgłoszenie:</strong> ${formatDate(lead.date)}</p>
+                              <p>📢 <strong>Kampania:</strong> ${escapeHtml(lead.campaign)}</p>
                           </div>
-                      </div>
-                      
-                      <div class="lead-info-section">
-                          <div class="info-row">
-                              <div class="info-icon">👤</div>
-                              <div class="info-content">
-                                  <div class="info-label">Pacjent</div>
-                                  <div class="info-value large">${escapeHtml(lead.name)}</div>
-                              </div>
-                          </div>
-                          
-                          <div class="info-row">
-                              <div class="info-icon">📞</div>
-                              <div class="info-content">
-                                  <div class="info-label">Telefon</div>
-                                  <div class="info-value">${formatPhone(lead.phone)}</div>
-                              </div>
-                          </div>
-                          
-                          <div class="info-row">
-                              <div class="info-icon">✉️</div>
-                              <div class="info-content">
-                                  <div class="info-label">Email</div>
-                                  <div class="info-value">${escapeHtml(lead.email)}</div>
-                              </div>
-                          </div>
-                          
-                          <div class="info-row">
-                              <div class="info-icon">⏱️</div>
-                              <div class="info-content">
-                                  <div class="info-label">Czas reakcji</div>
-                                  <div class="info-value">${calculateWaitTimes(lead.date, lead.lastUpdate, lead.waitUntil, lead.statusKey)}</div>
-                              </div>
-                          </div>
-                      </div>
-                      
-                      <div class="lead-info-section">
-                          <div class="info-row">
-                              <div class="info-icon">🦷</div>
-                              <div class="info-content">
-                                  <div class="info-label">Cel wizyty</div>
-                                  <div class="info-value">${escapeHtml(lead.info1)}</div>
-                              </div>
-                          </div>
-                          
-                          <div class="info-row">
-                              <div class="info-icon">📝</div>
-                              <div class="info-content">
-                                  <div class="info-label">Dodatkowe informacje</div>
-                                  <div class="info-value">${escapeHtml(lead.info2)}</div>
-                              </div>
+                          <div style="text-align:right">
+                              <span class="status-badge ${statusClass(lead.statusKey)}">${lead.status}</span>
+                              <div class="muted" style="margin-top:5px">Aktualizacja:<br>${formatDate(lead.lastUpdate)}</div>
                           </div>
                       </div>
                   </div>
-                  
+                  <div class="box data">
+                      <p><strong>🧾 Pacjent:</strong> ${escapeHtml(lead.name)}</p>
+                      <p><strong>📞 Telefon:</strong> ${formatPhone(lead.phone)}</p>
+                      <p><strong>✉️ Email:</strong> ${escapeHtml(lead.email)}</p>
+                      <p><strong>⏱️ Czas kontaktu:</strong> ${calculateWaitTimes(lead.date, lead.lastUpdate, lead.waitUntil, lead.statusKey)}</p>
+                      <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
+                      <p><strong>🦷 Cel:</strong> ${escapeHtml(lead.info1)}</p>
+                      <p><strong>📝 Info:</strong> ${escapeHtml(lead.info2)}</p>
+                  </div>
                   <div class="buttons status-buttons ${lead.canEdit ? "" : "disabled"}">
-                     <a class="obs btn-action ${lead.statusKey === 'obsluzony' ? 'active' : ''}" onclick="handleStatusClick('obsluzony')">
-                        ✔️ Obsłużony
-                     </a>
-                     
-                     <a class="nie btn-action ${lead.statusKey === 'nie_odbiera' ? 'active' : ''}" onclick="handleStatusClick('nie_odbiera')">
-                        📞 Nie odbiera
-                     </a>
-                     
-                     <a class="odrz btn-action ${lead.statusKey === 'odrzucony' ? 'active' : ''}" onclick="handleStatusClick('odrzucony')">
-                        ✖️ Odrzucony
-                     </a>
+                      <a class="obs ${lead.statusKey === 'obsluzony' ? 'active' : ''}" onclick="handleStatusClick('obsluzony')">✔ Obsłużony</a>
+                      <a class="nie ${lead.statusKey === 'nie_odbiera' ? 'active' : ''}" onclick="handleStatusClick('nie_odbiera')">📞 Nie odbiera</a>
+                      <a class="odrz ${lead.statusKey === 'odrzucony' ? 'active' : ''}" onclick="handleStatusClick('odrzucony')">❌ Odrzucony</a>
                   </div>
-                  
-                  ${!lead.canEdit ? '<div class="lock-message">🔒 Edycja zablokowana</div>' : ''}
+                  ${!lead.canEdit ? '<p class="muted" style="text-align:center; color:#f44336; font-weight:bold; margin-top:20px;">⛔ Edycja zablokowana</p>' : ''}
               </div>
           `;
       }
@@ -897,14 +683,14 @@
                   <td>${formatDate(r.created)}</td>
                   <td>
                       <strong>${escapeHtml(r.name)}</strong><br>
-                      <small style="color:#6b7280;">📞 ${formatPhone(r.phone)}</small><br>
-                      <small style="color:#6b7280;">✉️ ${escapeHtml(r.email)}</small>
+                      <small class="muted">📞 ${formatPhone(r.phone)}</small><br>
+                      <small class="muted">✉️ ${escapeHtml(r.email)}</small>
                   </td>
                   <td><span class="status-badge ${statusClass(r.status)}">${escapeHtml(r.status)}</span></td>
                   <td>${formatDate(r.updated)}</td>
                   <td>${calculateWaitTimes(r.created, r.updated, r.waitUntil, r.status)}</td>
                   <td>${escapeHtml(r.campaign)}</td>
-                  <td><button class="btn-tool" onclick="openPreview('${escapeHtml(r.id)}')">👁️</button></td>
+                  <td><button class="btn-tool" onclick="openPreview('${escapeHtml(r.id)}')">Szczegóły</button></td>
               </tr>
           `).join("");
           
@@ -913,20 +699,20 @@
               <div class="lead-card">
                   <div class="lead-card-header">
                       <div style="flex: 1;">
-                          <div style="font-weight: 600; font-size: 15px; margin-bottom: 4px;">🆔 ${escapeHtml(r.id)}</div>
-                          <div style="color:#6b7280; font-size:13px;">📅 ${formatDate(r.created)}</div>
+                          <div style="font-weight: bold; font-size: 16px; margin-bottom: 4px;">🆔 ID: ${r.id}</div>
+                          <div class="muted">📅 ${formatDate(r.created)}</div>
                       </div>
                       <span class="status-badge ${statusClass(r.status)}">${escapeHtml(r.status)}</span>
                   </div>
                   <div class="lead-card-info">
-                     <p>👤 <strong>${escapeHtml(r.name)}</strong></p>
+                     <p><strong>🧾 ${escapeHtml(r.name)}</strong></p>
                      <p>📞 ${formatPhone(r.phone)}</p>
                      <p>✉️ ${escapeHtml(r.email)}</p>
                      <p>📢 ${escapeHtml(r.campaign)}</p>
                      <p>⏱️ ${calculateWaitTimes(r.created, r.updated, r.waitUntil, r.status)}</p>
                   </div>
                   <div class="lead-card-actions">
-                      <button class="btn-tool" onclick="openPreview('${escapeHtml(r.id)}')" style="width: 100%;">👁️ Szczegóły</button>
+                      <button class="btn-tool" onclick="openPreview('${escapeHtml(r.id)}')" style="width: 100%;">Szczegóły</button>
                   </div>
               </div>
           `).join("");
@@ -950,79 +736,28 @@
           if(!r) return;
       
           document.getElementById("previewContent").innerHTML = `
-              <div class="lead-info-card" style="border:none; box-shadow:none;">
-                <div style="padding:16px 16px 0 16px;">
-                    <button class="btn-back" onclick="closePreview()">
-                        <span>Powrót</span>
-                    </button>
-                </div>
-                  <div class="lead-info-section">
-                      <div class="lead-info-header">
-                          <div class="lead-meta">
-                              <div class="lead-id">🆔 ID: ${escapeHtml(r.id)}</div>
-                              <div class="lead-date">📅 ${formatDate(r.created)}</div>
-                              <div class="lead-campaign">📢 ${escapeHtml(r.campaign)}</div>
-                          </div>
-                          <div class="status-update">
-                              <span class="status-badge ${statusClass(r.status)}">${escapeHtml(r.status)}</span>
-                              <div class="update-time">${formatDate(r.updated)}</div>
-                          </div>
+              <div class="box">
+                  <div class="status-row">
+                      <div>
+                           <p>🆔 <strong>ID:</strong> ${escapeHtml(r.id)}</p>
+                           <p>📅 <strong>Zgłoszenie:</strong> ${formatDate(r.created)}</p>
+                           <p>📢 <strong>Kampania:</strong> ${escapeHtml(r.campaign)}</p>
                       </div>
-                  </div>
-                  
-                  <div class="lead-info-section">
-                      <div class="info-row">
-                          <div class="info-icon">👤</div>
-                          <div class="info-content">
-                              <div class="info-label">Pacjent</div>
-                              <div class="info-value large">${escapeHtml(r.name)}</div>
-                          </div>
-                      </div>
-                      
-                      <div class="info-row">
-                          <div class="info-icon">📞</div>
-                          <div class="info-content">
-                              <div class="info-label">Telefon</div>
-                              <div class="info-value">${formatPhone(r.phone)}</div>
-                          </div>
-                      </div>
-                      
-                      <div class="info-row">
-                          <div class="info-icon">✉️</div>
-                          <div class="info-content">
-                              <div class="info-label">Email</div>
-                              <div class="info-value">${escapeHtml(r.email)}</div>
-                          </div>
-                      </div>
-                      
-                      <div class="info-row">
-                          <div class="info-icon">⏱️</div>
-                          <div class="info-content">
-                              <div class="info-label">Czas reakcji</div>
-                              <div class="info-value">${calculateWaitTimes(r.created, r.updated, r.waitUntil, r.status)}</div>
-                          </div>
-                      </div>
-                  </div>
-                  
-                  <div class="lead-info-section">
-                      <div class="info-row">
-                          <div class="info-icon">🦷</div>
-                          <div class="info-content">
-                              <div class="info-label">Cel wizyty</div>
-                              <div class="info-value">${escapeHtml(r.info1)}</div>
-                          </div>
-                      </div>
-                      
-                      <div class="info-row">
-                          <div class="info-icon">📝</div>
-                          <div class="info-content">
-                              <div class="info-label">Dodatkowe informacje</div>
-                              <div class="info-value">${escapeHtml(r.info2)}</div>
-                          </div>
+                      <div style="text-align:right">
+                           <span class="status-badge ${statusClass(r.status)}">${escapeHtml(r.status)}</span>
+                           <div class="muted" style="margin-top:5px">Aktualizacja:<br>${formatDate(r.updated)}</div>
                       </div>
                   </div>
               </div>
-          `;
+              <div class="box data">
+                  <p><strong>🧾 Pacjent:</strong> ${escapeHtml(r.name)}</p>
+                  <p><strong>📞 Telefon:</strong> ${formatPhone(r.phone)}</p>
+                  <p><strong>✉️ Email:</strong> ${escapeHtml(r.email)}</p>
+                  <p><strong>⏱️ Czas:</strong> ${calculateWaitTimes(r.created, r.updated, r.waitUntil, r.status)}</p>
+                  <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
+                  <p><strong>🦷 Info 1:</strong> ${escapeHtml(r.info1)}</p>
+                  <p><strong>📝 Info 2:</strong> ${escapeHtml(r.info2)}</p>
+              </div>`;
           
           document.getElementById("previewModal").classList.remove("hidden");
       }
@@ -1065,14 +800,7 @@
               hideLoader();
               if (!d) return;
               if (d.success) {
-                  app.innerHTML = `
-                      <div class="content" style="text-align:center; padding:60px 20px;">
-                          <div style="font-size:64px; margin-bottom:20px;">✅</div>
-                          <h2 style="color:#10b981; margin:0 0 12px 0;">Status zapisany!</h2>
-                          <p style="color:#6b7280; margin-bottom:30px;">Zmiana została pomyślnie zapisana w systemie.</p>
-                          <button class="btn-tool btn-apply" onclick="location.reload()" style="margin:0 auto;">↻ Odśwież stronę</button>
-                      </div>
-                  `;
+                  app.innerHTML = '<div class="content" style="text-align:center; padding:50px;"><h2>✅ Zapisano</h2><button class="btn-tool" onclick="location.reload()" style="margin:20px auto;">Wróć</button></div>';
               } else {
                   alert("Błąd: " + d.error);
                   location.reload();
@@ -1133,10 +861,10 @@
           let workMins = Math.floor((end - (waitUntil > created ? waitUntil : created)) / 60000);
           if (workMins < 0) workMins = 0;
       
-          let color = "#10b981";
-          if (workMins > 1440) color = "#dc2626";
-          else if (workMins > 120) color = "#ea580c";
-          else if (workMins > 30) color = "#f59e0b";
+          let color = "#2e7d32";
+          if (workMins > 1440) color = "#880e4f";
+          else if (workMins > 120) color = "#d32f2f";
+          else if (workMins > 30) color = "#ef6c00";
       
           const fmt = (m) => {
               if (m > 2880) return Math.floor(m / 1440) + " dni";
@@ -1144,7 +872,7 @@
               return h > 0 ? `${h}h ${m % 60}m` : `${m}m`;
           };
       
-          return `<div style="font-weight: 600; color: ${color}; font-size:14px;">${fmt(workMins)}</div><div style="font-size: 12px; color: #9ca3af; margin-top:2px;">(łącznie: ${fmt(rawMins)})</div>`;
+          return `<div style="font-weight: bold; color: ${color};">${fmt(workMins)}</div><div style="font-size: 0.85em; color: #666;">(łącznie: ${fmt(rawMins)})</div>`;
       }
       
       function goToDashboard() {
@@ -1164,13 +892,7 @@
       }
       
       function showError(m) { 
-          app.innerHTML = `
-              <div class="content" style="text-align:center; padding:60px 20px;">
-                  <div style="font-size:64px; margin-bottom:20px;">⛔</div>
-                  <h2 style="color:#dc2626; margin:0 0 12px 0;">Wystąpił błąd</h2>
-                  <p style="color:#6b7280;">${m}</p>
-              </div>
-          `; 
+          app.innerHTML = `<div class="content"><h3>⛔ Błąd</h3><p>${m}</p></div>`; 
       }
       
       // ====== INIT ======
@@ -1180,6 +902,12 @@
           renderListLayout();
           loadDashboard(true);
       }
+      
+      document.addEventListener("click", (e) => {
+          if (!e.target.closest('.multiselect')) {
+              document.querySelectorAll('.multiselect-content').forEach(el => el.classList.remove('show'));
+          }
+      });
    </script>
 </body>
 </html>
